@@ -431,10 +431,16 @@ public class BluetoothPeripheral {
      *
      * @param characteristic Specifies the characteristic to read.
      */
-    public void readCharacteristic(@NotNull final BluetoothGattCharacteristic characteristic) {
+    public void readCharacteristic(final BluetoothGattCharacteristic characteristic) {
         // Make sure we are still connected
         if(state != ConnectionState.Connected) {
             gattCallback.onCharacteristicRead(characteristic, GATT_ERROR);
+            return;
+        }
+
+        // Check if characteristic is valid
+        if (characteristic == null) {
+            HBLogger.e(TAG, "characteristic is 'null', ignoring read request");
             return;
         }
 
@@ -485,8 +491,6 @@ public class BluetoothPeripheral {
         } else {
             HBLogger.e(TAG,"ERROR: Could not enqueue read characteristic command");
         }
-
-
     }
 
     /**
@@ -495,10 +499,22 @@ public class BluetoothPeripheral {
      *
      * @param characteristic Specifies which service, characteristic and value to write.
      */
-    public void writeCharacteristic(@NotNull BluetoothGattCharacteristic characteristic, @NotNull byte[] value,  final int writeType) {
+    public void writeCharacteristic(BluetoothGattCharacteristic characteristic, byte[] value,  final int writeType) {
         // Make sure we are still connected
         if(state != ConnectionState.Connected) {
             gattCallback.onCharacteristicWrite(characteristic, GATT_ERROR);
+            return;
+        }
+
+        // Check if characteristic is valid
+        if (characteristic == null) {
+            HBLogger.e(TAG, "characteristic is 'null', ignoring write request");
+            return;
+        }
+
+        // Check if byte array is valid
+        if (value == null) {
+            HBLogger.e(TAG, "value to write is 'null', ignoring write request");
             return;
         }
 
