@@ -264,6 +264,7 @@ public class BluetoothCentral {
                 if(key.equalsIgnoreCase("org.bluez.Device1")) {
                     final String deviceAddress;
                     final String deviceName;
+                    final int rssi;
                     ArrayList<String> serviceUUIDs = null;
 
                     // Grab address
@@ -292,6 +293,13 @@ public class BluetoothCentral {
                         serviceUUIDs = (ArrayList) value.get(SERVICE_UUIDS).getValue();
                     }
 
+                    if((value.get("Rssi") != null) && (value.get("Rssi").getValue() instanceof Short)) {
+                        rssi = (Short) value.get("Rssi").getValue();
+                    } else {
+                        rssi = -100;
+                    }
+
+
                     // Don't proceed if deviceAddress or deviceName are null
                     if(deviceAddress == null || deviceName == null) return;
 
@@ -304,7 +312,7 @@ public class BluetoothCentral {
                     }
 
                     // Create ScanResult
-                    final ScanResult scanResult = new ScanResult(deviceName, deviceAddress, finalServiceUUIDs);
+                    final ScanResult scanResult = new ScanResult(deviceName, deviceAddress, finalServiceUUIDs, rssi);
                     final BluetoothPeripheral peripheral = new BluetoothPeripheral(device, deviceName, deviceAddress, internalCallback, null);
 
                     // Propagate found device
@@ -353,10 +361,12 @@ public class BluetoothCentral {
                 final String deviceAddress;
                 final String deviceName;
                 final String[] serviceUUIDs;
+                final int rssi;
                 try {
                     deviceAddress = foundDevice.getAddress();
                     deviceName = foundDevice.getName();
                     serviceUUIDs = foundDevice.getUuids();
+                    rssi = foundDevice.getRssi();
                 } catch (Exception e) {
                     return;
                 }
@@ -366,7 +376,7 @@ public class BluetoothCentral {
 
                 // Propagate found device
                 // Create ScanResult
-                final ScanResult scanResult = new ScanResult(deviceName, deviceAddress, serviceUUIDs);
+                final ScanResult scanResult = new ScanResult(deviceName, deviceAddress, serviceUUIDs, rssi);
                 final BluetoothPeripheral peripheral = new BluetoothPeripheral(foundDevice, deviceName, deviceAddress, internalCallback, null);
                 callBackHandler.post(() -> {
                     if(bluetoothCentralCallback != null) {
