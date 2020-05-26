@@ -18,6 +18,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
 
 public class BluetoothCentral {
 
@@ -31,17 +32,13 @@ public class BluetoothCentral {
     private volatile boolean isPowered = false;
     private volatile boolean isStoppingScan = false;
     private final Map<DiscoveryFilter, Object> scanFilters = new EnumMap<>(DiscoveryFilter.class);
-    private static final int SECOND = 1000;
-    private static final int MINUTE = 60 * SECOND;
-    private boolean init = false;
-    private boolean connecting = false;
+    private static final long MINUTE = TimeUnit.MINUTES.toMillis(1);
 
     // Command queue
     private final Queue<Runnable> commandQueue = new ConcurrentLinkedQueue<>();
     private boolean commandQueueBusy;
     private final Handler queueHandler = new Handler("CentralQueue");
     private String currentCommand;
-    private String currentDeviceAddress;
 
     // Bluez property strings
     private static final String DISCOVERING = "Discovering";
@@ -68,50 +65,34 @@ public class BluetoothCentral {
 
             // Do some administration work
             connectedDevices.put(device.getAddress(), device);
+            unconnectedDevices.remove(device.getAddress());
+
             if(connectedDevices.size() == MAX_CONNECTED_PERIPHERALS) {
                 HBLogger.w(TAG,"maximum amount (7) of connected peripherals reached");
             }
-//            HBLogger.i(TAG, String.format("Connected devices: %d", connectedDevices.size()));
 
-            // Remove peripheral from unconnected peripherals map if it is there
-            if(unconnectedDevices.get(device.getAddress()) != null) {
-                unconnectedDevices.remove(device.getAddress());
-            }
+            HBLogger.i(TAG, String.format("Connected devices: %d", connectedDevices.size()));
 
             // Inform the listener that we are now connected
             callBackHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    bluetoothCentralCallback.onConnectedPeripheral(device);
+                    if (bluetoothCentralCallback != null) {
+                        bluetoothCentralCallback.onConnectedPeripheral(device);
+                    }
                 }
             });
         }
 
         @Override
         public void servicesDiscovered(BluetoothPeripheral device) {
-            // Continue scanning
-            BluetoothCentral.this.connecting = false;
-            HBLogger.i(TAG,"Resuming scan (connected)");
-            if(!isScanning()) {
-                findSupportedDevices();
-            }
+            // TODO , is this needed?
+            HBLogger.i(TAG, "Service discovery succeeded");
         }
 
         @Override
         public void serviceDiscoveryFailed(BluetoothPeripheral device) {
             HBLogger.i(TAG, "Service discovery failed");
-            if(device.isPaired()) {
-                // If this happens to a Omron BPM it usually means the bond is lost so remove the device
-                if(device.getName().startsWith("BLEsmart_")) {
-                    callBackHandler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            HBLogger.i(TAG, "Removing device because bond lost");
-                            removeDevice(device);
-                        }
-                    }, 1000L);
-                }
-            }
         }
 
         @Override
@@ -120,25 +101,15 @@ public class BluetoothCentral {
 
             // Remove it from the connected peripherals map, in case it still got there
             connectedDevices.remove(device.getAddress());
-//            HBLogger.i(TAG, String.format("Connected devices: %d", connectedDevices.size()));
+            unconnectedDevices.remove(device.getAddress());
 
-            // Remove from unconnected devices list
-            if (unconnectedDevices.get(device.getAddress()) != null) {
-                unconnectedDevices.remove(device.getAddress());
-            }
-
-            // Continue scanning
-            BluetoothCentral.this.connecting = false;
-            if(!isScanning()) {
-                HBLogger.i(TAG,"Resuming scan");
-                findSupportedDevices();
-            }
+            HBLogger.i(TAG, String.format("Connected devices: %d", connectedDevices.size()));
 
             // Inform the handler that the connection failed
             if (bluetoothCentralCallback != null) {
                 bluetoothCentralCallback.onConnectionFailed(device, 0);
             } else {
-                HBLogger.e(TAG,"ERROR: No connection listener for 'connectFailed' callback");
+                HBLogger.e(TAG,"ERROR: no callback for 'connectFailed' registered");
             }
         }
 
@@ -148,18 +119,17 @@ public class BluetoothCentral {
 
             // Remove it from the connected peripherals map
             connectedDevices.remove(deviceAddress);
-//            HBLogger.i(TAG, String.format("Connected devices: %d", connectedDevices.size()));
+            unconnectedDevices.remove(deviceAddress);
 
-            // Make sure it is also not in unconnected peripherals map
-            if(unconnectedDevices.get(deviceAddress) != null) {
-                unconnectedDevices.remove(deviceAddress);
-            }
+            HBLogger.i(TAG, String.format("Connected devices: %d", connectedDevices.size()));
 
             // Trigger callback
             callBackHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    bluetoothCentralCallback.onDisconnectedPeripheral(device, 0);
+                    if (bluetoothCentralCallback != null) {
+                        bluetoothCentralCallback.onDisconnectedPeripheral(device, 0);
+                    }
                 }
             });
 
@@ -171,14 +141,7 @@ public class BluetoothCentral {
                         removeDevice(device);
                     }
                 }
-            }, 1000L);
-
-            // In some cases, like when service discovery fails we may still need to start scanning
-            BluetoothCentral.this.connecting = false;
-            if(!isScanning()) {
-                HBLogger.i(TAG,"Resuming scan");
-                findSupportedDevices();
-            }
+            }, 500L);
         }
     };
 
@@ -299,10 +262,6 @@ public class BluetoothCentral {
                         rssi = -100;
                     }
 
-
-                    // Don't proceed if deviceAddress or deviceName are null
-                    if(deviceAddress == null || deviceName == null) return;
-
                     // Convert the service UUIDs
                     final String[] finalServiceUUIDs;
                     if(serviceUUIDs != null) {
@@ -320,7 +279,7 @@ public class BluetoothCentral {
                         if(bluetoothCentralCallback != null) {
                             bluetoothCentralCallback.onDiscoveredPeripheral(peripheral, scanResult);
                         } else {
-                            HBLogger.e(TAG, "central is null");
+                            HBLogger.e(TAG, "bluetoothCentralCallback is null");
                         }
                     });
                 }
@@ -371,9 +330,6 @@ public class BluetoothCentral {
                     return;
                 }
 
-                // We are not interested in devices without a name or address
-                if (deviceName == null || deviceAddress == null) return;
-
                 // Propagate found device
                 // Create ScanResult
                 final ScanResult scanResult = new ScanResult(deviceName, deviceAddress, serviceUUIDs, rssi);
@@ -382,7 +338,7 @@ public class BluetoothCentral {
                     if(bluetoothCentralCallback != null) {
                         bluetoothCentralCallback.onDiscoveredPeripheral(peripheral, scanResult);
                     } else {
-                        HBLogger.e(TAG, "central is null");
+                        HBLogger.e(TAG, "bluetoothCentralCallback is null");
                     }
                 });
             } else if (propertiesChanged.getInterfaceName().equals("org.bluez.Adapter1")) {
@@ -397,7 +353,7 @@ public class BluetoothCentral {
                         HBLogger.i(TAG, String.format("Powered %s", isPowered ? "on" : "off"));
 
                         // Complete the command and add a delay if needed
-                        int delay = isPowered ? 0 : 4 * MINUTE;
+                        long delay = isPowered ? 0 : 4 * MINUTE;
                         callBackHandler.postDelayed(() -> {
                             if (currentCommand.equalsIgnoreCase(POWERED)) completedCommand();
                         }, delay);
@@ -480,14 +436,6 @@ public class BluetoothCentral {
 
     }
 
-    public void findSupportedDevices() {
-        startScanning();
-        startScanTimer();
-        if(adapter.isPowered()) {
-            scanCounter++;
-        }
-    }
-
     /*
      * Stop the scanner
      */
@@ -566,9 +514,6 @@ public class BluetoothCentral {
                     adapterOff();
                     adapterOn();
                 }
-
-                // Restart the scan and timer
-                findSupportedDevices();
             }
         };
 
@@ -587,7 +532,6 @@ public class BluetoothCentral {
     }
 
     public void adapterOn() {
- //       isPowered = false;
         boolean result = commandQueue.add(() -> {
 
             if(!adapter.isPowered()) {
@@ -649,19 +593,11 @@ public class BluetoothCentral {
                 return;
             }
 
-            // Make sure only 1 connection is in progress at any time
-            if(connecting) {
-                HBLogger.w(TAG,String.format("WARNING: Connection in progress, aborting connection to %s", peripheral.getAddress()));
-                return;
-            }
-
             if (!unconnectedDevices.containsKey(peripheral.getAddress())) {
                 peripheral.setPeripheralCallback(peripheralCallback);
                 unconnectedDevices.put(peripheral.getAddress(), peripheral);
 
                 HBLogger.i(TAG,"Pausing scan");
-                stopScanning();
-                connecting = true;
                 peripheral.connect();
             } else {
                 HBLogger.e(TAG,String.format("WARNING: Already connected with %s", peripheral.getAddress()));
@@ -682,7 +618,6 @@ public class BluetoothCentral {
         commandQueue.poll();
         commandQueueBusy = false;
         currentCommand = "";
-        currentDeviceAddress = "";
         nextCommand();
     }
 

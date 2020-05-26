@@ -1,6 +1,7 @@
 package testapp;
 
 import blessed.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
@@ -143,11 +144,24 @@ public class BluetoothHandler {
         }
     };
 
-    private BluetoothCentralCallback bluetoothCentralCallback = new BluetoothCentralCallback() {
+    private final BluetoothCentralCallback bluetoothCentralCallback = new BluetoothCentralCallback() {
         @Override
         public void onConnectedPeripheral(BluetoothPeripheral peripheral) {
             super.onConnectedPeripheral(peripheral);
             HBLogger.i(TAG, "Connected peripheral");
+            startScanning();
+        }
+
+        @Override
+        public void onConnectionFailed(@NotNull BluetoothPeripheral peripheral, int status) {
+            super.onConnectionFailed(peripheral, status);
+            startScanning();
+        }
+
+        @Override
+        public void onDisconnectedPeripheral(@NotNull BluetoothPeripheral peripheral, int status) {
+            super.onDisconnectedPeripheral(peripheral, status);
+            startScanning();
         }
 
         @Override
@@ -162,6 +176,10 @@ public class BluetoothHandler {
 
         central = new BluetoothCentral(bluetoothCentralCallback, new Handler("testapp.BluetoothHandler"));
 
+        startScanning();
+    }
+
+    void startScanning() {
         central.scanForPeripherals();
     }
 }
