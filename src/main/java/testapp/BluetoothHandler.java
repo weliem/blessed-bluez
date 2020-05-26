@@ -5,6 +5,7 @@ import blessed.*;
 import java.util.UUID;
 
 import static blessed.BluetoothBytesParser.bytes2String;
+import static blessed.BluetoothPeripheral.GATT_SUCCESS;
 
 
 public class BluetoothHandler {
@@ -60,6 +61,19 @@ public class BluetoothHandler {
         public void onCharacteristicUpdate(BluetoothPeripheral peripheral, byte[] value, BluetoothGattCharacteristic characteristic, int status) {
             super.onCharacteristicUpdate(peripheral, value, characteristic, status);
             HBLogger.i(TAG, String.format("Received %s", bytes2String(value)));
+
+            if(status != GATT_SUCCESS) return;
+            UUID characteristicUUID = characteristic.getUuid();
+            BluetoothBytesParser parser = new BluetoothBytesParser(value);
+
+            if(characteristicUUID.equals(MANUFACTURER_NAME_CHARACTERISTIC_UUID)) {
+                String manufacturer = parser.getStringValue(0);
+                HBLogger.i(TAG, String.format("Received manufacturer: %s", manufacturer));
+            }
+            else if(characteristicUUID.equals(MODEL_NUMBER_CHARACTERISTIC_UUID)) {
+                String modelNumber = parser.getStringValue(0);
+                HBLogger.i(TAG, String.format("Received modelnumber: %s", modelNumber));
+            }
         }
 
         @Override
