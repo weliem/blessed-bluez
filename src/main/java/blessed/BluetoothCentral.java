@@ -1,6 +1,5 @@
 package blessed;
 
-
 import blessed.bluez.*;
 import org.bluez.Adapter1;
 import org.bluez.Device1;
@@ -413,7 +412,6 @@ public class BluetoothCentral {
             } else {
                 filters.put(entry.getKey().name(), new Variant<>(entry.getValue()));
             }
-
         }
         adapter.setDiscoveryFilter(filters);
     }
