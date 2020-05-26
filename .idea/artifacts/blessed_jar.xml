@@ -1,5 +1,5 @@
 <component name="ArtifactManager">
-  <artifact type="jar" name="blessed:jar">
+  <artifact type="jar" build-on-make="true" name="blessed:jar">
     <output-path>$PROJECT_DIR$/out/artifacts/blessed_jar</output-path>
     <root id="archive" name="blessed.jar">
       <element id="module-output" name="blessed.main" />

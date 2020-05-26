@@ -1,3 +1,5 @@
+package testapp;
+
 import blessed.*;
 
 
@@ -21,7 +23,7 @@ public class BluetoothHandler {
 
     public BluetoothHandler() {
 
-        central = new BluetoothCentral(bluetoothCentralCallback, new Handler("BluetoothHandler"));
+        central = new BluetoothCentral(bluetoothCentralCallback, new Handler("testapp.BluetoothHandler"));
 
         central.scanForPeripherals();
     }

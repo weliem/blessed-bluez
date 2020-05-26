@@ -1,4 +1,4 @@
-import blessed.BluetoothCentral;
+package testapp;
 
 public class Main {
 

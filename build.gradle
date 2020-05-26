@@ -11,6 +11,15 @@ repositories {
     mavenCentral()
 }
 
+jar {
+    manifest {
+        attributes 'Main-Class': 'testapp.Main'
+    }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
 dependencies {
     implementation 'org.apache.commons:commons-lang3:3.10'
     implementation 'com.github.hypfvieh:dbus-java:3.2.1'
