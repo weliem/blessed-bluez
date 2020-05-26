@@ -792,6 +792,30 @@ public class BluetoothPeripheral {
         return mServices;
     }
 
+    public BluetoothGattService getService(UUID serviceUUID) {
+        for (BluetoothGattService service : mServices) {
+            if (service.getUuid().equals(serviceUUID)) {
+                return service;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Method to get a characteristic by its UUID
+     * @param serviceUUID The service UUID the characteristic should be part of
+     * @param characteristicUUID the characteristic UUID
+     * @return the BluetoothGattCharacteristic matching the serviceUUID and characteristicUUID
+     */
+    public BluetoothGattCharacteristic getCharacteristic(UUID serviceUUID, UUID characteristicUUID) {
+        BluetoothGattService service = getService(serviceUUID);
+        if(service != null) {
+            return service.getCharacteristic(characteristicUUID);
+        } else {
+            return null;
+        }
+    }
+
     public boolean isPaired() {
         isBonded = device.isPaired();
         return isBonded;
