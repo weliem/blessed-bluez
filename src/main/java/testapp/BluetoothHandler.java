@@ -44,25 +44,42 @@ public class BluetoothHandler {
         public void onServicesDiscovered(BluetoothPeripheral peripheral) {
             super.onServicesDiscovered(peripheral);
             HBLogger.i(TAG, "Services discovered");
-            // Read manufacturer and model number from the Device Information Service
 
+            // Read manufacturer and model number from the Device Information Service
             if(peripheral.getService(DIS_SERVICE_UUID) != null) {
                 peripheral.readCharacteristic(peripheral.getCharacteristic(DIS_SERVICE_UUID, MANUFACTURER_NAME_CHARACTERISTIC_UUID));
                 peripheral.readCharacteristic(peripheral.getCharacteristic(DIS_SERVICE_UUID, MODEL_NUMBER_CHARACTERISTIC_UUID));
+            }
+
+            // Turn on notifications for Blood Pressure Service
+            if(peripheral.getService(BLP_SERVICE_UUID) != null) {
+                peripheral.setNotify(peripheral.getCharacteristic(BLP_SERVICE_UUID, BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID), true);
+            }
+
+            // Turn on notification for Health Thermometer Service
+            if(peripheral.getService(HTS_SERVICE_UUID) != null) {
+                peripheral.setNotify(peripheral.getCharacteristic(HTS_SERVICE_UUID, TEMPERATURE_MEASUREMENT_CHARACTERISTIC_UUID), true);
             }
         }
 
         @Override
         public void onNotificationStateUpdate(BluetoothPeripheral peripheral, BluetoothGattCharacteristic characteristic, int status) {
             super.onNotificationStateUpdate(peripheral, characteristic, status);
+            if( status == GATT_SUCCESS) {
+                if(peripheral.isNotifying(characteristic)) {
+                    HBLogger.i(TAG, String.format("SUCCESS: Notify set to 'on' for %s", characteristic.getUuid()));
+                } else {
+                    HBLogger.i(TAG, String.format("SUCCESS: Notify set to 'off' for %s", characteristic.getUuid()));
+                }
+            } else {
+                HBLogger.e(TAG, String.format("ERROR: Changing notification state failed for %s", characteristic.getUuid()));
+            }
         }
 
         @Override
         public void onCharacteristicUpdate(BluetoothPeripheral peripheral, byte[] value, BluetoothGattCharacteristic characteristic, int status) {
             super.onCharacteristicUpdate(peripheral, value, characteristic, status);
             HBLogger.i(TAG, String.format("Received %s", bytes2String(value)));
-
-            if(status != GATT_SUCCESS) return;
             UUID characteristicUUID = characteristic.getUuid();
             BluetoothBytesParser parser = new BluetoothBytesParser(value);
 
@@ -73,6 +90,10 @@ public class BluetoothHandler {
             else if(characteristicUUID.equals(MODEL_NUMBER_CHARACTERISTIC_UUID)) {
                 String modelNumber = parser.getStringValue(0);
                 HBLogger.i(TAG, String.format("Received modelnumber: %s", modelNumber));
+            }
+            else if(characteristicUUID.equals(TEMPERATURE_MEASUREMENT_CHARACTERISTIC_UUID)) {
+                TemperatureMeasurement measurement = new TemperatureMeasurement(value);
+                HBLogger.d(TAG, measurement.toString());
             }
         }
 
