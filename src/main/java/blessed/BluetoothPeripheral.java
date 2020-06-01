@@ -228,7 +228,7 @@ public class BluetoothPeripheral {
         @Override
         public void onServicesDiscovered(List<BluetoothGattService> services, int status) {
             serviceDiscoveryCompleted = true;
-            HBLogger.i(TAG,String.format(TAG, "Discovered %d services", services.size()));
+            HBLogger.i(TAG,String.format( "Discovered %d services", services.size()));
             peripheralCallback.onServicesDiscovered(BluetoothPeripheral.this);
         }
     };
@@ -660,7 +660,7 @@ public class BluetoothPeripheral {
                 gattCallback.onPairingFailed();
             } else if (key.equalsIgnoreCase("RSSI")) {
                 Short rssi = (Short) value.getValue();
-                HBLogger.i(TAG, String.format("RSSI %d", rssi));
+ //               HBLogger.i(TAG, String.format("RSSI %d", rssi));
             }
         }
     }

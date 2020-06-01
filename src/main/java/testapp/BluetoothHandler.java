@@ -43,7 +43,7 @@ public class BluetoothHandler {
     private final BluetoothPeripheralCallback peripheralCallback = new BluetoothPeripheralCallback() {
         @Override
         public void onServicesDiscovered(BluetoothPeripheral peripheral) {
-            super.onServicesDiscovered(peripheral);
+          //  super.onServicesDiscovered(peripheral);
             HBLogger.i(TAG, "Services discovered");
 
             // Read manufacturer and model number from the Device Information Service
@@ -80,7 +80,7 @@ public class BluetoothHandler {
         @Override
         public void onCharacteristicUpdate(BluetoothPeripheral peripheral, byte[] value, BluetoothGattCharacteristic characteristic, int status) {
             super.onCharacteristicUpdate(peripheral, value, characteristic, status);
-            HBLogger.i(TAG, String.format("Received %s", bytes2String(value)));
+ //           HBLogger.i(TAG, String.format("Received %s", bytes2String(value)));
             UUID characteristicUUID = characteristic.getUuid();
             BluetoothBytesParser parser = new BluetoothBytesParser(value);
 
@@ -94,7 +94,8 @@ public class BluetoothHandler {
             }
             else if(characteristicUUID.equals(TEMPERATURE_MEASUREMENT_CHARACTERISTIC_UUID)) {
                 TemperatureMeasurement measurement = new TemperatureMeasurement(value);
-                HBLogger.d(TAG, measurement.toString());
+                HBLogger.i(TAG, measurement.toString());
+                peripheral.disconnect();
             }
         }
 
@@ -149,7 +150,7 @@ public class BluetoothHandler {
         public void onConnectedPeripheral(BluetoothPeripheral peripheral) {
             super.onConnectedPeripheral(peripheral);
             HBLogger.i(TAG, "Connected peripheral");
-            startScanning();
+ //           startScanning();
         }
 
         @Override
@@ -167,8 +168,10 @@ public class BluetoothHandler {
         @Override
         public void onDiscoveredPeripheral(final BluetoothPeripheral peripheral, final ScanResult scanResult) {
             HBLogger.i(TAG, String.format("Found %s", peripheral.getName()));
-            central.stopScanning();
-            central.connectPeripheral(peripheral, peripheralCallback);
+            if (peripheral.getName() != null && peripheral.getName().startsWith("TAIDOC")) {
+                central.stopScanning();
+                central.connectPeripheral(peripheral, peripheralCallback);
+            }
         }
     };
 
