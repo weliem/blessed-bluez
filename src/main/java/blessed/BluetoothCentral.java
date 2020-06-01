@@ -346,7 +346,7 @@ public class BluetoothCentral {
                     if (s.equalsIgnoreCase(DISCOVERING) && value.getValue() instanceof Boolean) {
                         isScanning = (Boolean) value.getValue();
                         if (isScanning) isStoppingScan = false;
-                        HBLogger.i(TAG, String.format("Scan %s", isScanning ? "started" : "stopped"));
+                        HBLogger.i(TAG, String.format("scan %s", isScanning ? "started" : "stopped"));
                         if (currentCommand.equalsIgnoreCase(DISCOVERING)) {
                             callBackHandler.postDelayed(new Runnable() {
                                 @Override
@@ -357,7 +357,7 @@ public class BluetoothCentral {
                         }
                     } else if (s.equalsIgnoreCase(POWERED) && value.getValue() instanceof Boolean) {
                         isPowered = (Boolean) value.getValue();
-                        HBLogger.i(TAG, String.format("Powered %s", isPowered ? "on" : "off"));
+                        HBLogger.i(TAG, String.format("powered %s", isPowered ? "on" : "off"));
 
                         // Complete the command and add a delay if needed
                         long delay = isPowered ? 0 : 4 * MINUTE;
