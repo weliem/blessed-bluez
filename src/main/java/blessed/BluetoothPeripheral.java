@@ -45,6 +45,7 @@ public class BluetoothPeripheral {
     // Internal handler
     private final Handler handler;
     private final Handler bleHandler;
+    private Handler callBackHandler;
 
     // Variables for service discovery timer
     private final Handler timeoutHandler;
@@ -171,7 +172,9 @@ public class BluetoothPeripheral {
                 notifyingCharacteristics.remove(characteristic.getUuid());
             }
 
-            peripheralCallback.onNotificationStateUpdate(BluetoothPeripheral.this, characteristic, GATT_SUCCESS);
+            if (peripheralCallback != null) {
+                callBackHandler.post(() -> peripheralCallback.onNotificationStateUpdate(BluetoothPeripheral.this, characteristic, GATT_SUCCESS));
+            }
             completedCommand();
         }
 
@@ -182,7 +185,10 @@ public class BluetoothPeripheral {
             if (status != GATT_SUCCESS) {
                 HBLogger.i(TAG,String.format("ERROR: Write descriptor failed device: %s, characteristic: %s", getAddress(), parentCharacteristic.getUuid()));
             }
-            peripheralCallback.onDescriptorWrite(BluetoothPeripheral.this, new byte[0], descriptor, status);
+
+            if (peripheralCallback != null) {
+                callBackHandler.post(() -> peripheralCallback.onDescriptorWrite(BluetoothPeripheral.this, new byte[0], descriptor, status));
+            }
             completedCommand();
         }
 
@@ -198,7 +204,9 @@ public class BluetoothPeripheral {
 
         @Override
         public void onCharacteristicChanged(@NotNull final byte[] value, @NotNull final BluetoothGattCharacteristic characteristic) {
-            peripheralCallback.onCharacteristicUpdate(BluetoothPeripheral.this, value, characteristic, GATT_SUCCESS);
+            if (peripheralCallback != null) {
+                callBackHandler.post(() -> peripheralCallback.onCharacteristicUpdate(BluetoothPeripheral.this, value, characteristic, GATT_SUCCESS));
+            }
         }
 
         @Override
@@ -208,7 +216,9 @@ public class BluetoothPeripheral {
                     HBLogger.e(TAG,String.format("ERROR: Write failed characteristic: %s, status %s", characteristic.getUuid(), statusToString(status)));
             }
 
-            peripheralCallback.onCharacteristicWrite(BluetoothPeripheral.this, currentWriteBytes, characteristic, status);
+            if (peripheralCallback != null) {
+                callBackHandler.post(() -> peripheralCallback.onCharacteristicWrite(BluetoothPeripheral.this, currentWriteBytes, characteristic, status));
+            }
             completedCommand();
         }
 
@@ -216,31 +226,38 @@ public class BluetoothPeripheral {
         public void onPaired() {
             HBLogger.i(TAG, "Pairing (bonding) succeeded");
 //            if(getName().startsWith("PDL") || getName().startsWith("Philips health band")) disconnect();
-            peripheralCallback.onBondingSucceeded(BluetoothPeripheral.this);
+            if (peripheralCallback != null) {
+                callBackHandler.post(() -> peripheralCallback.onBondingSucceeded(BluetoothPeripheral.this));
+            }
         }
 
         @Override
         public void onPairingFailed() {
             HBLogger.i(TAG, "Pairing failed");
-            peripheralCallback.onBondingFailed(BluetoothPeripheral.this);
+            if (peripheralCallback != null) {
+                callBackHandler.post(() -> peripheralCallback.onBondingFailed(BluetoothPeripheral.this));
+            }
         }
 
         @Override
         public void onServicesDiscovered(List<BluetoothGattService> services, int status) {
             serviceDiscoveryCompleted = true;
             HBLogger.i(TAG,String.format( "Discovered %d services", services.size()));
-            peripheralCallback.onServicesDiscovered(BluetoothPeripheral.this);
+            if (peripheralCallback != null) {
+                callBackHandler.post(() -> peripheralCallback.onServicesDiscovered(BluetoothPeripheral.this));
+            }
         }
     };
 
     /*
      * PUBLIC HBDeviceAdapter Interface Methods
      */
-    public BluetoothPeripheral(BluezDevice bluezDevice, String deviceName, String deviceAddress, InternalCallback listener, BluetoothPeripheralCallback peripheralCallback) {
+    public BluetoothPeripheral(BluezDevice bluezDevice, String deviceName, String deviceAddress, InternalCallback listener, BluetoothPeripheralCallback peripheralCallback, Handler callBackHandler) {
         this.device = bluezDevice;
         this.deviceAddress = deviceAddress;
         this.deviceName = deviceName;
         this.listener = listener;
+        this.callBackHandler = callBackHandler;
         this.peripheralCallback = peripheralCallback;
         this.handler = new Handler(TAG + deviceAddress);
         this.bleHandler = new Handler("BLE-" + deviceAddress);

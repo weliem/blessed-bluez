@@ -286,7 +286,7 @@ public class BluetoothCentral {
 
                     // Create ScanResult
                     final ScanResult scanResult = new ScanResult(deviceName, deviceAddress, finalServiceUUIDs, rssi);
-                    final BluetoothPeripheral peripheral = new BluetoothPeripheral(device, deviceName, deviceAddress, internalCallback, null);
+                    final BluetoothPeripheral peripheral = new BluetoothPeripheral(device, deviceName, deviceAddress, internalCallback, null, callBackHandler);
                     onScanResult(peripheral, scanResult);
                 }
             });
@@ -339,7 +339,7 @@ public class BluetoothCentral {
                 // Propagate found device
                 // Create ScanResult
                 final ScanResult scanResult = new ScanResult(deviceName, deviceAddress, serviceUUIDs, rssi);
-                final BluetoothPeripheral peripheral = new BluetoothPeripheral(foundDevice, deviceName, deviceAddress, internalCallback, null);
+                final BluetoothPeripheral peripheral = new BluetoothPeripheral(foundDevice, deviceName, deviceAddress, internalCallback, null, callBackHandler);
                 onScanResult(peripheral, scanResult);
             } else if (propertiesChanged.getInterfaceName().equals(BLUEZ_ADAPTER_INTERFACE)) {
                 propertiesChanged.getPropertiesChanged().forEach((s, value) -> {
