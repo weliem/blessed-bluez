@@ -632,6 +632,7 @@ public class BluetoothCentral {
         unconnectedDevices.put(peripheral.getAddress(), peripheral);
         boolean result = commandQueue.add(() -> {
             currentDeviceAddress = peripheral.getAddress();
+            currentCommand = CONNECTED;
             peripheral.connect();
         });
 
