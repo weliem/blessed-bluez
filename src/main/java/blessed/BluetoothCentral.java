@@ -350,7 +350,14 @@ public class BluetoothCentral {
                         isScanning = (Boolean) value.getValue();
                         if (isScanning) isStoppingScan = false;
                         HBLogger.i(TAG, String.format("Scan %s", isScanning ? "started" : "stopped"));
-                        if (currentCommand.equalsIgnoreCase(DISCOVERING)) completedCommand();
+                        if (currentCommand.equalsIgnoreCase(DISCOVERING)) {
+                            callBackHandler.postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    completedCommand();
+                                }
+                            }, 300L);
+                        }
                     } else if (s.equalsIgnoreCase(POWERED) && value.getValue() instanceof Boolean) {
                         isPowered = (Boolean) value.getValue();
                         HBLogger.i(TAG, String.format("Powered %s", isPowered ? "on" : "off"));
@@ -575,12 +582,13 @@ public class BluetoothCentral {
         }
     }
 
-    public void connectPeripheral(BluetoothPeripheral peripheral, BluetoothPeripheralCallback peripheralCallback) {
+    public void connectPeripheral(final BluetoothPeripheral peripheral, final BluetoothPeripheralCallback peripheralCallback) {
         // Make sure peripheral is valid
         if (peripheral == null) {
             HBLogger.i(TAG, "no valid peripheral specified, aborting connection");
             return;
         }
+        peripheral.setPeripheralCallback(peripheralCallback);
 
         // Check if we are already connected
         if (connectedDevices.containsKey(peripheral.getAddress())) {
@@ -594,9 +602,9 @@ public class BluetoothCentral {
             return;
         }
 
+        unconnectedDevices.put(peripheral.getAddress(), peripheral);
         boolean result = commandQueue.add(() -> {
-            peripheral.setPeripheralCallback(peripheralCallback);
-            unconnectedDevices.put(peripheral.getAddress(), peripheral);
+
             peripheral.connect();
         });
 

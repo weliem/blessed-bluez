@@ -248,7 +248,7 @@ public class BluetoothPeripheral {
         BluezSignalHandler.getInstance().addDevice(deviceAddress, this);
     }
 
-    void setPeripheralCallback(BluetoothPeripheralCallback peripheralCallback) {
+    void setPeripheralCallback(final BluetoothPeripheralCallback peripheralCallback) {
         this.peripheralCallback = peripheralCallback;
     }
 

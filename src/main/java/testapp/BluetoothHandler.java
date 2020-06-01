@@ -162,12 +162,13 @@ public class BluetoothHandler {
         @Override
         public void onDisconnectedPeripheral(@NotNull BluetoothPeripheral peripheral, int status) {
             super.onDisconnectedPeripheral(peripheral, status);
+            HBLogger.i(TAG, "Disconnected peripheral");
             startScanning();
         }
 
         @Override
         public void onDiscoveredPeripheral(final BluetoothPeripheral peripheral, final ScanResult scanResult) {
-            HBLogger.i(TAG, String.format("Found %s", peripheral.getName()));
+            HBLogger.i(TAG, String.format("Found %s (%s)", peripheral.getName(), peripheral.getAddress()));
             if (peripheral.getName() != null && peripheral.getName().startsWith("TAIDOC")) {
                 central.stopScanning();
                 central.connectPeripheral(peripheral, peripheralCallback);
