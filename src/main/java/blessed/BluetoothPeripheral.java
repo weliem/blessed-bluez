@@ -122,7 +122,6 @@ public class BluetoothPeripheral {
                 case Connected:
                     state = ConnectionState.Connected;
                     isBonded = isPaired();
-                    HBLogger.i(TAG, String.format("Connected to %s (%s)", getAddress(), isBonded ? "BONDED" : "BOND_NONE"));
                     if (listener != null) {
                         listener.connected(BluetoothPeripheral.this);
                     }
@@ -242,7 +241,7 @@ public class BluetoothPeripheral {
         @Override
         public void onServicesDiscovered(List<BluetoothGattService> services, int status) {
             serviceDiscoveryCompleted = true;
-            HBLogger.i(TAG,String.format( "Discovered %d services", services.size()));
+            HBLogger.i(TAG,String.format( "discovered %d services for '%s'", services.size(), getName()));
             if (peripheralCallback != null) {
                 callBackHandler.post(() -> peripheralCallback.onServicesDiscovered(BluetoothPeripheral.this));
             }
@@ -654,10 +653,10 @@ public class BluetoothPeripheral {
                 cancelServiceDiscoveryTimer();
                 servicesResolved();
             } else if (key.equalsIgnoreCase(PROPERTY_SERVICES_RESOLVED) && value.getValue().equals(false)) {
-                HBLogger.i(TAG, String.format("ServicesResolved is false (%s)", deviceName));
+                HBLogger.i(TAG, String.format("servicesResolved is false (%s)", deviceName));
                 gattCallback.onConnectionStateChanged(ConnectionState.Disconnecting, GATT_SUCCESS);
             } else if (key.equalsIgnoreCase(PROPERTY_CONNECTED) && value.getValue().equals(false)) {
-                HBLogger.i(TAG, String.format("Connected is false (%s)", deviceName));
+                HBLogger.i(TAG, String.format("connected is false (%s)", deviceName));
 
                 // Clean up
                 cancelServiceDiscoveryTimer();
@@ -667,7 +666,7 @@ public class BluetoothPeripheral {
                 timeoutHandler.stop();
             } else if (key.equalsIgnoreCase(PROPERTY_CONNECTED) && value.getValue().equals(true)) {
                 long timePassed = System.currentTimeMillis() - connectTimestamp;
-                HBLogger.i(TAG, String.format("Connected to '%s' (%s) in %.1fs", deviceName, isPaired() ? "BONDED" : "BOND_NONE", timePassed / 1000.0f));
+                HBLogger.i(TAG, String.format("connected to '%s' (%s) in %.1fs", deviceName, isPaired() ? "BONDED" : "BOND_NONE", timePassed / 1000.0f));
                 gattCallback.onConnectionStateChanged(ConnectionState.Connected, GATT_SUCCESS);
                 startServiceDiscoveryTimer();
             } else if (key.equalsIgnoreCase(PROPERTY_PAIRED) && value.getValue().equals(true)) {
@@ -707,7 +706,7 @@ public class BluetoothPeripheral {
         if (currentCommand != null) {
             if (nrTries >= MAX_TRIES) {
                 // Max retries reached, give up on this one and proceed
-                HBLogger.w(TAG,"Max number of tries reached, not retrying operation anymore ");
+                HBLogger.w(TAG,"max number of tries reached, not retrying operation anymore ");
                 commandQueue.poll();
             } else {
                 isRetrying = true;
@@ -725,7 +724,7 @@ public class BluetoothPeripheral {
         synchronized (this) {
             // Check if we are still connected
             if (state != ConnectionState.Connected) {
-                HBLogger.i(TAG,String.format("Device %s is not connected, clearing command queue", getAddress()));
+                HBLogger.i(TAG,String.format("device %s is not connected, clearing command queue", getAddress()));
                 commandQueue.clear();
                 commandQueueBusy = false;
                 return;
