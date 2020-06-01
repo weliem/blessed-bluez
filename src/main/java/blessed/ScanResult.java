@@ -1,5 +1,7 @@
 package blessed;
 
+import java.util.Arrays;
+
 public class ScanResult {
     private String name;
     private String address;
@@ -23,5 +25,15 @@ public class ScanResult {
 
     public String[] getUuids() {
         return uuids;
+    }
+
+    @Override
+    public String toString() {
+        return "ScanResult{" +
+                "name='" + name + '\'' +
+                ", address='" + address + '\'' +
+                ", uuids=" + Arrays.toString(uuids) +
+                ", rssi=" + rssi +
+                '}';
     }
 }
