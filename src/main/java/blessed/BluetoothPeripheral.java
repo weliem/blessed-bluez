@@ -32,6 +32,7 @@ public class BluetoothPeripheral {
     private long connectTimestamp;
     private boolean isPairing;
     private boolean isRetrying;
+    private byte[] currentWriteBytes;
 
     // Keep track of all native services/characteristics/descriptors
     private final Map<String, BluezGattService> serviceMap = new ConcurrentHashMap<>();
@@ -143,7 +144,7 @@ public class BluetoothPeripheral {
                 case Connecting:
                     state = ConnectionState.Connecting;
                     if (status == GATT_ERROR) {
-                        HBLogger.i(TAG,String.format("HARALD: Connection failed with status '%s'", statusToString(status)));
+                        HBLogger.i(TAG,String.format("Connection failed with status '%s'", statusToString(status)));
                         completeDisconnect(false);
                         if (listener != null) {
                             listener.disconnected(BluetoothPeripheral.this);
@@ -188,21 +189,7 @@ public class BluetoothPeripheral {
         @Override
         public void onCharacteristicRead(BluetoothGattCharacteristic characteristic, int status) {
             if (status != GATT_SUCCESS) {
-                if (status == GATT_AUTH_FAIL) {
-                    // Characteristic encrypted and needs bonding, so retry operation
-                    // This only seems to happen on Android 6
-                    HBLogger.i(TAG,"HARALD: Read failed (Authentication failed), bonding in progress so retry read command");
-                    retryCommand();
-                    return;
-                } else if (status == GATT_INSUFFICIENT_AUTHENTICATION) {
-                    // // Characteristic encrypted and needs bonding, so retry operation
-                    // This only seems to happen on Android < 6
-                    HBLogger.i(TAG,"HARALD: Read failed (Insufficient authentication) bonding in progress so retry read command");
-                    retryCommand();
-                    return;
-                } else {
-                    HBLogger.i(TAG,String.format(Locale.ENGLISH, "ERROR: Read failed for characteristic: %s, status %d", characteristic.getUuid(), status));
-                }
+                    HBLogger.e(TAG,String.format(Locale.ENGLISH, "ERROR: Read failed for characteristic: %s, status %d", characteristic.getUuid(), status));
             }
 
             // Just complete the command. The actual value will come in through onCharacteristicChanged
@@ -218,45 +205,30 @@ public class BluetoothPeripheral {
         public void onCharacteristicWrite(@NotNull final BluetoothGattCharacteristic characteristic, final int status) {
             // Perform some checks on the status field
             if (status != GATT_SUCCESS) {
-                if (status == GATT_AUTH_FAIL) {
-                    HBLogger.i(TAG,"HARALD: Write failed (Authentication failed), bonding in progress so retrying write command");
-                    retryCommand();
-                    return;
-                } else if (status == GATT_INSUFFICIENT_AUTHENTICATION) {
-                    HBLogger.i(TAG,"HARALD: Write failed (Insufficient authentication), bonding in progress so retrying write command");
-                    retryCommand();
-                    return;
-                } else {
-                    HBLogger.i(TAG,String.format("ERROR: Write failed characteristic: %s, status %s", characteristic.getUuid(), statusToString(status)));
-                }
+                    HBLogger.e(TAG,String.format("ERROR: Write failed characteristic: %s, status %s", characteristic.getUuid(), statusToString(status)));
             }
 
-            peripheralCallback.onCharacteristicWrite(BluetoothPeripheral.this, new byte[0], characteristic, status);
+            peripheralCallback.onCharacteristicWrite(BluetoothPeripheral.this, currentWriteBytes, characteristic, status);
             completedCommand();
         }
 
         @Override
         public void onPaired() {
             HBLogger.i(TAG, "Pairing (bonding) succeeded");
-            if(getName().startsWith("PDL") || getName().startsWith("Philips health band")) disconnect();
+//            if(getName().startsWith("PDL") || getName().startsWith("Philips health band")) disconnect();
+            peripheralCallback.onBondingSucceeded(BluetoothPeripheral.this);
         }
 
         @Override
         public void onPairingFailed() {
             HBLogger.i(TAG, "Pairing failed");
+            peripheralCallback.onBondingFailed(BluetoothPeripheral.this);
         }
 
         @Override
         public void onServicesDiscovered(List<BluetoothGattService> services, int status) {
-            HBLogger.i(TAG,"onServicesDiscovered");
             serviceDiscoveryCompleted = true;
-
-            // Make sure all services have the right HBDevice set
-            services.forEach(service -> {
-                service.setDevice(BluetoothPeripheral.this);
-            });
-
-            // Ready with the preparations
+            HBLogger.i(TAG,String.format(TAG, "Discovered %d services", services.size()));
             peripheralCallback.onServicesDiscovered(BluetoothPeripheral.this);
         }
     };
@@ -308,7 +280,7 @@ public class BluetoothPeripheral {
         if (currentCommand != null) {
             if (nrTries >= MAX_TRIES) {
                 // Max retries reached, give up on this one and proceed
-                HBLogger.i(TAG,"HARALD: Max number of tries reached, not retrying operation anymore ");
+                HBLogger.w(TAG,"Max number of tries reached, not retrying operation anymore ");
                 commandQueue.poll();
             } else {
                 isRetrying = true;
@@ -431,31 +403,31 @@ public class BluetoothPeripheral {
      *
      * @param characteristic Specifies the characteristic to read.
      */
-    public void readCharacteristic(final BluetoothGattCharacteristic characteristic) {
+    public boolean readCharacteristic(final BluetoothGattCharacteristic characteristic) {
         // Make sure we are still connected
         if(state != ConnectionState.Connected) {
             gattCallback.onCharacteristicRead(characteristic, GATT_ERROR);
-            return;
+            return false;
         }
 
         // Check if characteristic is valid
         if (characteristic == null) {
             HBLogger.e(TAG, "characteristic is 'null', ignoring read request");
-            return;
+            return false;
         }
 
         // Check if this characteristic actually has READ property
         if ((characteristic.getProperties() & PROPERTY_READ) == 0) {
             HBLogger.i(TAG,"ERROR: Characteristic cannot be read");
-            return;
+            return false;
         }
 
         // Check if we have the native characteristic
-        final BluezGattCharacteristic nativeCharacteristic = getNativeCharacteristic(characteristic.getUuid());
+        final BluezGattCharacteristic nativeCharacteristic = getBluezGattCharacteristic(characteristic.getUuid());
         if (nativeCharacteristic == null) {
             HBLogger.e(TAG, "ERROR: Native characteristic is null");
             gattCallback.onCharacteristicRead(characteristic, GATT_ERROR);
-            return;
+            return false;
         }
 
         // All in order, do the read
@@ -491,6 +463,7 @@ public class BluetoothPeripheral {
         } else {
             HBLogger.e(TAG,"ERROR: Could not enqueue read characteristic command");
         }
+        return result;
     }
 
     /**
@@ -499,33 +472,33 @@ public class BluetoothPeripheral {
      *
      * @param characteristic Specifies which service, characteristic and value to write.
      */
-    public void writeCharacteristic(BluetoothGattCharacteristic characteristic, final byte[] value,  final int writeType) {
+    public boolean writeCharacteristic(BluetoothGattCharacteristic characteristic, final byte[] value,  final int writeType) {
         // Make sure we are still connected
         if(state != ConnectionState.Connected) {
             gattCallback.onCharacteristicWrite(characteristic, GATT_ERROR);
-            return;
+            return false;
         }
 
         // Check if characteristic is valid
         if (characteristic == null) {
             HBLogger.e(TAG, "characteristic is 'null', ignoring write request");
-            return;
+            return false;
         }
 
         // Check if byte array is valid
         if (value == null) {
             HBLogger.e(TAG, "value to write is 'null', ignoring write request");
-            return;
+            return false;
         }
 
         // Copy the value to avoid race conditions
         final byte[] bytesToWrite = copyOf(value);
 
         // Check if we have the native characteristic
-        final BluezGattCharacteristic nativeCharacteristic = getNativeCharacteristic(characteristic.getUuid());
+        final BluezGattCharacteristic nativeCharacteristic = getBluezGattCharacteristic(characteristic.getUuid());
         if (nativeCharacteristic == null) {
             HBLogger.e(TAG, "ERROR: Native characteristic is null");
-            return;
+            return false;
         }
 
         // Check if this characteristic actually supports this writeType
@@ -546,13 +519,15 @@ public class BluetoothPeripheral {
         }
         if ((characteristic.getProperties() & writeProperty) == 0) {
             HBLogger.i(TAG,String.format(Locale.ENGLISH, "ERROR: Characteristic cannot be written with this writeType : %d", writeType));
-            return;
+            return false;
         }
 
         // All in order, do the write
         boolean result = commandQueue.add(() -> {
             if(state == ConnectionState.Connected) {
                 try {
+                    // Perform the write
+                    currentWriteBytes = bytesToWrite;
                     HBLogger.i(TAG,String.format("writing <%s> to characteristic <%s>", bytes2String(bytesToWrite), nativeCharacteristic.getUuid()));
                     HashMap<String, Object> options = new HashMap<>();
                     options.put("type", writeType == WRITE_TYPE_DEFAULT ? "request" : "command");
@@ -578,28 +553,29 @@ public class BluetoothPeripheral {
         } else {
             HBLogger.e(TAG,"ERROR: Could not enqueue write characteristic command");
         }
+        return result;
     }
 
     // A Handler is passed in because notifies are async so need to post on the handler for the HBDevice this adapter is tied to
-    public void setNotify(BluetoothGattCharacteristic characteristic, boolean enable) {
+    public boolean setNotify(BluetoothGattCharacteristic characteristic, boolean enable) {
         // Make sure we are still connected
         if(state != ConnectionState.Connected) {
             gattCallback.onNotifySet(characteristic, false);
-            return;
+            return false;
         }
 
         // Check if characteristic is valid
         if (characteristic == null) {
             HBLogger.e(TAG, "characteristic is 'null', ignoring setNotify request");
-            return;
+            return false;
         }
 
         // Check if we have the native characteristic
-        final BluezGattCharacteristic nativeCharacteristic = getNativeCharacteristic(characteristic.getUuid());
+        final BluezGattCharacteristic nativeCharacteristic = getBluezGattCharacteristic(characteristic.getUuid());
         if (nativeCharacteristic == null) {
             HBLogger.e(TAG, "ERROR: Native characteristic is null");
             gattCallback.onNotifySet(characteristic, false );
-            return;
+            return false;
         }
 
         // Check if characteristic has NOTIFY or INDICATE properties and set the correct byte value to be written
@@ -611,7 +587,7 @@ public class BluetoothPeripheral {
             value = BluetoothGattDescriptor.ENABLE_INDICATION_VALUE;
         } else {
             HBLogger.i(TAG,String.format("ERROR: Characteristic %s does not have notify of indicate property", characteristic.getUuid()));
-            return;
+            return false;
         }
 
         // All in order, do the set notify
@@ -646,13 +622,13 @@ public class BluetoothPeripheral {
         } else {
             HBLogger.e(TAG,"ERROR: Could not enqueue set notify characteristic command");
         }
+        return result;
     }
 
     public boolean isNotifying(BluetoothGattCharacteristic characteristic) {
-        final BluezGattCharacteristic nativeCharacteristic = getNativeCharacteristic(characteristic.getUuid());
+        final BluezGattCharacteristic nativeCharacteristic = getBluezGattCharacteristic(characteristic.getUuid());
         if (nativeCharacteristic == null) {
             HBLogger.e(TAG, "ERROR: Native characteristic is null");
-            gattCallback.onNotifySet(characteristic, false );
             return false;
         }
         return nativeCharacteristic.isNotifying();
@@ -666,7 +642,7 @@ public class BluetoothPeripheral {
         if(state != ConnectionState.Connected) {
             HBLogger.e(TAG, "Services resolved but not connected");
             return;
-        };
+        }
 
         // Make sure we start with an empty slate
         clearMaps();
@@ -692,21 +668,28 @@ public class BluetoothPeripheral {
         descriptorMap.clear();
     }
 
+    public static final String BLUEZ_CHARACTERISTIC_INTERFACE = "org.bluez.GattCharacteristic1";
+    private static final String PROPERTY_NOTIFYING = "Notifying";
+    private static final String PROPERTY_VALUE = "Value";
+    private static final String PROPERTY_SERVICES_RESOLVED = "ServicesResolved";
+    private static final String PROPERTY_CONNECTED = "Connected";
+    private static final String PROPERTY_PAIRED = "Paired";
+
     private final AbstractPropertiesChangedHandler propertiesChangedHandler = new AbstractPropertiesChangedHandler() {
         @Override
         public void handle(Properties.PropertiesChanged propertiesChanged) {
-            if (propertiesChanged.getInterfaceName().equals("org.bluez.GattCharacteristic1")) {
+            if (propertiesChanged.getInterfaceName().equals(BLUEZ_CHARACTERISTIC_INTERFACE)) {
                 String path = propertiesChanged.getPath();
 
                 propertiesChanged.getPropertiesChanged().forEach((s, value) -> {
                     // See what the update is about
-                    if (s.equalsIgnoreCase("Notifying")) {
+                    if (s.equalsIgnoreCase(PROPERTY_NOTIFYING)) {
                         boolean isNotifying = (Boolean) value.getValue();
                         BluetoothGattCharacteristic bluetoothGattCharacteristic = getCharacteristicFromPath(path);
                         if(bluetoothGattCharacteristic != null) {
                             gattCallback.onNotifySet(bluetoothGattCharacteristic, isNotifying);
                         }
-                    } else if (s.equalsIgnoreCase("Value")) {
+                    } else if (s.equalsIgnoreCase(PROPERTY_VALUE)) {
                         if (value.getType() instanceof DBusListType) {
                             if (value.getValue() instanceof byte[]) {
                                 byte[] byteVal = (byte[]) value.getValue();
@@ -742,19 +725,13 @@ public class BluetoothPeripheral {
 //        System.out.println("Changed variant value " + value.getValue());
 
         if (device != null) {
-            if (key.equalsIgnoreCase("ServicesResolved") && value.getValue().equals(true)) {
-                if(manualBonding) return;
+            if (key.equalsIgnoreCase(PROPERTY_SERVICES_RESOLVED) && value.getValue().equals(true)) {
                 cancelServiceDiscoveryTimer();
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        servicesResolved();
-                    }
-                });
-            } else if (key.equalsIgnoreCase("ServicesResolved") && value.getValue().equals(false)) {
+                servicesResolved();
+            } else if (key.equalsIgnoreCase(PROPERTY_SERVICES_RESOLVED) && value.getValue().equals(false)) {
                 HBLogger.i(TAG, String.format("ServicesResolved is false (%s)", deviceName));
                 gattCallback.onConnectionStateChanged(ConnectionState.Disconnecting, GATT_SUCCESS);
-            } else if (key.equalsIgnoreCase("Connected") && value.getValue().equals(false)) {
+            } else if (key.equalsIgnoreCase(PROPERTY_CONNECTED) && value.getValue().equals(false)) {
                 HBLogger.i(TAG, String.format("Connected is false (%s)", deviceName));
 
                 // Clean up
@@ -763,15 +740,15 @@ public class BluetoothPeripheral {
                 gattCallback.onConnectionStateChanged(ConnectionState.Disconnected, GATT_SUCCESS);
                 handler.stop();
                 timeoutHandler.stop();
-            } else if (key.equalsIgnoreCase("Connected") && value.getValue().equals(true)) {
+            } else if (key.equalsIgnoreCase(PROPERTY_CONNECTED) && value.getValue().equals(true)) {
                 long timePassed = System.currentTimeMillis() - connectTimestamp;
                 HBLogger.i(TAG, String.format("Connected to '%s' (%s) in %.1fs", deviceName, isPaired() ? "BONDED" : "BOND_NONE", timePassed / 1000.0f));
                 gattCallback.onConnectionStateChanged(ConnectionState.Connected, GATT_SUCCESS);
-                //  startServiceDiscoveryTimer();
-            } else if (key.equalsIgnoreCase("Paired") && value.getValue().equals(true)) {
+                startServiceDiscoveryTimer();
+            } else if (key.equalsIgnoreCase(PROPERTY_PAIRED) && value.getValue().equals(true)) {
                 isBonded = true;
                 gattCallback.onPaired();
-            } else if (key.equalsIgnoreCase("Paired") && value.getValue().equals(false)) {
+            } else if (key.equalsIgnoreCase(PROPERTY_PAIRED) && value.getValue().equals(false)) {
                 gattCallback.onPairingFailed();
             } else if (key.equalsIgnoreCase("RSSI")) {
                 Short rssi = (Short) value.getValue();
@@ -784,7 +761,7 @@ public class BluetoothPeripheral {
         propertiesChangedHandler.handle(propertiesChanged);
     }
 
-    private BluezGattCharacteristic getNativeCharacteristic(UUID characteristicUUID) {
+    private BluezGattCharacteristic getBluezGattCharacteristic(UUID characteristicUUID) {
         BluezGattCharacteristic characteristic = null;
 
         for (BluezGattCharacteristic gattCharacteristic : characteristicMap.values()) {
@@ -795,8 +772,8 @@ public class BluetoothPeripheral {
         return characteristic;
     }
 
-    private BluetoothGattCharacteristic getBluetoothGattCharacteristic(BluezGattCharacteristic btCharacteristic) {
-        UUID characteristicUUID = UUID.fromString(btCharacteristic.getUuid());
+    private BluetoothGattCharacteristic getBluetoothGattCharacteristic(BluezGattCharacteristic bluezGattCharacteristic) {
+        UUID characteristicUUID = UUID.fromString(bluezGattCharacteristic.getUuid());
         for (BluetoothGattService service : mServices) {
             for (BluetoothGattCharacteristic characteristic : service.getCharacteristics())
                 if (characteristic.getUuid().equals(characteristicUUID)) {
@@ -907,8 +884,7 @@ public class BluetoothPeripheral {
 
         BluetoothGattCharacteristic bluetoothGattCharacteristic = getBluetoothGattCharacteristic(characteristic);
         if (bluetoothGattCharacteristic == null) {
-            HBLogger.e(TAG, "got an update for unknown characteristic, should not happen");
-            return null;
+            HBLogger.e(TAG, String.format("can't find characteristic with path %s", path));
         }
         return bluetoothGattCharacteristic;
     }
@@ -921,7 +897,7 @@ public class BluetoothPeripheral {
         timeoutRunnable = new Runnable() {
             @Override
             public void run() {
-                HBLogger.e(TAG, String.format("HARALD: Service Discovery timeout, disconnecting '%s'", device.getName()));
+                HBLogger.e(TAG, String.format("Service Discovery timeout, disconnecting '%s'", device.getName()));
 
                 // Disconnecting doesn't work so do it ourselves
                 cancelServiceDiscoveryTimer();
@@ -1015,6 +991,7 @@ public class BluetoothPeripheral {
 
         // Create HBService object
         BluetoothGattService hbService = new BluetoothGattService(UUID.fromString(service.getUuid()));
+        hbService.setDevice(this);
 
         // Get all characteristics for this service
         List<BluezGattCharacteristic> characteristics = service.getGattCharacteristics();
@@ -1066,6 +1043,11 @@ public class BluetoothPeripheral {
         }
     }
 
+    /**
+     * Safe copying of a byte array.
+     * @param source the byte array to copy, can be null
+     * @return non-null byte array that is a copy of source
+     */
     private byte[] copyOf(byte[] source) {
         if (source == null) return new byte[0];
         final int sourceLength = source.length;

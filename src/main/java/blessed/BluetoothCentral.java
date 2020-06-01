@@ -49,6 +49,14 @@ public class BluetoothCentral {
     private static final String SERVICE_UUIDS = "UUIDs";
     private static final String NAME = "Name";
     private static final String ADDRESS = "Address";
+    private static final String RSSI = "Rssi";
+
+
+    public static final String DBUS_BUSNAME = "org.freedesktop.DBus";
+    public static final String BLUEZ_DBUS_BUSNAME = "org.bluez";
+    public static final String BLUEZ_DEVICE_INTERFACE = "org.bluez.Device1";
+    public static final String BLUEZ_ADAPTER_INTERFACE = "org.bluez.Adapter1";
+    public static final String BLUEZ_GATT_INTERFACE = "org.bluez.GattManager1";
 
     // Strings
     private static final String ENQUEUE_ERROR = "ERROR: Could not enqueue stop scanning command";
@@ -219,12 +227,22 @@ public class BluetoothCentral {
         startScanning();
     }
 
+    private void onScanResult(BluetoothPeripheral peripheral, ScanResult scanResult) {
+        callBackHandler.post(() -> {
+            if(bluetoothCentralCallback != null) {
+                bluetoothCentralCallback.onDiscoveredPeripheral(peripheral, scanResult);
+            } else {
+                HBLogger.e(TAG, "bluetoothCentralCallback is null");
+            }
+        });
+    }
+
     private final AbstractInterfacesAddedHandler interfacesAddedHandler = new AbstractInterfacesAddedHandler() {
         @Override
         public void handle(ObjectManager.InterfacesAdded interfacesAdded) {
             Map<String, Map<String, Variant<?>>> interfaces = interfacesAdded.getInterfaces();
             interfaces.forEach((key, value) -> {
-                if(key.equalsIgnoreCase("org.bluez.Device1")) {
+                if(key.equalsIgnoreCase(BLUEZ_DEVICE_INTERFACE)) {
                     final String deviceAddress;
                     final String deviceName;
                     final int rssi;
@@ -256,8 +274,8 @@ public class BluetoothCentral {
                         serviceUUIDs = (ArrayList) value.get(SERVICE_UUIDS).getValue();
                     }
 
-                    if((value.get("Rssi") != null) && (value.get("Rssi").getValue() instanceof Short)) {
-                        rssi = (Short) value.get("Rssi").getValue();
+                    if((value.get(RSSI) != null) && (value.get(RSSI).getValue() instanceof Short)) {
+                        rssi = (Short) value.get(RSSI).getValue();
                     } else {
                         rssi = -100;
                     }
@@ -273,15 +291,7 @@ public class BluetoothCentral {
                     // Create ScanResult
                     final ScanResult scanResult = new ScanResult(deviceName, deviceAddress, finalServiceUUIDs, rssi);
                     final BluetoothPeripheral peripheral = new BluetoothPeripheral(device, deviceName, deviceAddress, internalCallback, null);
-
-                    // Propagate found device
-                    callBackHandler.post(() -> {
-                        if(bluetoothCentralCallback != null) {
-                            bluetoothCentralCallback.onDiscoveredPeripheral(peripheral, scanResult);
-                        } else {
-                            HBLogger.e(TAG, "bluetoothCentralCallback is null");
-                        }
-                    });
+                    onScanResult(peripheral, scanResult);
                 }
             });
         }
@@ -292,14 +302,13 @@ public class BluetoothCentral {
         public void handle(Properties.PropertiesChanged propertiesChanged) {
 
             // See if this property is for a device
-            if (propertiesChanged.getInterfaceName().equals("org.bluez.Device1")) {
+            if (propertiesChanged.getInterfaceName().equals(BLUEZ_DEVICE_INTERFACE)) {
 
                 // Make sure the propertiesChanged is not empty. Note that we also get called because of propertiesRemoved.
                 if (propertiesChanged.getPropertiesChanged().isEmpty()) return;
 
                 // Make sure we are still scanning before handling this propertyChanged event
                 if ((!isScanning) || isStoppingScan) {
- //                   handleDeviceSignalWhenNotScanning(propertiesChanged);
                     return;
                 }
 
@@ -334,14 +343,8 @@ public class BluetoothCentral {
                 // Create ScanResult
                 final ScanResult scanResult = new ScanResult(deviceName, deviceAddress, serviceUUIDs, rssi);
                 final BluetoothPeripheral peripheral = new BluetoothPeripheral(foundDevice, deviceName, deviceAddress, internalCallback, null);
-                callBackHandler.post(() -> {
-                    if(bluetoothCentralCallback != null) {
-                        bluetoothCentralCallback.onDiscoveredPeripheral(peripheral, scanResult);
-                    } else {
-                        HBLogger.e(TAG, "bluetoothCentralCallback is null");
-                    }
-                });
-            } else if (propertiesChanged.getInterfaceName().equals("org.bluez.Adapter1")) {
+                onScanResult(peripheral, scanResult);
+            } else if (propertiesChanged.getInterfaceName().equals(BLUEZ_ADAPTER_INTERFACE)) {
                 propertiesChanged.getPropertiesChanged().forEach((s, value) -> {
                     if (s.equalsIgnoreCase(DISCOVERING) && value.getValue() instanceof Boolean) {
                         isScanning = (Boolean) value.getValue();
