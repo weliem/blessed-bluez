@@ -132,6 +132,11 @@ public class BluetoothCentral {
 
             HBLogger.i(TAG, String.format("Connected devices: %d", connectedDevices.size()));
 
+            // Remove unbonded devices to make setting notifications work (Bluez issue)
+            if (!device.isPaired()) {
+                removeDevice(device);
+            }
+
             // Trigger callback
             callBackHandler.post(new Runnable() {
                 @Override
@@ -141,16 +146,6 @@ public class BluetoothCentral {
                     }
                 }
             });
-
-            // Remove unbonded devices to make setting notifications work (Bluez issue)
-            callBackHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    if (!device.isPaired()) {
-                        removeDevice(device);
-                    }
-                }
-            }, 500L);
         }
     };
 
@@ -384,10 +379,10 @@ public class BluetoothCentral {
                 deviceAddress = foundDevice.getAddress();
 
                 // See if this is a device we are trying to connect or pair
-                if(deviceAddress.equalsIgnoreCase(currentDeviceAddress)) {
+                if (deviceAddress.equalsIgnoreCase(currentDeviceAddress)) {
                     propertiesChanged.getPropertiesChanged().forEach((s, value) -> {
                         if (value.getValue() instanceof Boolean &&
-                                ((s.equalsIgnoreCase(CONNECTED)  && currentCommand.equalsIgnoreCase(CONNECTED)) ||
+                                ((s.equalsIgnoreCase(CONNECTED) && currentCommand.equalsIgnoreCase(CONNECTED)) ||
                                         (s.equalsIgnoreCase(PAIRED) && currentCommand.equalsIgnoreCase(PAIRED)))) {
                             HBLogger.i(TAG, String.format("Completed %s", s));
                             completedCommand();
