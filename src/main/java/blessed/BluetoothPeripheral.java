@@ -20,10 +20,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import static blessed.BluetoothGattCharacteristic.*;
 
 public class BluetoothPeripheral {
-
     private static final String TAG = BluetoothPeripheral.class.getSimpleName();
 
-    // Keep pointer to raw device object
+    // Core variables
     private final BluezDevice device;
     private final String deviceName;
     private final String deviceAddress;
@@ -33,6 +32,11 @@ public class BluetoothPeripheral {
     private boolean isPairing;
     private boolean isRetrying;
     private byte[] currentWriteBytes;
+    private final Handler callBackHandler;
+    private ConnectionState state;
+    private final InternalCallback listener;
+    private BluetoothPeripheralCallback peripheralCallback;
+    private boolean serviceDiscoveryCompleted = false;
 
     // Keep track of all native services/characteristics/descriptors
     private final Map<String, BluezGattService> serviceMap = new ConcurrentHashMap<>();
@@ -42,22 +46,18 @@ public class BluetoothPeripheral {
     // Keep track of all translated services
     private List<BluetoothGattService> mServices;
 
-    // Internal handler
-    private final Handler handler;
-    private final Handler bleHandler;
-    private Handler callBackHandler;
-
     // Variables for service discovery timer
     private final Handler timeoutHandler;
     private Runnable timeoutRunnable;
     private static final int SERVICE_DISCOVERY_TIMEOUT_IN_MS = 10000;
 
+    // Queue related variables
     private final Queue<Runnable> commandQueue = new ConcurrentLinkedQueue<>();
     private boolean commandQueueBusy;
+    private final Handler queueHandler;
     private int nrTries;
     private static final int MAX_TRIES = 2;
 
-    public static final String CCC_DESCRIPTOR_UUID = "00002902-0000-1000-8000-00805f9b34fb";
 
     /**
      * A GATT operation completed successfully
@@ -109,12 +109,7 @@ public class BluetoothPeripheral {
      */
     public static final int GATT_AUTH_FAIL = 137;
 
-    private final Set<UUID> notifyingCharacteristics = new HashSet<>();
-    private ConnectionState state;
-    private final InternalCallback listener;
-    private BluetoothPeripheralCallback peripheralCallback;
-    private boolean serviceDiscoveryCompleted = false;
-
+    // GattCallback will deal with managing low-level callbacks
     private final GattCallback gattCallback = new GattCallback() {
         @Override
         public void onConnectionStateChanged(ConnectionState connectionState, int status) {
@@ -164,13 +159,6 @@ public class BluetoothPeripheral {
 
         @Override
         public void onNotifySet(final BluetoothGattCharacteristic characteristic, final boolean enabled) {
-            // Keep track of which characteristics are notifying
-            if (enabled) {
-                notifyingCharacteristics.add(characteristic.getUuid());
-            } else {
-                notifyingCharacteristics.remove(characteristic.getUuid());
-            }
-
             if (peripheralCallback != null) {
                 callBackHandler.post(() -> peripheralCallback.onNotificationStateUpdate(BluetoothPeripheral.this, characteristic, GATT_SUCCESS));
             }
@@ -258,8 +246,7 @@ public class BluetoothPeripheral {
         this.listener = listener;
         this.callBackHandler = callBackHandler;
         this.peripheralCallback = peripheralCallback;
-        this.handler = new Handler(TAG + deviceAddress);
-        this.bleHandler = new Handler("BLE-" + deviceAddress);
+        this.queueHandler = new Handler("BLE-" + deviceAddress);
         this.timeoutHandler = new Handler(TAG + " serviceDiscovery " + deviceAddress);
         BluezSignalHandler.getInstance().addDevice(deviceAddress, this);
     }
@@ -310,7 +297,6 @@ public class BluetoothPeripheral {
 
     private void cleanupAfterFailedConnect() {
         BluezSignalHandler.getInstance().removeDevice(deviceAddress);
-        handler.stop();
         timeoutHandler.stop();
         gattCallback.onConnectionStateChanged(ConnectionState.Disconnected, GATT_ERROR);
     }
@@ -321,7 +307,7 @@ public class BluetoothPeripheral {
 
     private void completeDisconnect(boolean notify) {
         // Do some cleanup
-        bleHandler.stop();
+        queueHandler.stop();
         commandQueue.clear();
         commandQueueBusy = false;
 
@@ -528,7 +514,7 @@ public class BluetoothPeripheral {
             if(state == ConnectionState.Connected) {
                 try {
                     if (enable) {
-                        HBLogger.i(TAG,String.format("startNotify for characteristic <%s>", nativeCharacteristic.getUuid()));
+                        HBLogger.i(TAG,String.format("setNotify for characteristic <%s>", nativeCharacteristic.getUuid()));
                         boolean isNotifying = nativeCharacteristic.isNotifying();
 //                HBLogger.i(TAG,String.format("Currently notifying %s", isNotifying));
                         if (isNotifying) {
@@ -662,7 +648,6 @@ public class BluetoothPeripheral {
                 cancelServiceDiscoveryTimer();
                 BluezSignalHandler.getInstance().removeDevice(deviceAddress);
                 gattCallback.onConnectionStateChanged(ConnectionState.Disconnected, GATT_SUCCESS);
-                handler.stop();
                 timeoutHandler.stop();
             } else if (key.equalsIgnoreCase(PROPERTY_CONNECTED) && value.getValue().equals(true)) {
                 long timePassed = System.currentTimeMillis() - connectTimestamp;
@@ -743,7 +728,7 @@ public class BluetoothPeripheral {
                     nrTries = 0;
                 }
 
-                bleHandler.post(() -> {
+                queueHandler.post(() -> {
                     try {
                         bluetoothCommand.run();
                     } catch (Exception ex) {

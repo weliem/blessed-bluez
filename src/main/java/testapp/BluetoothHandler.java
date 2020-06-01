@@ -12,7 +12,7 @@ import static blessed.BluetoothPeripheral.GATT_SUCCESS;
 public class BluetoothHandler {
     private static final String TAG = BluetoothCentral.class.getSimpleName();
 
-    private BluetoothCentral central;
+    private final BluetoothCentral central;
 
     // UUIDs for the Blood Pressure service (BLP)
     private static final UUID BLP_SERVICE_UUID = UUID.fromString("00001810-0000-1000-8000-00805f9b34fb");
@@ -42,9 +42,8 @@ public class BluetoothHandler {
 
     private final BluetoothPeripheralCallback peripheralCallback = new BluetoothPeripheralCallback() {
         @Override
-        public void onServicesDiscovered(BluetoothPeripheral peripheral) {
-          //  super.onServicesDiscovered(peripheral);
-            HBLogger.i(TAG, "Services discovered");
+        public void onServicesDiscovered(@NotNull BluetoothPeripheral peripheral) {
+            HBLogger.i(TAG, "Services discovered, starting initialization");
 
             // Read manufacturer and model number from the Device Information Service
             if(peripheral.getService(DIS_SERVICE_UUID) != null) {
@@ -64,8 +63,7 @@ public class BluetoothHandler {
         }
 
         @Override
-        public void onNotificationStateUpdate(BluetoothPeripheral peripheral, BluetoothGattCharacteristic characteristic, int status) {
-            super.onNotificationStateUpdate(peripheral, characteristic, status);
+        public void onNotificationStateUpdate(@NotNull BluetoothPeripheral peripheral, @NotNull BluetoothGattCharacteristic characteristic, int status) {
             if( status == GATT_SUCCESS) {
                 if(peripheral.isNotifying(characteristic)) {
                     HBLogger.i(TAG, String.format("SUCCESS: Notify set to 'on' for %s", characteristic.getUuid()));
@@ -78,8 +76,7 @@ public class BluetoothHandler {
         }
 
         @Override
-        public void onCharacteristicUpdate(BluetoothPeripheral peripheral, byte[] value, BluetoothGattCharacteristic characteristic, int status) {
-            super.onCharacteristicUpdate(peripheral, value, characteristic, status);
+        public void onCharacteristicUpdate(@NotNull BluetoothPeripheral peripheral, byte[] value, @NotNull BluetoothGattCharacteristic characteristic, int status) {
  //           HBLogger.i(TAG, String.format("Received %s", bytes2String(value)));
             UUID characteristicUUID = characteristic.getUuid();
             BluetoothBytesParser parser = new BluetoothBytesParser(value);
@@ -100,54 +97,49 @@ public class BluetoothHandler {
         }
 
         @Override
-        public void onCharacteristicWrite(BluetoothPeripheral peripheral, byte[] value, BluetoothGattCharacteristic characteristic, int status) {
+        public void onCharacteristicWrite(@NotNull BluetoothPeripheral peripheral, byte[] value, @NotNull BluetoothGattCharacteristic characteristic, int status) {
             super.onCharacteristicWrite(peripheral, value, characteristic, status);
         }
 
         @Override
-        public void onDescriptorRead(BluetoothPeripheral peripheral, byte[] value, BluetoothGattDescriptor descriptor, int status) {
+        public void onDescriptorRead(@NotNull BluetoothPeripheral peripheral, byte[] value, @NotNull BluetoothGattDescriptor descriptor, int status) {
             super.onDescriptorRead(peripheral, value, descriptor, status);
         }
 
         @Override
-        public void onDescriptorWrite(BluetoothPeripheral peripheral, byte[] value, BluetoothGattDescriptor descriptor, int status) {
+        public void onDescriptorWrite(@NotNull BluetoothPeripheral peripheral, byte[] value, @NotNull BluetoothGattDescriptor descriptor, int status) {
             super.onDescriptorWrite(peripheral, value, descriptor, status);
         }
 
         @Override
-        public void onBondingStarted(BluetoothPeripheral peripheral) {
+        public void onBondingStarted(@NotNull BluetoothPeripheral peripheral) {
             super.onBondingStarted(peripheral);
         }
 
         @Override
-        public void onBondingSucceeded(BluetoothPeripheral peripheral) {
+        public void onBondingSucceeded(@NotNull BluetoothPeripheral peripheral) {
             super.onBondingSucceeded(peripheral);
         }
 
         @Override
-        public void onBondingFailed(BluetoothPeripheral peripheral) {
+        public void onBondingFailed(@NotNull BluetoothPeripheral peripheral) {
             super.onBondingFailed(peripheral);
         }
 
         @Override
-        public void onBondLost(BluetoothPeripheral peripheral) {
+        public void onBondLost(@NotNull BluetoothPeripheral peripheral) {
             super.onBondLost(peripheral);
         }
 
         @Override
-        public void onReadRemoteRssi(BluetoothPeripheral peripheral, int rssi, int status) {
+        public void onReadRemoteRssi(@NotNull BluetoothPeripheral peripheral, int rssi, int status) {
             super.onReadRemoteRssi(peripheral, rssi, status);
-        }
-
-        @Override
-        public void onMtuChanged(BluetoothPeripheral peripheral, int mtu, int status) {
-            super.onMtuChanged(peripheral, mtu, status);
         }
     };
 
     private final BluetoothCentralCallback bluetoothCentralCallback = new BluetoothCentralCallback() {
         @Override
-        public void onConnectedPeripheral(BluetoothPeripheral peripheral) {
+        public void onConnectedPeripheral(@NotNull BluetoothPeripheral peripheral) {
             super.onConnectedPeripheral(peripheral);
             HBLogger.i(TAG, "Connected peripheral");
  //           startScanning();
@@ -167,7 +159,7 @@ public class BluetoothHandler {
         }
 
         @Override
-        public void onDiscoveredPeripheral(final BluetoothPeripheral peripheral, final ScanResult scanResult) {
+        public void onDiscoveredPeripheral(final @NotNull BluetoothPeripheral peripheral, final @NotNull ScanResult scanResult) {
 //            HBLogger.i(TAG, String.format("Found %s (%s)", peripheral.getName(), peripheral.getAddress()));
 //            HBLogger.i(TAG, scanResult.toString());
             if (peripheral.getName() != null && peripheral.getName().startsWith("TAIDOC")) {
