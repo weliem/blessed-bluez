@@ -39,6 +39,7 @@ public class BluetoothCentral {
     private boolean commandQueueBusy;
     private final Handler queueHandler = new Handler("CentralQueue");
     private String currentCommand;
+    private String currentDeviceAddress;
 
     // Bluez property strings
     private static final String DISCOVERING = "Discovering";
@@ -309,6 +310,7 @@ public class BluetoothCentral {
 
                 // Make sure we are still scanning before handling this propertyChanged event
                 if ((!isScanning) || isStoppingScan) {
+                    handleDeviceSignalWhenNotScanning(propertiesChanged);
                     return;
                 }
 
@@ -369,6 +371,31 @@ public class BluetoothCentral {
                         }, delay);
                     }
                 });
+            }
+        }
+
+        private void handleDeviceSignalWhenNotScanning(Properties.PropertiesChanged propertiesChanged) {
+            // Get the device object
+            final BluezDevice foundDevice = getDeviceByPath(adapter, propertiesChanged.getPath());
+            if (foundDevice == null) return;
+
+            final String deviceAddress;
+            try {
+                deviceAddress = foundDevice.getAddress();
+
+                // See if this is a device we are trying to connect or pair
+                if(deviceAddress.equalsIgnoreCase(currentDeviceAddress)) {
+                    propertiesChanged.getPropertiesChanged().forEach((s, value) -> {
+                        if (value.getValue() instanceof Boolean &&
+                                ((s.equalsIgnoreCase(CONNECTED)  && currentCommand.equalsIgnoreCase(CONNECTED)) ||
+                                        (s.equalsIgnoreCase(PAIRED) && currentCommand.equalsIgnoreCase(PAIRED)))) {
+                            HBLogger.i(TAG, String.format("Completed %s", s));
+                            completedCommand();
+                        }
+                    });
+                }
+            } catch (Exception e) {
+                // Ignore this exception, the device is probably removed already
             }
         }
     };
@@ -604,7 +631,7 @@ public class BluetoothCentral {
 
         unconnectedDevices.put(peripheral.getAddress(), peripheral);
         boolean result = commandQueue.add(() -> {
-
+            currentDeviceAddress = peripheral.getAddress();
             peripheral.connect();
         });
 
@@ -617,6 +644,7 @@ public class BluetoothCentral {
 
     public void cancelConnection(final BluetoothPeripheral peripheral) {
         if (peripheral.getConnectionState() == ConnectionState.Connected) {
+            currentDeviceAddress = peripheral.getAddress();
             peripheral.disconnect();
         }
     }
