@@ -248,100 +248,6 @@ public class BluetoothPeripheral {
         BluezSignalHandler.getInstance().addDevice(deviceAddress, this);
     }
 
-
-    private void completeDisconnect(boolean notify) {
-        // Do some cleanup
-        bleHandler.stop();
-        commandQueue.clear();
-        commandQueueBusy = false;
-
-        if (listener != null && notify) {
-            listener.disconnected(BluetoothPeripheral.this);
-        }
-    }
-
-    /**
-     * The current command has been completed, move to the next command in the queue (if any)
-     */
-    private void completedCommand() {
-//        HBLogger.i(TAG, "Command completed");
-        isRetrying = false;
-        commandQueue.poll();
-        commandQueueBusy = false;
-        nextCommand();
-    }
-
-    /**
-     * Retry the current command. Typically used when a read/write fails and triggers a bonding procedure
-     */
-    private void retryCommand() {
-        commandQueueBusy = false;
-        Runnable currentCommand = commandQueue.peek();
-        if (currentCommand != null) {
-            if (nrTries >= MAX_TRIES) {
-                // Max retries reached, give up on this one and proceed
-                HBLogger.w(TAG,"Max number of tries reached, not retrying operation anymore ");
-                commandQueue.poll();
-            } else {
-                isRetrying = true;
-            }
-        }
-        nextCommand();
-    }
-
-    /**
-     * Execute the next command in the subscribe queue.
-     * A queue is used because the calls have to be executed sequentially.
-     * If the read or write fails, the next command in the queue is executed.
-     */
-    private void nextCommand() {
-        synchronized (this) {
-            // Check if we are still connected
-            if (state != ConnectionState.Connected) {
-                HBLogger.i(TAG,String.format("Device %s is not connected, clearing command queue", getAddress()));
-                commandQueue.clear();
-                commandQueueBusy = false;
-                return;
-            }
-
-            // If there is still a command being executed then bail out
-            if (commandQueueBusy) {
-                return;
-            }
-
-            // Execute the next command in the queue
-            final Runnable bluetoothCommand = commandQueue.peek();
-            if (bluetoothCommand != null) {
-                commandQueueBusy = true;
-                if (!isRetrying) {
-                    nrTries = 0;
-                }
-
-                bleHandler.post(() -> {
-                    try {
-                        bluetoothCommand.run();
-                    } catch (Exception ex) {
-                        HBLogger.w(TAG,String.format("ERROR: Command exception for device '%s'", getName()));
-                        ex.printStackTrace();
-                        completedCommand();
-                    }
-                });
-            }
-        }
-    }
-
-    public String getName() {
-        return deviceName;
-    };
-
-    public String getAddress() {
-        return deviceAddress;
-    }
-
-    public ConnectionState getConnectionState() {
-        return state;
-    }
-
     void setPeripheralCallback(BluetoothPeripheralCallback peripheralCallback) {
         this.peripheralCallback = peripheralCallback;
     }
@@ -395,6 +301,17 @@ public class BluetoothPeripheral {
 
     public void disconnect() {
         device.disconnect();
+    }
+
+    private void completeDisconnect(boolean notify) {
+        // Do some cleanup
+        bleHandler.stop();
+        commandQueue.clear();
+        commandQueueBusy = false;
+
+        if (listener != null && notify) {
+            listener.disconnected(BluetoothPeripheral.this);
+        }
     }
 
     /**
@@ -625,15 +542,6 @@ public class BluetoothPeripheral {
         return result;
     }
 
-    public boolean isNotifying(BluetoothGattCharacteristic characteristic) {
-        final BluezGattCharacteristic nativeCharacteristic = getBluezGattCharacteristic(characteristic.getUuid());
-        if (nativeCharacteristic == null) {
-            HBLogger.e(TAG, "ERROR: Native characteristic is null");
-            return false;
-        }
-        return nativeCharacteristic.isNotifying();
-    }
-
     /*
      * PRIVATE METHODS
      */
@@ -761,6 +669,77 @@ public class BluetoothPeripheral {
         propertiesChangedHandler.handle(propertiesChanged);
     }
 
+
+    /**
+     * The current command has been completed, move to the next command in the queue (if any)
+     */
+    private void completedCommand() {
+//        HBLogger.i(TAG, "Command completed");
+        isRetrying = false;
+        commandQueue.poll();
+        commandQueueBusy = false;
+        nextCommand();
+    }
+
+    /**
+     * Retry the current command. Typically used when a read/write fails and triggers a bonding procedure
+     */
+    private void retryCommand() {
+        commandQueueBusy = false;
+        Runnable currentCommand = commandQueue.peek();
+        if (currentCommand != null) {
+            if (nrTries >= MAX_TRIES) {
+                // Max retries reached, give up on this one and proceed
+                HBLogger.w(TAG,"Max number of tries reached, not retrying operation anymore ");
+                commandQueue.poll();
+            } else {
+                isRetrying = true;
+            }
+        }
+        nextCommand();
+    }
+
+    /**
+     * Execute the next command in the subscribe queue.
+     * A queue is used because the calls have to be executed sequentially.
+     * If the read or write fails, the next command in the queue is executed.
+     */
+    private void nextCommand() {
+        synchronized (this) {
+            // Check if we are still connected
+            if (state != ConnectionState.Connected) {
+                HBLogger.i(TAG,String.format("Device %s is not connected, clearing command queue", getAddress()));
+                commandQueue.clear();
+                commandQueueBusy = false;
+                return;
+            }
+
+            // If there is still a command being executed then bail out
+            if (commandQueueBusy) {
+                return;
+            }
+
+            // Execute the next command in the queue
+            final Runnable bluetoothCommand = commandQueue.peek();
+            if (bluetoothCommand != null) {
+                commandQueueBusy = true;
+                if (!isRetrying) {
+                    nrTries = 0;
+                }
+
+                bleHandler.post(() -> {
+                    try {
+                        bluetoothCommand.run();
+                    } catch (Exception ex) {
+                        HBLogger.w(TAG,String.format("ERROR: Command exception for device '%s'", getName()));
+                        ex.printStackTrace();
+                        completedCommand();
+                    }
+                });
+            }
+        }
+    }
+
     private BluezGattCharacteristic getBluezGattCharacteristic(UUID characteristicUUID) {
         BluezGattCharacteristic characteristic = null;
 
@@ -812,9 +791,30 @@ public class BluetoothPeripheral {
         }
     }
 
+    public String getName() {
+        return deviceName;
+    };
+
+    public String getAddress() {
+        return deviceAddress;
+    }
+
+    public ConnectionState getConnectionState() {
+        return state;
+    }
+
     public boolean isPaired() {
         isBonded = device.isPaired();
         return isBonded;
+    }
+
+    public boolean isNotifying(BluetoothGattCharacteristic characteristic) {
+        final BluezGattCharacteristic nativeCharacteristic = getBluezGattCharacteristic(characteristic.getUuid());
+        if (nativeCharacteristic == null) {
+            HBLogger.e(TAG, "ERROR: Native characteristic is null");
+            return false;
+        }
+        return nativeCharacteristic.isNotifying();
     }
 
 
