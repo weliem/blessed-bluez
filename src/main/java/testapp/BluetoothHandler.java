@@ -94,6 +94,11 @@ public class BluetoothHandler {
                 HBLogger.i(TAG, measurement.toString());
                 peripheral.disconnect();
             }
+            else if(characteristicUUID.equals(BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID)) {
+                BloodPressureMeasurement measurement = new BloodPressureMeasurement(value);
+                HBLogger.i(TAG, measurement.toString());
+                peripheral.disconnect();
+            }
         }
 
         @Override
