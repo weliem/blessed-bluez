@@ -13,6 +13,7 @@ public class BluetoothHandler {
     private static final String TAG = BluetoothCentral.class.getSimpleName();
 
     private final BluetoothCentral central;
+    private final Handler handler = new Handler("testapp.BluetoothHandler");
 
     // UUIDs for the Blood Pressure service (BLP)
     private static final UUID BLP_SERVICE_UUID = UUID.fromString("00001810-0000-1000-8000-00805f9b34fb");
@@ -153,14 +154,14 @@ public class BluetoothHandler {
         @Override
         public void onConnectionFailed(@NotNull BluetoothPeripheral peripheral, int status) {
             super.onConnectionFailed(peripheral, status);
-            startScanning();
+            handler.postDelayed(() -> startScanning(), 10000L);
         }
 
         @Override
         public void onDisconnectedPeripheral(@NotNull BluetoothPeripheral peripheral, int status) {
             super.onDisconnectedPeripheral(peripheral, status);
             HBLogger.i(TAG, "Disconnected peripheral");
-            startScanning();
+            handler.postDelayed(() -> startScanning(), 10000L);
         }
 
         @Override
@@ -176,7 +177,7 @@ public class BluetoothHandler {
 
     public BluetoothHandler() {
 
-        central = new BluetoothCentral(bluetoothCentralCallback, new Handler("testapp.BluetoothHandler"));
+        central = new BluetoothCentral(bluetoothCentralCallback, handler);
 
         startScanning();
     }

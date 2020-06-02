@@ -302,6 +302,7 @@ public class BluetoothPeripheral {
     }
 
     public void disconnect() {
+        HBLogger.i(TAG, "Disconnecting on request");
         device.disconnect();
     }
 
