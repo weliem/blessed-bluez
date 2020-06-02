@@ -1,14 +1,14 @@
 package testapp;
 
-import blessed.BluetoothBytesParser;
+import com.welie.blessed.BluetoothBytesParser;
 import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-import static blessed.BluetoothBytesParser.FORMAT_FLOAT;
-import static blessed.BluetoothBytesParser.FORMAT_UINT8;
+import static com.welie.blessed.BluetoothBytesParser.FORMAT_FLOAT;
+import static com.welie.blessed.BluetoothBytesParser.FORMAT_UINT8;
 
 
 public class TemperatureMeasurement implements Serializable {

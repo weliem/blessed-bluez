@@ -1,6 +1,6 @@
 package testapp;
 
-import blessed.HBLogger;
+import com.welie.blessed.HBLogger;
 
 import java.io.IOException;
 import java.io.InputStream;

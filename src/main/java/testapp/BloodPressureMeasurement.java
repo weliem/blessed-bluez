@@ -1,14 +1,14 @@
 package testapp;
 
-import blessed.BluetoothBytesParser;
+import com.welie.blessed.BluetoothBytesParser;
 
 import java.io.Serializable;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
-import static blessed.BluetoothBytesParser.FORMAT_SFLOAT;
-import static blessed.BluetoothBytesParser.FORMAT_UINT8;
+import static com.welie.blessed.BluetoothBytesParser.FORMAT_SFLOAT;
+import static com.welie.blessed.BluetoothBytesParser.FORMAT_UINT8;
 
 public class BloodPressureMeasurement implements Serializable {
 

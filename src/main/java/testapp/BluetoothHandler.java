@@ -1,12 +1,11 @@
 package testapp;
 
-import blessed.*;
+import com.welie.blessed.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
-import static blessed.BluetoothBytesParser.bytes2String;
-import static blessed.BluetoothPeripheral.GATT_SUCCESS;
+import static com.welie.blessed.BluetoothPeripheral.GATT_SUCCESS;
 
 
 public class BluetoothHandler {
