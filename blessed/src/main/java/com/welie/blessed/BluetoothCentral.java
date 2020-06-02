@@ -63,9 +63,10 @@ public class BluetoothCentral {
     private static final String ENQUEUE_ERROR = "ERROR: Could not enqueue stop scanning command";
 
     private final Object connectLock = new Object();
-    private final Map<String, BluetoothPeripheral> connectedDevices = new ConcurrentHashMap<>();
-    private final Map<String, BluetoothPeripheral> unconnectedDevices = new ConcurrentHashMap<>();
+    private final Map<String, BluetoothPeripheral> connectedPeripherals = new ConcurrentHashMap<>();
+    private final Map<String, BluetoothPeripheral> unconnectedPeripherals = new ConcurrentHashMap<>();
     private static final int MAX_CONNECTED_PERIPHERALS = 7;
+    private static final int ADDRESS_LENGTH = 17;
 
     private final InternalCallback internalCallback = new InternalCallback() {
 
@@ -73,14 +74,14 @@ public class BluetoothCentral {
         public void connected(BluetoothPeripheral device) {
 
             // Do some administration work
-            connectedDevices.put(device.getAddress(), device);
-            unconnectedDevices.remove(device.getAddress());
+            connectedPeripherals.put(device.getAddress(), device);
+            unconnectedPeripherals.remove(device.getAddress());
 
-            if (connectedDevices.size() == MAX_CONNECTED_PERIPHERALS) {
+            if (connectedPeripherals.size() == MAX_CONNECTED_PERIPHERALS) {
                 HBLogger.w(TAG, "maximum amount (7) of connected peripherals reached");
             }
 
-            HBLogger.i(TAG, String.format("Connected devices: %d", connectedDevices.size()));
+            HBLogger.i(TAG, String.format("Connected devices: %d", connectedPeripherals.size()));
 
             // Inform the listener that we are now connected
             callBackHandler.post(new Runnable() {
@@ -109,10 +110,10 @@ public class BluetoothCentral {
             HBLogger.e(TAG, String.format("ERROR: Connection to %s failed", device.getAddress()));
 
             // Remove it from the connected peripherals map, in case it still got there
-            connectedDevices.remove(device.getAddress());
-            unconnectedDevices.remove(device.getAddress());
+            connectedPeripherals.remove(device.getAddress());
+            unconnectedPeripherals.remove(device.getAddress());
 
-            HBLogger.i(TAG, String.format("Connected devices: %d", connectedDevices.size()));
+            HBLogger.i(TAG, String.format("Connected devices: %d", connectedPeripherals.size()));
 
             // Inform the handler that the connection failed
             if (bluetoothCentralCallback != null) {
@@ -127,10 +128,10 @@ public class BluetoothCentral {
             String deviceAddress = device.getAddress();
 
             // Remove it from the connected peripherals map
-            connectedDevices.remove(deviceAddress);
-            unconnectedDevices.remove(deviceAddress);
+            connectedPeripherals.remove(deviceAddress);
+            unconnectedPeripherals.remove(deviceAddress);
 
-            HBLogger.i(TAG, String.format("Connected devices: %d", connectedDevices.size()));
+            HBLogger.i(TAG, String.format("Connected devices: %d", connectedPeripherals.size()));
 
             // Remove unbonded devices to make setting notifications work (Bluez issue)
             if (!device.isPaired()) {
@@ -615,18 +616,18 @@ public class BluetoothCentral {
         peripheral.setPeripheralCallback(peripheralCallback);
 
         // Check if we are already connected
-        if (connectedDevices.containsKey(peripheral.getAddress())) {
+        if (connectedPeripherals.containsKey(peripheral.getAddress())) {
             HBLogger.w(TAG, String.format("WARNING: Already connected to %s'", peripheral.getAddress()));
             return;
         }
 
         // Check if we already have an outstanding connection request for this peripheral
-        if (unconnectedDevices.containsKey(peripheral.getAddress())) {
+        if (unconnectedPeripherals.containsKey(peripheral.getAddress())) {
             HBLogger.w(TAG, String.format("WARNING: Already connecting to %s'", peripheral.getAddress()));
             return;
         }
 
-        unconnectedDevices.put(peripheral.getAddress(), peripheral);
+        unconnectedPeripherals.put(peripheral.getAddress(), peripheral);
         boolean result = commandQueue.add(() -> {
             currentDeviceAddress = peripheral.getAddress();
             currentCommand = CONNECTED;
@@ -645,6 +646,67 @@ public class BluetoothCentral {
             currentDeviceAddress = peripheral.getAddress();
             peripheral.disconnect();
         }
+    }
+
+    /**
+     * Get a peripheral object matching the specified mac address.
+     *
+     * @param peripheralAddress mac address
+     * @return a BluetoothPeripheral object matching the specified mac address or null if it was not found
+     */
+    public BluetoothPeripheral getPeripheral(String peripheralAddress) {
+        if (!checkBluetoothAddress(peripheralAddress)) {
+            HBLogger.e(TAG, String.format("%s is not a valid address. Make sure all alphabetic characters are uppercase.", peripheralAddress));
+            return null;
+        }
+
+        if (connectedPeripherals.containsKey(peripheralAddress)) {
+            return connectedPeripherals.get(peripheralAddress);
+        } else if (unconnectedPeripherals.containsKey(peripheralAddress)) {
+            return unconnectedPeripherals.get(peripheralAddress);
+        } else {
+            return new BluetoothPeripheral(null, null, peripheralAddress, internalCallback, null, callBackHandler);
+        }
+    }
+
+    /**
+     * Validate a String Bluetooth address, such as "00:43:A8:23:10:F0"
+     * <p>Alphabetic characters must be uppercase to be valid.
+     *
+     * @param address Bluetooth address as string
+     * @return true if the address is valid, false otherwise
+     */
+    private boolean checkBluetoothAddress(String address) {
+        if (address == null || address.length() != ADDRESS_LENGTH) {
+            return false;
+        }
+        for (int i = 0; i < ADDRESS_LENGTH; i++) {
+            char c = address.charAt(i);
+            switch (i % 3) {
+                case 0:
+                case 1:
+                    if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F')) {
+                        // hex character, OK
+                        break;
+                    }
+                    return false;
+                case 2:
+                    if (c == ':') {
+                        break;  // OK
+                    }
+                    return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Get the list of connected peripherals.
+     *
+     * @return list of connected peripherals
+     */
+    public List<BluetoothPeripheral> getConnectedPeripherals() {
+        return new ArrayList<>(connectedPeripherals.values());
     }
 
     /**
