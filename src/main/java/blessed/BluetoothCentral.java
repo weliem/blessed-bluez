@@ -285,7 +285,7 @@ public class BluetoothCentral {
                     }
 
                     // Create ScanResult
-                    final ScanResult scanResult = new ScanResult(deviceName, deviceAddress, finalServiceUUIDs, rssi);
+                    final ScanResult scanResult = new ScanResult(deviceName, deviceAddress, finalServiceUUIDs, rssi, device.getManufacturerData());
                     final BluetoothPeripheral peripheral = new BluetoothPeripheral(device, deviceName, deviceAddress, internalCallback, null, callBackHandler);
                     onScanResult(peripheral, scanResult);
                 }
@@ -327,18 +327,20 @@ public class BluetoothCentral {
                 final String deviceName;
                 final String[] serviceUUIDs;
                 final int rssi;
+                final Map<Integer, byte[]> manufacturerData;
                 try {
                     deviceAddress = foundDevice.getAddress();
                     deviceName = foundDevice.getName();
                     serviceUUIDs = foundDevice.getUuids();
                     rssi = foundDevice.getRssi();
+                    manufacturerData = foundDevice.getManufacturerData();
                 } catch (Exception e) {
                     return;
                 }
 
                 // Propagate found device
                 // Create ScanResult
-                final ScanResult scanResult = new ScanResult(deviceName, deviceAddress, serviceUUIDs, rssi);
+                final ScanResult scanResult = new ScanResult(deviceName, deviceAddress, serviceUUIDs, rssi, manufacturerData);
                 final BluetoothPeripheral peripheral = new BluetoothPeripheral(foundDevice, deviceName, deviceAddress, internalCallback, null, callBackHandler);
                 onScanResult(peripheral, scanResult);
             } else if (propertiesChanged.getInterfaceName().equals(BLUEZ_ADAPTER_INTERFACE)) {
@@ -384,7 +386,7 @@ public class BluetoothCentral {
                         if (value.getValue() instanceof Boolean &&
                                 ((s.equalsIgnoreCase(CONNECTED) && currentCommand.equalsIgnoreCase(CONNECTED)) ||
                                         (s.equalsIgnoreCase(PAIRED) && currentCommand.equalsIgnoreCase(PAIRED)))) {
-                            HBLogger.i(TAG, String.format("Completed %s", s));
+ //                           HBLogger.i(TAG, String.format("Completed %s", s));
                             completedCommand();
                         }
                     });

@@ -1,18 +1,21 @@
 package blessed;
 
 import java.util.Arrays;
+import java.util.Map;
 
 public class ScanResult {
-    private String name;
-    private String address;
-    private String[] uuids;
-    private int rssi;
+    private final String name;
+    private final String address;
+    private final String[] uuids;
+    private final int rssi;
+    private final Map<Integer, byte[]> manufacturerData;
 
-    public ScanResult(String deviceName, String deviceAddress, String[] uuids, int rssi) {
+    public ScanResult(String deviceName, String deviceAddress, String[] uuids, int rssi, Map<Integer, byte[]> manufacturerData ) {
         this.name = deviceName;
         this.address = deviceAddress;
         this.uuids = uuids;
         this.rssi = rssi;
+        this.manufacturerData = manufacturerData;
     }
 
     public String getAddress() {
@@ -27,6 +30,10 @@ public class ScanResult {
         return uuids;
     }
 
+    public Map<Integer, byte[]> getManufacturerData() {
+        return manufacturerData;
+    }
+
     @Override
     public String toString() {
         return "ScanResult{" +
@@ -34,6 +41,7 @@ public class ScanResult {
                 ", address='" + address + '\'' +
                 ", uuids=" + Arrays.toString(uuids) +
                 ", rssi=" + rssi +
+                ", manufacturerData=" + manufacturerData +
                 '}';
     }
 }

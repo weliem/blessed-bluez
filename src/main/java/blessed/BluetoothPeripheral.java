@@ -861,24 +861,6 @@ public class BluetoothPeripheral {
         return result;
     }
 
-
-    public Map<Integer, byte[]> getManufacturerData() {
-        try {
-            Map<Integer, byte[]> result = new HashMap<>();
-
-            // Convert manufacturer data
-            final Map<UInt16, byte[]> deviceManufacturerData = device.getManufacturerData();
-            if(deviceManufacturerData != null) {
-                deviceManufacturerData.forEach((key, value) -> {
-                    result.put(key.intValue(), value);
-                });
-            }
-            return result;
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
     private BluetoothGattCharacteristic getCharacteristicFromPath(String path) {
         BluezGattCharacteristic characteristic = characteristicMap.get(path);
         if(characteristic == null) return null;
@@ -1012,6 +994,7 @@ public class BluetoothPeripheral {
 
         return hbService;
     }
+
 
     /**
      * Converts byte array to hex string

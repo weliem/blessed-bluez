@@ -260,9 +260,21 @@ public class BluezDevice extends AbstractBluetoothObject {
      * </p>
      * @return map of uint16/bytearray, maybe null
      */
-    @SuppressWarnings("unchecked")
-    public Map<UInt16, byte[]> getManufacturerData() {
-        return getTyped("ManufacturerData", DBusMap.class);
+    public Map<Integer, byte[]> getManufacturerData() {
+        try {
+            Map<Integer, byte[]> result = new HashMap<>();
+
+            // Convert manufacturer data
+            final Map<UInt16, byte[]> deviceManufacturerData = getTyped("ManufacturerData", DBusMap.class);
+            if(deviceManufacturerData != null) {
+                deviceManufacturerData.forEach((key, value) -> {
+                    result.put(key.intValue(), value);
+                });
+            }
+            return result;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /**
