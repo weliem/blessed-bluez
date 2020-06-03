@@ -1,4 +1,4 @@
-# BLESSED for Android - BLE made easy
+# BLESSED for Bluez - BLE made easy
 
 [![](https://jitpack.io/v/weliem/blessed-bluez.svg)](https://jitpack.io/#weliem/blessed-bluez)
 
