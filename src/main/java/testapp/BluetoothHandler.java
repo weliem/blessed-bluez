@@ -43,7 +43,7 @@ public class BluetoothHandler {
     private final BluetoothPeripheralCallback peripheralCallback = new BluetoothPeripheralCallback() {
         @Override
         public void onServicesDiscovered(@NotNull BluetoothPeripheral peripheral) {
-            HBLogger.i(TAG, "Services discovered, starting initialization");
+            HBLogger.i(TAG, "services discovered, starting initialization");
 
             // Read manufacturer and model number from the Device Information Service
             if(peripheral.getService(DIS_SERVICE_UUID) != null) {
@@ -146,7 +146,7 @@ public class BluetoothHandler {
         @Override
         public void onConnectedPeripheral(@NotNull BluetoothPeripheral peripheral) {
             super.onConnectedPeripheral(peripheral);
-            HBLogger.i(TAG, "Connected peripheral");
+ //           HBLogger.i(TAG, "connected peripheral");
  //           startScanning();
         }
 
@@ -159,7 +159,7 @@ public class BluetoothHandler {
         @Override
         public void onDisconnectedPeripheral(@NotNull BluetoothPeripheral peripheral, int status) {
             super.onDisconnectedPeripheral(peripheral, status);
-            HBLogger.i(TAG, "Disconnected peripheral");
+            HBLogger.i(TAG, "disconnected peripheral");
             handler.postDelayed(() -> startScanning(), 10000L);
         }
 

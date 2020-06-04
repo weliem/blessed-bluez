@@ -53,11 +53,11 @@ public class BluetoothCentral {
     private static final String RSSI = "Rssi";
 
 
-    public static final String DBUS_BUSNAME = "org.freedesktop.DBus";
-    public static final String BLUEZ_DBUS_BUSNAME = "org.bluez";
-    public static final String BLUEZ_DEVICE_INTERFACE = "org.bluez.Device1";
-    public static final String BLUEZ_ADAPTER_INTERFACE = "org.bluez.Adapter1";
-    public static final String BLUEZ_GATT_INTERFACE = "org.bluez.GattManager1";
+    static final String DBUS_BUSNAME = "org.freedesktop.DBus";
+    static final String BLUEZ_DBUS_BUSNAME = "org.bluez";
+    static final String BLUEZ_DEVICE_INTERFACE = "org.bluez.Device1";
+    static final String BLUEZ_ADAPTER_INTERFACE = "org.bluez.Adapter1";
+    static final String BLUEZ_GATT_INTERFACE = "org.bluez.GattManager1";
 
     // Strings
     private static final String ENQUEUE_ERROR = "ERROR: Could not enqueue stop scanning command";
@@ -81,7 +81,7 @@ public class BluetoothCentral {
                 HBLogger.w(TAG, "maximum amount (7) of connected peripherals reached");
             }
 
-            HBLogger.i(TAG, String.format("Connected devices: %d", connectedPeripherals.size()));
+            HBLogger.i(TAG, String.format("connected devices: %d", connectedPeripherals.size()));
 
             // Inform the listener that we are now connected
             callBackHandler.post(new Runnable() {
@@ -97,7 +97,7 @@ public class BluetoothCentral {
         @Override
         public void servicesDiscovered(BluetoothPeripheral device) {
             // TODO , is this needed?
-            HBLogger.i(TAG, "Service discovery succeeded");
+            HBLogger.i(TAG, "service discovery succeeded");
         }
 
         @Override
@@ -113,7 +113,7 @@ public class BluetoothCentral {
             connectedPeripherals.remove(device.getAddress());
             unconnectedPeripherals.remove(device.getAddress());
 
-            HBLogger.i(TAG, String.format("Connected devices: %d", connectedPeripherals.size()));
+            HBLogger.i(TAG, String.format("connected devices: %d", connectedPeripherals.size()));
 
             // Inform the handler that the connection failed
             if (bluetoothCentralCallback != null) {
@@ -131,7 +131,7 @@ public class BluetoothCentral {
             connectedPeripherals.remove(deviceAddress);
             unconnectedPeripherals.remove(deviceAddress);
 
-            HBLogger.i(TAG, String.format("Connected devices: %d", connectedPeripherals.size()));
+            HBLogger.i(TAG, String.format("connected devices: %d", connectedPeripherals.size()));
 
             // Remove unbonded devices to make setting notifications work (Bluez issue)
             if (!device.isPaired()) {
@@ -162,20 +162,20 @@ public class BluetoothCentral {
             // Find all adapters and pick one if there are more than one
             List<BluezAdapter> adapters = scanForBluetoothAdapters();
             if (!adapters.isEmpty()) {
-                HBLogger.i(TAG, String.format("Found %d bluetooth adapter(s)", adapters.size()));
+                HBLogger.i(TAG, String.format("found %d bluetooth adapter(s)", adapters.size()));
 
                 // Take the adapter with the highest number
                 adapter = adapters.get(adapters.size() - 1);
-                HBLogger.i(TAG, "Using adapter " + adapter.getDeviceName());
+                HBLogger.i(TAG, "using adapter " + adapter.getDeviceName());
 
                 // Make sure the adapter is powered on
                 isPowered = adapter.isPowered();
                 if (!isPowered) {
-                    HBLogger.i(TAG, "Adapter not on, so turning it on now");
+                    HBLogger.i(TAG, "adapter not on, so turning it on now");
                     adapterOn();
                 }
             } else {
-                HBLogger.e(TAG, "No bluetooth adaptors found");
+                HBLogger.e(TAG, "no bluetooth adaptors found");
                 return;
             }
 
@@ -784,7 +784,7 @@ public class BluetoothCentral {
         if (bluetoothDevice == null) return;
 
         boolean isBonded = device.isPaired();
-        HBLogger.i(TAG, String.format("Removing device %s (%s)", device.getAddress(), isBonded ? "BONDED" : "BOND_NONE"));
+        HBLogger.i(TAG, String.format("removing device %s (%s)", device.getAddress(), isBonded ? "BONDED" : "BOND_NONE"));
         if (adapter != null) {
             try {
                 Device1 rawDevice = bluetoothDevice.getRawDevice();

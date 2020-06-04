@@ -16,6 +16,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import static com.welie.blessed.BluetoothCentral.BLUEZ_DEVICE_INTERFACE;
 import static com.welie.blessed.BluetoothGattCharacteristic.*;
 
 public class BluetoothPeripheral {
@@ -112,23 +113,23 @@ public class BluetoothPeripheral {
     private final GattCallback gattCallback = new GattCallback() {
         @Override
         public void onConnectionStateChanged(ConnectionState connectionState, int status) {
+            ConnectionState previousState = state;
+            state = connectionState;
+
             switch (connectionState) {
                 case Connected:
-                    state = ConnectionState.Connected;
                     isBonded = isPaired();
                     if (listener != null) {
                         listener.connected(BluetoothPeripheral.this);
                     }
                     break;
                 case Disconnected:
-                    if(state== ConnectionState.Connecting) {
+                    if(previousState == ConnectionState.Connecting) {
                         if (listener != null) {
-                            state = ConnectionState.Disconnected;
                             listener.connectFailed(BluetoothPeripheral.this);
                             completeDisconnect(false);
                         }
                     } else {
-                        state = ConnectionState.Disconnected;
                         if(!serviceDiscoveryCompleted) {
                             listener.serviceDiscoveryFailed(BluetoothPeripheral.this);
                         }
@@ -136,9 +137,8 @@ public class BluetoothPeripheral {
                     }
                     break;
                 case Connecting:
-                    state = ConnectionState.Connecting;
                     if (status == GATT_ERROR) {
-                        HBLogger.i(TAG,String.format("Connection failed with status '%s'", statusToString(status)));
+                        HBLogger.i(TAG,String.format("connection failed with status '%s'", statusToString(status)));
                         completeDisconnect(false);
                         if (listener != null) {
                             listener.disconnected(BluetoothPeripheral.this);
@@ -146,7 +146,6 @@ public class BluetoothPeripheral {
                     }
                     break;
                 case Disconnecting:
-                    state = ConnectionState.Disconnecting;
                     commandQueue.clear();
                     commandQueueBusy = false;
                     break;
@@ -258,7 +257,7 @@ public class BluetoothPeripheral {
         // Do the connect
         gattCallback.onConnectionStateChanged(ConnectionState.Connecting, GATT_SUCCESS);
         try {
-            HBLogger.i(TAG, String.format("Connecting to '%s' (%s)", deviceName, deviceAddress));
+            HBLogger.i(TAG, String.format("connecting to '%s' (%s)", deviceName, deviceAddress));
             connectTimestamp = System.currentTimeMillis();
             device.connect();
         } catch (DBusExecutionException e) {
@@ -269,7 +268,7 @@ public class BluetoothPeripheral {
                 bluezConnectionstate = false;
             }
 
-            HBLogger.e(TAG, String.format("Connect exception, dbusexecutionexception (%s %s)", state == ConnectionState.Connected ? "connected" : "not connected", bluezConnectionstate ? "connected" : "not connected"));
+            HBLogger.e(TAG, String.format("connect exception, dbusexecutionexception (%s %s)", state == ConnectionState.Connected ? "connected" : "not connected", bluezConnectionstate ? "connected" : "not connected"));
             HBLogger.e(TAG, e.getMessage());
 
             // Unregister handler only if we are not connected. A connected event may have already been received!
@@ -277,18 +276,18 @@ public class BluetoothPeripheral {
                 cleanupAfterFailedConnect();
             }
         } catch (BluezAlreadyConnectedException e) {
-            HBLogger.e(TAG, "Connect exception: already connected");
+            HBLogger.e(TAG, "connect exception: already connected");
             gattCallback.onConnectionStateChanged(ConnectionState.Connected, GATT_SUCCESS);
         } catch (BluezNotReadyException e) {
-            HBLogger.e(TAG, "Connect exception: not ready");
+            HBLogger.e(TAG, "connect exception: not ready");
             HBLogger.e(TAG, e.getMessage());
             cleanupAfterFailedConnect();
         } catch (BluezFailedException e) {
-            HBLogger.e(TAG, "Connect exception: connect failed");
+            HBLogger.e(TAG, "connect exception: connect failed");
             HBLogger.e(TAG, e.getMessage());
             cleanupAfterFailedConnect();
         } catch (BluezInProgressException e) {
-            HBLogger.e(TAG, "Connect exception: in progress");
+            HBLogger.e(TAG, "connect exception: in progress");
             HBLogger.e(TAG, e.getMessage());
             cleanupAfterFailedConnect();
         }
@@ -301,7 +300,7 @@ public class BluetoothPeripheral {
     }
 
     public void disconnect() {
-        HBLogger.i(TAG, "Disconnecting on request");
+        HBLogger.i(TAG, "disconnecting on request");
         device.disconnect();
     }
 
@@ -608,27 +607,26 @@ public class BluetoothPeripheral {
                                 if(bluetoothGattCharacteristic != null) {
                                     gattCallback.onCharacteristicChanged(valueCopy, bluetoothGattCharacteristic);
                                 }
+                            } else {
+                                HBLogger.e(TAG, "got unknown type for VALUE update");
                             }
                         }
                     }
                 });
-            } else if (propertiesChanged.getInterfaceName().startsWith("org.bluez")) {
+            } else if (propertiesChanged.getInterfaceName().equals(BLUEZ_DEVICE_INTERFACE)) {
 //                        System.out.println("devicehandler: handle path " + propertiesChanged.getPath());
 //                        System.out.println("interface: " + propertiesChanged.getInterfaceName());
 //                        System.out.println("changed " + propertiesChanged.getPropertiesChanged().keySet());
 //                        System.out.println("props removed " + propertiesChanged.getPropertiesRemoved());
-
                 propertiesChanged.getPropertiesChanged().forEach((s, variant) -> {
-//                    if (!s.equalsIgnoreCase("RSSI")) {
-                    handlePropertyChange(s, variant);
-//                    }
+                    handlePropertyChangeForDevice(s, variant);
                 });
 
             }
         }
     };
 
-    private void handlePropertyChange(String key, Variant value) {
+    private void handlePropertyChangeForDevice(String key, Variant value) {
 //        System.out.println("Changed key " + key);
 //        System.out.println("Changed variant type " + value.getType());
 //        System.out.println("Changed variant sig " + value.getSig());
