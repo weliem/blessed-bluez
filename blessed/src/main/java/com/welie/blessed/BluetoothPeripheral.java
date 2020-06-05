@@ -307,6 +307,7 @@ public class BluetoothPeripheral {
 
     public void disconnect() {
         HBLogger.i(TAG, "disconnecting on request");
+        gattCallback.onConnectionStateChanged(ConnectionState.Disconnecting, GATT_SUCCESS);
         device.disconnect();
     }
 
@@ -578,6 +579,10 @@ public class BluetoothPeripheral {
         descriptorMap.clear();
     }
 
+    void handleSignal(Properties.PropertiesChanged propertiesChanged) {
+        propertiesChangedHandler.handle(propertiesChanged);
+    }
+
     private final AbstractPropertiesChangedHandler propertiesChangedHandler = new AbstractPropertiesChangedHandler() {
         @Override
         public void handle(Properties.PropertiesChanged propertiesChanged) {
@@ -585,24 +590,7 @@ public class BluetoothPeripheral {
                 BluetoothGattCharacteristic bluetoothGattCharacteristic = getCharacteristicFromPath(propertiesChanged.getPath());
                 if (bluetoothGattCharacteristic == null) return;
 
-                propertiesChanged.getPropertiesChanged().forEach((s, value) -> {
-                    if (s.equalsIgnoreCase(PROPERTY_NOTIFYING)) {
-                        boolean isNotifying = (Boolean) value.getValue();
-                        gattCallback.onNotifySet(bluetoothGattCharacteristic, isNotifying);
-                    } else if (s.equalsIgnoreCase(PROPERTY_VALUE)) {
-                        if (value.getType() instanceof DBusListType) {
-                            if (value.getValue() instanceof byte[]) {
-                                byte[] byteVal = (byte[]) value.getValue();
-                                byte[] valueCopy = copyOf(byteVal);
-                                gattCallback.onCharacteristicChanged(valueCopy, bluetoothGattCharacteristic);
-                            } else {
-                                HBLogger.e(TAG, "got VALUE update that is not byte array");
-                            }
-                        } else {
-                            HBLogger.e(TAG, "got unknown type for VALUE update");
-                        }
-                    }
-                });
+                propertiesChanged.getPropertiesChanged().forEach((s, value) -> handlePropertyChangedForCharacteristic(bluetoothGattCharacteristic, s, value));
             } else if (propertiesChanged.getInterfaceName().equals(BLUEZ_DEVICE_INTERFACE)) {
 //                        System.out.println("devicehandler: handle path " + propertiesChanged.getPath());
 //                        System.out.println("interface: " + propertiesChanged.getInterfaceName());
@@ -613,6 +601,25 @@ public class BluetoothPeripheral {
             }
         }
     };
+
+    private void handlePropertyChangedForCharacteristic(BluetoothGattCharacteristic bluetoothGattCharacteristic, String s, Variant<?> value) {
+        if (s.equalsIgnoreCase(PROPERTY_NOTIFYING)) {
+            boolean isNotifying = (Boolean) value.getValue();
+            gattCallback.onNotifySet(bluetoothGattCharacteristic, isNotifying);
+        } else if (s.equalsIgnoreCase(PROPERTY_VALUE)) {
+            if (value.getType() instanceof DBusListType) {
+                if (value.getValue() instanceof byte[]) {
+                    byte[] byteVal = (byte[]) value.getValue();
+                    byte[] valueCopy = copyOf(byteVal);
+                    gattCallback.onCharacteristicChanged(valueCopy, bluetoothGattCharacteristic);
+                } else {
+                    HBLogger.e(TAG, "got VALUE update that is not byte array");
+                }
+            } else {
+                HBLogger.e(TAG, "got unknown type for VALUE update");
+            }
+        }
+    }
 
     private void handlePropertyChangeForDevice(String key, Variant value) {
 //        System.out.println("Changed key " + key);
@@ -627,7 +634,6 @@ public class BluetoothPeripheral {
             servicesResolved();
         } else if (key.equalsIgnoreCase(PROPERTY_SERVICES_RESOLVED) && value.getValue().equals(false)) {
             HBLogger.i(TAG, String.format("servicesResolved is false (%s)", deviceName));
-            gattCallback.onConnectionStateChanged(ConnectionState.Disconnecting, GATT_SUCCESS);
         } else if (key.equalsIgnoreCase(PROPERTY_CONNECTED) && value.getValue().equals(false)) {
             HBLogger.i(TAG, String.format("connected is false (%s)", deviceName));
 
@@ -652,9 +658,7 @@ public class BluetoothPeripheral {
         }
     }
 
-    void handleSignal(Properties.PropertiesChanged propertiesChanged) {
-        propertiesChangedHandler.handle(propertiesChanged);
-    }
+
 
 
     /**
