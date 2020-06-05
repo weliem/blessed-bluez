@@ -50,7 +50,10 @@ public class BluetoothCentral {
     private static final String SERVICE_UUIDS = "UUIDs";
     private static final String NAME = "Name";
     private static final String ADDRESS = "Address";
-    private static final String RSSI = "Rssi";
+    private static final String RSSI = "RSSI";
+    private static final String MANUFACTURER_DATA = "ManufacturerData";
+    private static final String SERVICE_DATA = "ServiceData";
+
 
 
     static final String DBUS_BUSNAME = "org.freedesktop.DBus";
@@ -225,13 +228,15 @@ public class BluetoothCentral {
     }
 
     private void onScanResult(BluetoothPeripheral peripheral, ScanResult scanResult) {
-        callBackHandler.post(() -> {
-            if (bluetoothCentralCallback != null) {
-                bluetoothCentralCallback.onDiscoveredPeripheral(peripheral, scanResult);
-            } else {
-                HBLogger.e(TAG, "bluetoothCentralCallback is null");
-            }
-        });
+        if (isScanning) {
+            callBackHandler.post(() -> {
+                if (bluetoothCentralCallback != null) {
+                    bluetoothCentralCallback.onDiscoveredPeripheral(peripheral, scanResult);
+                } else {
+                    HBLogger.e(TAG, "bluetoothCentralCallback is null");
+                }
+            });
+        }
     }
 
     private final AbstractInterfacesAddedHandler interfacesAddedHandler = new AbstractInterfacesAddedHandler() {
@@ -254,6 +259,7 @@ public class BluetoothCentral {
 
                     // Get the device
                     final BluezDevice device = getDeviceByAddress(adapter, deviceAddress);
+                    if (device == null) return;
 
                     // Grab name
                     if (value.get(NAME) != null) {
@@ -280,7 +286,7 @@ public class BluetoothCentral {
                     // Convert the service UUIDs
                     final String[] finalServiceUUIDs;
                     if (serviceUUIDs != null) {
-                        finalServiceUUIDs = serviceUUIDs.toArray(new String[serviceUUIDs.size()]);
+                        finalServiceUUIDs = serviceUUIDs.toArray(new String[0]);
                     } else {
                         finalServiceUUIDs = null;
                     }

@@ -47,14 +47,14 @@ public class BluetoothPeripheral {
     private List<BluetoothGattService> mServices;
 
     // Variables for service discovery timer
-    private final Handler timeoutHandler;
+    private Handler timeoutHandler;
     private Runnable timeoutRunnable;
     private static final int SERVICE_DISCOVERY_TIMEOUT_IN_MS = 10000;
 
     // Queue related variables
     private final Queue<Runnable> commandQueue = new ConcurrentLinkedQueue<>();
     private boolean commandQueueBusy;
-    private final Handler queueHandler;
+    private Handler queueHandler;
     private int nrTries;
     private static final int MAX_TRIES = 2;
 
@@ -250,9 +250,6 @@ public class BluetoothPeripheral {
         this.listener = listener;
         this.callBackHandler = callBackHandler;
         this.peripheralCallback = peripheralCallback;
-        this.queueHandler = new Handler("BLE-" + deviceAddress);
-        this.timeoutHandler = new Handler(TAG + " serviceDiscovery " + deviceAddress);
-        BluezSignalHandler.getInstance().addDevice(deviceAddress, this);
     }
 
     void setPeripheralCallback(final BluetoothPeripheralCallback peripheralCallback) {
@@ -264,6 +261,9 @@ public class BluetoothPeripheral {
         gattCallback.onConnectionStateChanged(ConnectionState.Connecting, GATT_SUCCESS);
         try {
             HBLogger.i(TAG, String.format("connecting to '%s' (%s)", deviceName, deviceAddress));
+            BluezSignalHandler.getInstance().addDevice(deviceAddress, this);
+            queueHandler = new Handler("BLE-" + deviceAddress);
+            timeoutHandler = new Handler(TAG + " serviceDiscovery " + deviceAddress);
             connectTimestamp = System.currentTimeMillis();
             device.connect();
         } catch (DBusExecutionException e) {
