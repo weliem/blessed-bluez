@@ -302,6 +302,7 @@ public class BluetoothPeripheral {
     private void cleanupAfterFailedConnect() {
         BluezSignalHandler.getInstance().removeDevice(deviceAddress);
         timeoutHandler.stop();
+        timeoutHandler = null;
         gattCallback.onConnectionStateChanged(ConnectionState.Disconnected, GATT_ERROR);
     }
 
@@ -314,6 +315,7 @@ public class BluetoothPeripheral {
     private void completeDisconnect(boolean notify) {
         // Do some cleanup
         queueHandler.stop();
+        queueHandler = null;
         commandQueue.clear();
         commandQueueBusy = false;
 
@@ -642,6 +644,7 @@ public class BluetoothPeripheral {
             BluezSignalHandler.getInstance().removeDevice(deviceAddress);
             gattCallback.onConnectionStateChanged(ConnectionState.Disconnected, GATT_SUCCESS);
             timeoutHandler.stop();
+            timeoutHandler = null;
         } else if (key.equalsIgnoreCase(PROPERTY_CONNECTED) && value.getValue().equals(true)) {
             long timePassed = System.currentTimeMillis() - connectTimestamp;
             HBLogger.i(TAG, String.format("connected to '%s' (%s) in %.1fs", deviceName, isPaired() ? "BONDED" : "BOND_NONE", timePassed / 1000.0f));
