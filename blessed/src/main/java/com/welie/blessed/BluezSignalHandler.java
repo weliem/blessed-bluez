@@ -54,7 +54,6 @@ public class BluezSignalHandler {
         }
     };
 
-
     private BluezSignalHandler(DBusConnection dBusConnection) {
         try {
             this.dbusConnection = dBusConnection;
@@ -69,20 +68,15 @@ public class BluezSignalHandler {
         dbusConnection.addSigHandler(handler.getImplementationClass(), handler);
     }
 
-
     void addDevice(String deviceAddress, BluetoothPeripheral peripheral) {
         String deviceAddressString = deviceAddress.replace(":","_");
         devicesMap.put(deviceAddressString, peripheral);
-        HBLogger.i(TAG, String.format("Registered %d peripherals", devicesMap.size()));
     }
-
 
     void removeDevice(String deviceAddress) {
         String deviceAddressString = deviceAddress.replace(":","_");
         devicesMap.remove(deviceAddressString);
-        HBLogger.i(TAG, String.format("Registered %d peripherals", devicesMap.size()));
     }
-
 
     void addCentral(BluetoothCentral central) {
         centralList.add(central);
