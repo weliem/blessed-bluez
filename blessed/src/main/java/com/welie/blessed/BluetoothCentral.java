@@ -362,7 +362,7 @@ public class BluetoothCentral {
                                 public void run() {
                                     completedCommand();
                                 }
-                            }, 300L);
+                            }, 100L);
                         }
                     } else if (s.equalsIgnoreCase(POWERED) && value.getValue() instanceof Boolean) {
                         isPowered = (Boolean) value.getValue();
@@ -455,6 +455,8 @@ public class BluetoothCentral {
             try {
                 currentCommand = DISCOVERING;
                 adapter.startDiscovery();
+                scanCounter++;
+                startScanTimer();
             } catch (BluezFailedException e) {
                 HBLogger.e(TAG, "Could not start discovery (failed)");
                 completedCommand();
@@ -498,6 +500,7 @@ public class BluetoothCentral {
             // Stop the discovery
             try {
                 currentCommand = DISCOVERING;
+                cancelTimeoutTimer();
                 adapter.stopDiscovery();
             } catch (BluezNotReadyException e) {
                 HBLogger.e(TAG, "Could not stop discovery (not ready)");
@@ -542,20 +545,17 @@ public class BluetoothCentral {
         cancelTimeoutTimer();
 
         // Prepare runnable
-        this.timeoutRunnable = new Runnable() {
-            @Override
-            public void run() {
+        this.timeoutRunnable = () -> {
+            HBLogger.i(TAG, String.format("Scanning timeout, stopping scan (%d)", scanCounter));
+            stopScanning();
+            startScanning();
 
-                HBLogger.i(TAG, String.format("Scanning timeout, stopping scan (%d)", scanCounter));
-                stopScanning();
-
-                // See if we need to cycle the adapter
-                if (scanCounter >= CYCLE_ADAPTER_THRESHOLD) {
-                    scanCounter = 0;
-                    adapterOff();
-                    adapterOn();
-                }
-            }
+            // See if we need to cycle the adapter
+//            if (scanCounter >= CYCLE_ADAPTER_THRESHOLD) {
+//                scanCounter = 0;
+//                adapterOff();
+//                adapterOn();
+//            }
         };
 
         // Start timer
