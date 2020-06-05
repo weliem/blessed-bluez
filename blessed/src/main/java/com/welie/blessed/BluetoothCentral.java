@@ -535,10 +535,12 @@ public class BluetoothCentral {
     private int scanCounter = 0;
     private final Handler timeoutHandler = new Handler(this.getClass().getSimpleName());
     private Runnable timeoutRunnable;
+
     // Cycle the adapter power when threshold is reached
     private static final int CYCLE_ADAPTER_THRESHOLD = 3600;
+
     // Scan in intervals. Make sure it is less than 10seconds to avoid issues with Bluez internal scanning
-    private static final long SCAN_INTERNAL = 8000L;
+    private static final long SCAN_INTERNAL = TimeUnit.SECONDS.toMillis(8);
 
     private void startScanTimer() {
         // Cancel runnable if it exists

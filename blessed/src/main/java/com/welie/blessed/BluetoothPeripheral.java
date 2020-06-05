@@ -604,65 +604,81 @@ public class BluetoothPeripheral {
         }
     };
 
-    private void handlePropertyChangedForCharacteristic(BluetoothGattCharacteristic bluetoothGattCharacteristic, String s, Variant<?> value) {
-        if (s.equalsIgnoreCase(PROPERTY_NOTIFYING)) {
-            boolean isNotifying = (Boolean) value.getValue();
-            gattCallback.onNotifySet(bluetoothGattCharacteristic, isNotifying);
-        } else if (s.equalsIgnoreCase(PROPERTY_VALUE)) {
-            if (value.getType() instanceof DBusListType) {
-                if (value.getValue() instanceof byte[]) {
-                    byte[] byteVal = (byte[]) value.getValue();
-                    byte[] valueCopy = copyOf(byteVal);
-                    gattCallback.onCharacteristicChanged(valueCopy, bluetoothGattCharacteristic);
-                } else {
-                    HBLogger.e(TAG, "got VALUE update that is not byte array");
-                }
-            } else {
-                HBLogger.e(TAG, "got unknown type for VALUE update");
-            }
-        }
+    private void handlePropertyChangedForCharacteristic(BluetoothGattCharacteristic bluetoothGattCharacteristic, String propertyName, Variant<?> value) {
+       switch (propertyName) {
+           case PROPERTY_NOTIFYING:
+               boolean isNotifying = (Boolean) value.getValue();
+               gattCallback.onNotifySet(bluetoothGattCharacteristic, isNotifying);
+               break;
+           case PROPERTY_VALUE:
+               if (value.getType() instanceof DBusListType) {
+                   if (value.getValue() instanceof byte[]) {
+                       byte[] byteVal = (byte[]) value.getValue();
+                       byte[] valueCopy = copyOf(byteVal);
+                       gattCallback.onCharacteristicChanged(valueCopy, bluetoothGattCharacteristic);
+                   } else {
+                       HBLogger.e(TAG, "got VALUE update that is not byte array");
+                   }
+               } else {
+                   HBLogger.e(TAG, "got unknown type for VALUE update");
+               }
+               break;
+           default:
+               HBLogger.e(TAG, String.format("Unhandled characteristic property change %s", propertyName));
+       }
     }
 
-    private void handlePropertyChangeForDevice(String key, Variant value) {
+    private void handlePropertyChangeForDevice(String propertyName, Variant<?> value) {
 //        System.out.println("Changed key " + key);
 //        System.out.println("Changed variant type " + value.getType());
 //        System.out.println("Changed variant sig " + value.getSig());
 //        System.out.println("Changed variant value " + value.getValue());
 
-        if (device == null) return;
+        final boolean propertyValue;
+        if (value.getValue() instanceof Boolean) {
+            propertyValue = (Boolean) value.getValue();
+        } else {
+            propertyValue = false;
+        }
 
-        if (key.equalsIgnoreCase(PROPERTY_SERVICES_RESOLVED) && value.getValue().equals(true)) {
-            cancelServiceDiscoveryTimer();
-            servicesResolved();
-        } else if (key.equalsIgnoreCase(PROPERTY_SERVICES_RESOLVED) && value.getValue().equals(false)) {
-            HBLogger.i(TAG, String.format("servicesResolved is false (%s)", deviceName));
-        } else if (key.equalsIgnoreCase(PROPERTY_CONNECTED) && value.getValue().equals(false)) {
-            HBLogger.i(TAG, String.format("connected is false (%s)", deviceName));
+        switch (propertyName) {
+            case PROPERTY_SERVICES_RESOLVED:
+                if (propertyValue) {
+                    cancelServiceDiscoveryTimer();
+                    servicesResolved();
+                } else {
+                    HBLogger.i(TAG, String.format("servicesResolved is false (%s)", deviceName));
+                }
+                break;
+            case PROPERTY_CONNECTED:
+                if (propertyValue) {
+                    long timePassed = System.currentTimeMillis() - connectTimestamp;
+                    HBLogger.i(TAG, String.format("connected to '%s' (%s) in %.1fs", deviceName, isPaired() ? "BONDED" : "BOND_NONE", timePassed / 1000.0f));
+                    gattCallback.onConnectionStateChanged(ConnectionState.Connected, GATT_SUCCESS);
+                    startServiceDiscoveryTimer();
+                } else {
+                    HBLogger.i(TAG, String.format("connected is false (%s)", deviceName));
 
-            // Clean up
-            cancelServiceDiscoveryTimer();
-            BluezSignalHandler.getInstance().removeDevice(deviceAddress);
-            gattCallback.onConnectionStateChanged(ConnectionState.Disconnected, GATT_SUCCESS);
-            timeoutHandler.stop();
-            timeoutHandler = null;
-        } else if (key.equalsIgnoreCase(PROPERTY_CONNECTED) && value.getValue().equals(true)) {
-            long timePassed = System.currentTimeMillis() - connectTimestamp;
-            HBLogger.i(TAG, String.format("connected to '%s' (%s) in %.1fs", deviceName, isPaired() ? "BONDED" : "BOND_NONE", timePassed / 1000.0f));
-            gattCallback.onConnectionStateChanged(ConnectionState.Connected, GATT_SUCCESS);
-            startServiceDiscoveryTimer();
-        } else if (key.equalsIgnoreCase(PROPERTY_PAIRED) && value.getValue().equals(true)) {
-            isBonded = true;
-            gattCallback.onPaired();
-        } else if (key.equalsIgnoreCase(PROPERTY_PAIRED) && value.getValue().equals(false)) {
-            gattCallback.onPairingFailed();
-        } else if (key.equalsIgnoreCase("RSSI")) {
-            Short rssi = (Short) value.getValue();
-            //               HBLogger.i(TAG, String.format("RSSI %d", rssi));
+                    // Clean up
+                    cancelServiceDiscoveryTimer();
+                    BluezSignalHandler.getInstance().removeDevice(deviceAddress);
+                    gattCallback.onConnectionStateChanged(ConnectionState.Disconnected, GATT_SUCCESS);
+                    timeoutHandler.stop();
+                    timeoutHandler = null;
+                }
+                break;
+            case PROPERTY_PAIRED:
+                if (propertyValue) {
+                    isBonded = true;
+                    gattCallback.onPaired();
+                } else {
+                    gattCallback.onPairingFailed();
+                }
+                break;
+            default:
+                // Ignore other properties
         }
     }
-
-
-
 
     /**
      * The current command has been completed, move to the next command in the queue (if any)
