@@ -594,10 +594,7 @@ public class BluetoothPeripheral {
 
                 propertiesChanged.getPropertiesChanged().forEach((s, value) -> handlePropertyChangedForCharacteristic(bluetoothGattCharacteristic, s, value));
             } else if (propertiesChanged.getInterfaceName().equals(BLUEZ_DEVICE_INTERFACE)) {
-//                        System.out.println("devicehandler: handle path " + propertiesChanged.getPath());
-//                        System.out.println("interface: " + propertiesChanged.getInterfaceName());
-//                        System.out.println("changed " + propertiesChanged.getPropertiesChanged().keySet());
-//                        System.out.println("props removed " + propertiesChanged.getPropertiesRemoved());
+
                 propertiesChanged.getPropertiesChanged().forEach((s, variant) -> handlePropertyChangeForDevice(s, variant));
 
             }

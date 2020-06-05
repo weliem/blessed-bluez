@@ -228,7 +228,7 @@ public class BluetoothCentral {
     }
 
     private void onScanResult(BluetoothPeripheral peripheral, ScanResult scanResult) {
-        if (isScanning) {
+        if (isScanning && !isStoppingScan) {
             callBackHandler.post(() -> {
                 if (bluetoothCentralCallback != null) {
                     bluetoothCentralCallback.onDiscoveredPeripheral(peripheral, scanResult);
@@ -362,7 +362,7 @@ public class BluetoothCentral {
                                 public void run() {
                                     completedCommand();
                                 }
-                            }, 100L);
+                            }, 200L);
                         }
                     } else if (s.equalsIgnoreCase(POWERED) && value.getValue() instanceof Boolean) {
                         isPowered = (Boolean) value.getValue();
@@ -453,6 +453,7 @@ public class BluetoothCentral {
 
             // Start the discovery
             try {
+                HBLogger.i(TAG, "Starting scan");
                 currentCommand = DISCOVERING;
                 adapter.startDiscovery();
                 scanCounter++;
@@ -486,6 +487,9 @@ public class BluetoothCentral {
         // Make sure the adapter is on
         if (!isPowered) return;
 
+        // Set flag to true in order to stop sending scan results
+        isStoppingScan = true;
+
         boolean result = commandQueue.add(() -> {
             // Check if we are scanning
             isScanning = adapter.isDiscovering();
@@ -494,11 +498,9 @@ public class BluetoothCentral {
                 return;
             }
 
-            // Set flag to true in order to stop sending scan results
-            isStoppingScan = true;
-
             // Stop the discovery
             try {
+                HBLogger.i(TAG, "Stopping scan");
                 currentCommand = DISCOVERING;
                 cancelTimeoutTimer();
                 adapter.stopDiscovery();

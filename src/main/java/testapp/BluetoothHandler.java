@@ -166,7 +166,7 @@ public class BluetoothHandler {
         @Override
         public void onDiscoveredPeripheral(final @NotNull BluetoothPeripheral peripheral, final @NotNull ScanResult scanResult) {
 //            HBLogger.i(TAG, String.format("Found %s (%s)", peripheral.getName(), peripheral.getAddress()));
-            HBLogger.i(TAG, scanResult.toString());
+ //           HBLogger.i(TAG, scanResult.toString());
             if (peripheral.getName() != null && (peripheral.getName().startsWith("IH") || peripheral.getName().startsWith("TAID"))) {
                 central.stopScanning();
                 central.connectPeripheral(peripheral, peripheralCallback);
