@@ -241,64 +241,64 @@ public class BluetoothCentral {
     private final AbstractInterfacesAddedHandler interfacesAddedHandler = new AbstractInterfacesAddedHandler() {
         @Override
         public void handle(ObjectManager.InterfacesAdded interfacesAdded) {
-            Map<String, Map<String, Variant<?>>> interfaces = interfacesAdded.getInterfaces();
-            interfaces.forEach((key, value) -> {
+            interfacesAdded.getInterfaces().forEach((key, value) -> {
                 if (key.equalsIgnoreCase(BLUEZ_DEVICE_INTERFACE)) {
-                    final String deviceAddress;
-                    final String deviceName;
-                    final int rssi;
-                    ArrayList<String> serviceUUIDs = null;
-
-                    // Grab address
-                    if (value.get(ADDRESS).getValue() instanceof String) {
-                        deviceAddress = (String) value.get(ADDRESS).getValue();
-                    } else {
-                        // There MUST be an address, so if not bail out...
-                        return;
-                    }
-
-                    // Get the device
-                    final BluezDevice device = getDeviceByAddress(adapter, deviceAddress);
-                    if (device == null) return;
-
-                    // Grab name
-                    if (value.get(NAME) != null) {
-                        if (value.get(NAME).getValue() instanceof String) {
-                            deviceName = (String) value.get(NAME).getValue();
-                        } else {
-                            deviceName = null;
-                        }
-                    } else {
-                        deviceName = null;
-                    }
-
-                    // Grab service UUIDs
-                    if ((value.get(SERVICE_UUIDS) != null) && (value.get(SERVICE_UUIDS).getValue() instanceof ArrayList)) {
-                        serviceUUIDs = (ArrayList) value.get(SERVICE_UUIDS).getValue();
-                    }
-
-                    if ((value.get(RSSI) != null) && (value.get(RSSI).getValue() instanceof Short)) {
-                        rssi = (Short) value.get(RSSI).getValue();
-                    } else {
-                        rssi = -100;
-                    }
-
-                    // Convert the service UUIDs
-                    final String[] finalServiceUUIDs;
-                    if (serviceUUIDs != null) {
-                        finalServiceUUIDs = serviceUUIDs.toArray(new String[0]);
-                    } else {
-                        finalServiceUUIDs = null;
-                    }
-
-                    // Create ScanResult
-                    final ScanResult scanResult = new ScanResult(deviceName, deviceAddress, finalServiceUUIDs, rssi, device.getManufacturerData(), device.getServiceData());
-                    final BluetoothPeripheral peripheral = new BluetoothPeripheral(device, deviceName, deviceAddress, internalCallback, null, callBackHandler);
-                    onScanResult(peripheral, scanResult);
+                    handleInterfaceAddedForDevice(value);
                 }
             });
         }
     };
+
+    private void handleInterfaceAddedForDevice(Map<String, Variant<?>> value) {
+        final String deviceAddress;
+        final String deviceName;
+        final int rssi;
+        ArrayList<String> serviceUUIDs = null;
+
+        // Grab address
+        if ((value.get(ADDRESS) != null) && (value.get(ADDRESS).getValue() instanceof String)) {
+            deviceAddress = (String) value.get(ADDRESS).getValue();
+        } else {
+            // There MUST be an address, so if not bail out...
+            return;
+        }
+
+        // Get the device
+        final BluezDevice device = getDeviceByAddress(adapter, deviceAddress);
+        if (device == null) return;
+
+        // Grab name
+        if ((value.get(NAME) != null) && (value.get(NAME).getValue() instanceof String)) {
+            deviceName = (String) value.get(NAME).getValue();
+        } else {
+            deviceName = null;
+        }
+
+        // Grab service UUIDs
+        if ((value.get(SERVICE_UUIDS) != null) && (value.get(SERVICE_UUIDS).getValue() instanceof ArrayList)) {
+            serviceUUIDs = (ArrayList) value.get(SERVICE_UUIDS).getValue();
+        }
+
+        // Grab RSSI
+        if ((value.get(RSSI) != null) && (value.get(RSSI).getValue() instanceof Short)) {
+            rssi = (Short) value.get(RSSI).getValue();
+        } else {
+            rssi = -100;
+        }
+
+        // Convert the service UUIDs
+        final String[] finalServiceUUIDs;
+        if (serviceUUIDs != null) {
+            finalServiceUUIDs = serviceUUIDs.toArray(new String[0]);
+        } else {
+            finalServiceUUIDs = null;
+        }
+
+        // Create ScanResult
+        final ScanResult scanResult = new ScanResult(deviceName, deviceAddress, finalServiceUUIDs, rssi, device.getManufacturerData(), device.getServiceData());
+        final BluetoothPeripheral peripheral = new BluetoothPeripheral(device, deviceName, deviceAddress, internalCallback, null, callBackHandler);
+        onScanResult(peripheral, scanResult);
+    }
 
     private final AbstractPropertiesChangedHandler propertiesChangedHandler = new AbstractPropertiesChangedHandler() {
         @Override
