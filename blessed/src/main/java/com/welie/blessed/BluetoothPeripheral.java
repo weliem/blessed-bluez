@@ -631,16 +631,9 @@ public class BluetoothPeripheral {
 //        System.out.println("Changed variant sig " + value.getSig());
 //        System.out.println("Changed variant value " + value.getValue());
 
-        final boolean propertyValue;
-        if (value.getValue() instanceof Boolean) {
-            propertyValue = (Boolean) value.getValue();
-        } else {
-            propertyValue = false;
-        }
-
         switch (propertyName) {
             case PROPERTY_SERVICES_RESOLVED:
-                if (propertyValue) {
+                if (value.getValue().equals(true)) {
                     cancelServiceDiscoveryTimer();
                     servicesResolved();
                 } else {
@@ -648,7 +641,7 @@ public class BluetoothPeripheral {
                 }
                 break;
             case PROPERTY_CONNECTED:
-                if (propertyValue) {
+                if (value.getValue().equals(true)) {
                     long timePassed = System.currentTimeMillis() - connectTimestamp;
                     HBLogger.i(TAG, String.format("connected to '%s' (%s) in %.1fs", deviceName, isPaired() ? "BONDED" : "BOND_NONE", timePassed / 1000.0f));
                     gattCallback.onConnectionStateChanged(ConnectionState.Connected, GATT_SUCCESS);
@@ -665,7 +658,7 @@ public class BluetoothPeripheral {
                 }
                 break;
             case PROPERTY_PAIRED:
-                if (propertyValue) {
+                if (value.getValue().equals(true)) {
                     isBonded = true;
                     gattCallback.onPaired();
                 } else {
