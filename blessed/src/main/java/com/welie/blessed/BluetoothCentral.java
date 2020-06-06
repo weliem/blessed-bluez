@@ -47,6 +47,7 @@ public class BluetoothCentral {
     private static final long MINUTE = TimeUnit.MINUTES.toMillis(1);
     private static final int MAX_CONNECTED_PERIPHERALS = 7;
     private static final int ADDRESS_LENGTH = 17;
+    private static final short DISCOVERY_RSSI_THRESHOLD = -70;
 
     // Cycle the adapter power when threshold is reached
     private static final int CYCLE_ADAPTER_THRESHOLD = 3600;
@@ -78,18 +79,9 @@ public class BluetoothCentral {
     private final InternalCallback internalCallback = new InternalCallback() {
         @Override
         public void connected(BluetoothPeripheral device) {
-
-            // Do some administration work
             connectedPeripherals.put(device.getAddress(), device);
             unconnectedPeripherals.remove(device.getAddress());
 
-            if (connectedPeripherals.size() == MAX_CONNECTED_PERIPHERALS) {
-                HBLogger.w(TAG, "maximum amount (7) of connected peripherals reached");
-            }
-
-            HBLogger.i(TAG, String.format("connected devices: %d", connectedPeripherals.size()));
-
-            // Inform the listener that we are now connected
             callBackHandler.post(() -> {
                 if (bluetoothCentralCallback != null) {
                     bluetoothCentralCallback.onConnectedPeripheral(device);
@@ -110,31 +102,20 @@ public class BluetoothCentral {
 
         @Override
         public void connectFailed(BluetoothPeripheral device) {
-            HBLogger.e(TAG, String.format("ERROR: Connection to %s failed", device.getAddress()));
-
-            // Remove it from the connected peripherals map, in case it still got there
             connectedPeripherals.remove(device.getAddress());
             unconnectedPeripherals.remove(device.getAddress());
 
-            HBLogger.i(TAG, String.format("connected devices: %d", connectedPeripherals.size()));
-
-            // Inform the handler that the connection failed
-            if (bluetoothCentralCallback != null) {
-                bluetoothCentralCallback.onConnectionFailed(device, 0);
-            } else {
-                HBLogger.e(TAG, "ERROR: no callback for 'connectFailed' registered");
-            }
+            callBackHandler.post(() -> {
+                if (bluetoothCentralCallback != null) {
+                    bluetoothCentralCallback.onConnectionFailed(device, 0);
+                }
+            });
         }
 
         @Override
         public void disconnected(BluetoothPeripheral device) {
-            String deviceAddress = device.getAddress();
-
-            // Remove it from the connected peripherals map
-            connectedPeripherals.remove(deviceAddress);
-            unconnectedPeripherals.remove(deviceAddress);
-
-            HBLogger.i(TAG, String.format("connected devices: %d", connectedPeripherals.size()));
+            connectedPeripherals.remove(device.getAddress());
+            unconnectedPeripherals.remove(device.getAddress());
 
             // Remove unbonded devices to make setting notifications work (Bluez issue)
             if (!device.isPaired()) {
@@ -151,11 +132,10 @@ public class BluetoothCentral {
     };
 
     public BluetoothCentral(@NotNull BluetoothCentralCallback bluetoothCentralCallback, @Nullable Handler handler) {
-        try {
-            // Process arguments
-            this.bluetoothCentralCallback = bluetoothCentralCallback;
-            this.callBackHandler = (handler != null) ? handler : new Handler("Central-callBackHandler");
+        this.bluetoothCentralCallback = bluetoothCentralCallback;
+        this.callBackHandler = (handler != null) ? handler : new Handler("Central-callBackHandler");
 
+        try {
             // Connect to the DBus
             dbusConnection = DBusConnection.newConnection(DBusConnection.DBusBusType.SYSTEM);
 
@@ -192,9 +172,8 @@ public class BluetoothCentral {
 
     public void scanForPeripherals() {
         // Setup scan filter
-        short rssiTreshold = -70;
         scanFilters.put(DiscoveryFilter.Transport, DiscoveryTransport.LE);
-        scanFilters.put(DiscoveryFilter.RSSI, rssiTreshold);
+        scanFilters.put(DiscoveryFilter.RSSI, DISCOVERY_RSSI_THRESHOLD);
         scanFilters.put(DiscoveryFilter.DuplicateData, true);
 
         // Start scan
@@ -213,9 +192,8 @@ public class BluetoothCentral {
         String[] scanUUIDs = uuidStrings.toArray(new String[0]);
 
         // Setup scan filter
-        short rssiTreshold = -70;
         scanFilters.put(DiscoveryFilter.Transport, DiscoveryTransport.LE);
-        scanFilters.put(DiscoveryFilter.RSSI, rssiTreshold);
+        scanFilters.put(DiscoveryFilter.RSSI, DISCOVERY_RSSI_THRESHOLD);
         scanFilters.put(DiscoveryFilter.DuplicateData, true);
         if (scanUUIDs.length > 0) {
             scanFilters.put(DiscoveryFilter.UUIDs, scanUUIDs);
