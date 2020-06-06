@@ -122,7 +122,6 @@ public class BluetoothCentral {
                 removeDevice(device);
             }
 
-            // Trigger callback
             callBackHandler.post(() -> {
                 if (bluetoothCentralCallback != null) {
                     bluetoothCentralCallback.onDisconnectedPeripheral(device, 0);
