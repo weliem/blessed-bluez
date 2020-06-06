@@ -86,12 +86,9 @@ public class BluetoothCentral {
             HBLogger.i(TAG, String.format("connected devices: %d", connectedPeripherals.size()));
 
             // Inform the listener that we are now connected
-            callBackHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    if (bluetoothCentralCallback != null) {
-                        bluetoothCentralCallback.onConnectedPeripheral(device);
-                    }
+            callBackHandler.post(() -> {
+                if (bluetoothCentralCallback != null) {
+                    bluetoothCentralCallback.onConnectedPeripheral(device);
                 }
             });
         }
@@ -141,12 +138,9 @@ public class BluetoothCentral {
             }
 
             // Trigger callback
-            callBackHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    if (bluetoothCentralCallback != null) {
-                        bluetoothCentralCallback.onDisconnectedPeripheral(device, 0);
-                    }
+            callBackHandler.post(() -> {
+                if (bluetoothCentralCallback != null) {
+                    bluetoothCentralCallback.onDisconnectedPeripheral(device, 0);
                 }
             });
         }
