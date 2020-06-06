@@ -253,7 +253,8 @@ public class BluetoothCentral {
                     if (value.get(ADDRESS).getValue() instanceof String) {
                         deviceAddress = (String) value.get(ADDRESS).getValue();
                     } else {
-                        deviceAddress = null;
+                        // There MUST be an address, so if not bail out...
+                        return;
                     }
 
                     // Get the device
