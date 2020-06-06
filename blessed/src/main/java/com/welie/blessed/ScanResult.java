@@ -9,13 +9,15 @@ public class ScanResult {
     private final String[] uuids;
     private final int rssi;
     private final Map<Integer, byte[]> manufacturerData;
+    private final Map<String, byte[]> serviceData;
 
-    public ScanResult(String deviceName, String deviceAddress, String[] uuids, int rssi, Map<Integer, byte[]> manufacturerData ) {
+    public ScanResult(String deviceName, String deviceAddress, String[] uuids, int rssi, Map<Integer, byte[]> manufacturerData, Map<String, byte[]> serviceData ) {
         this.name = deviceName;
         this.address = deviceAddress;
         this.uuids = uuids;
         this.rssi = rssi;
         this.manufacturerData = manufacturerData;
+        this.serviceData = serviceData;
     }
 
     public String getAddress() {
@@ -42,6 +44,7 @@ public class ScanResult {
                 ", uuids=" + Arrays.toString(uuids) +
                 ", rssi=" + rssi +
                 ", manufacturerData=" + manufacturerData +
+                ", serviceData=" + serviceData +
                 '}';
     }
 }
