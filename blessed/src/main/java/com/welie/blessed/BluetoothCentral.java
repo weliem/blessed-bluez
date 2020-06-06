@@ -307,9 +307,6 @@ public class BluetoothCentral {
             // See if this property is for a device
             if (propertiesChanged.getInterfaceName().equals(BLUEZ_DEVICE_INTERFACE)) {
 
-                // Make sure the propertiesChanged is not empty. Note that we also get called because of propertiesRemoved.
-                if (propertiesChanged.getPropertiesChanged().isEmpty()) return;
-
                 // Make sure we are still scanning before handling this propertyChanged event
                 if ((!isScanning) || isStoppingScan) {
                     handleDeviceSignalWhenNotScanning(propertiesChanged);

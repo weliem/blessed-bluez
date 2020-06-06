@@ -37,6 +37,9 @@ public class BluezSignalHandler {
     private final AbstractPropertiesChangedHandler signalHandler = new AbstractPropertiesChangedHandler() {
         @Override
         public void handle(Properties.PropertiesChanged propertiesChanged) {
+            // Make sure the propertiesChanged is not empty. Note that we also get called because of propertiesRemoved.
+            if (propertiesChanged.getPropertiesChanged().isEmpty()) return;
+
             // Send the signal to all centrals
             for(BluetoothCentral central : centralList) {
                   central.handleSignal(propertiesChanged);
