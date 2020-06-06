@@ -242,9 +242,12 @@ public class BluezDevice extends AbstractBluetoothObject {
      * </p>
      * @return map of string/bytearray, maybe null
      */
-    @SuppressWarnings("unchecked")
     public Map<String, byte[]> getServiceData() {
-        return getTyped("ServiceData", DBusMap.class);
+        try {
+            return getTyped("ServiceData", DBusMap.class);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public Map<String, byte[]> getAdvertisementData() {
