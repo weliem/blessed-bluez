@@ -55,7 +55,6 @@ public class BluetoothCentral {
     private static final String SERVICE_DATA = "ServiceData";
 
 
-
     static final String DBUS_BUSNAME = "org.freedesktop.DBus";
     static final String BLUEZ_DBUS_BUSNAME = "org.bluez";
     static final String BLUEZ_DEVICE_INTERFACE = "org.bluez.Device1";
@@ -303,106 +302,110 @@ public class BluetoothCentral {
     private final AbstractPropertiesChangedHandler propertiesChangedHandler = new AbstractPropertiesChangedHandler() {
         @Override
         public void handle(Properties.PropertiesChanged propertiesChanged) {
-
-            // See if this property is for a device
-            if (propertiesChanged.getInterfaceName().equals(BLUEZ_DEVICE_INTERFACE)) {
-
-                // Make sure we are still scanning before handling this propertyChanged event
-                if ((!isScanning) || isStoppingScan) {
-                    handleDeviceSignalWhenNotScanning(propertiesChanged);
-                    return;
-                }
-
-                // Make sure we ignore some events that are not indicators for new devices found
-                propertiesChanged.getPropertiesChanged().forEach((s, value) -> {
-                    if (s.equalsIgnoreCase(CONNECTED) ||
-                            s.equalsIgnoreCase(SERVICES_RESOLVED) ||
-                            s.equalsIgnoreCase(PAIRED)) {
+            switch (propertiesChanged.getInterfaceName()) {
+                case BLUEZ_DEVICE_INTERFACE:
+                    if ((!isScanning) || isStoppingScan) {
+                        handleDeviceSignalWhenNotScanning(propertiesChanged);
                         return;
                     }
-                });
-
-                // Get the device object
-                final BluezDevice foundDevice = getDeviceByPath(adapter, propertiesChanged.getPath());
-                if (foundDevice == null) return;
-
-                // Get device properties
-                final String deviceAddress;
-                final String deviceName;
-                final String[] serviceUUIDs;
-                final int rssi;
-                final Map<Integer, byte[]> manufacturerData;
-                try {
-                    deviceAddress = foundDevice.getAddress();
-                    deviceName = foundDevice.getName();
-                    serviceUUIDs = foundDevice.getUuids();
-                    rssi = foundDevice.getRssi();
-                    manufacturerData = foundDevice.getManufacturerData();
-                } catch (Exception e) {
-                    return;
-                }
-
-                // Propagate found device
-                // Create ScanResult
-                final ScanResult scanResult = new ScanResult(deviceName, deviceAddress, serviceUUIDs, rssi, manufacturerData);
-                final BluetoothPeripheral peripheral = new BluetoothPeripheral(foundDevice, deviceName, deviceAddress, internalCallback, null, callBackHandler);
-                onScanResult(peripheral, scanResult);
-            } else if (propertiesChanged.getInterfaceName().equals(BLUEZ_ADAPTER_INTERFACE)) {
-                propertiesChanged.getPropertiesChanged().forEach((s, value) -> {
-                    if (s.equalsIgnoreCase(DISCOVERING) && value.getValue() instanceof Boolean) {
-                        isScanning = (Boolean) value.getValue();
-                        if (isScanning) isStoppingScan = false;
-                        HBLogger.i(TAG, String.format("scan %s", isScanning ? "started" : "stopped"));
-                        if (currentCommand.equalsIgnoreCase(DISCOVERING)) {
-                            callBackHandler.postDelayed(new Runnable() {
-                                @Override
-                                public void run() {
-                                    completedCommand();
-                                }
-                            }, 200L);
-                        }
-                    } else if (s.equalsIgnoreCase(POWERED) && value.getValue() instanceof Boolean) {
-                        isPowered = (Boolean) value.getValue();
-                        HBLogger.i(TAG, String.format("powered %s", isPowered ? "on" : "off"));
-
-                        // Complete the command and add a delay if needed
-                        long delay = isPowered ? 0 : 4 * MINUTE;
-                        callBackHandler.postDelayed(() -> {
-                            if (currentCommand.equalsIgnoreCase(POWERED)) completedCommand();
-                        }, delay);
-                    }
-                });
-            }
-        }
-
-        private void handleDeviceSignalWhenNotScanning(Properties.PropertiesChanged propertiesChanged) {
-            // Get the device object
-            final BluezDevice foundDevice = getDeviceByPath(adapter, propertiesChanged.getPath());
-            if (foundDevice == null) return;
-
-            final String deviceAddress;
-            try {
-                deviceAddress = foundDevice.getAddress();
-
-                // See if this is a device we are trying to connect or pair
-                if (deviceAddress.equalsIgnoreCase(currentDeviceAddress)) {
-                    propertiesChanged.getPropertiesChanged().forEach((s, value) -> {
-                        if (value.getValue() instanceof Boolean &&
-                                ((s.equalsIgnoreCase(CONNECTED) && currentCommand.equalsIgnoreCase(CONNECTED)) ||
-                                        (s.equalsIgnoreCase(PAIRED) && currentCommand.equalsIgnoreCase(PAIRED)))) {
- //                           HBLogger.i(TAG, String.format("Completed %s", s));
-                            completedCommand();
-                        }
-                    });
-                }
-            } catch (Exception e) {
-                // Ignore this exception, the device is probably removed already
+                    handlePropertiesChangedForDevice(propertiesChanged);
+                    break;
+                case BLUEZ_ADAPTER_INTERFACE:
+                    propertiesChanged.getPropertiesChanged().forEach((s, value) -> handlePropertiesChangeForAdapter(s, value));
+                    break;
+                default:
             }
         }
     };
 
     void handleSignal(Properties.PropertiesChanged propertiesChanged) {
         propertiesChangedHandler.handle(propertiesChanged);
+    }
+
+    private void handlePropertiesChangedForDevice(Properties.PropertiesChanged propertiesChanged) {
+        // Make sure we ignore some events that are not indicators for new devices found
+        propertiesChanged.getPropertiesChanged().forEach((s, value) -> {
+            if (s.equalsIgnoreCase(CONNECTED) ||
+                    s.equalsIgnoreCase(SERVICES_RESOLVED) ||
+                    s.equalsIgnoreCase(PAIRED)) {
+                return;
+            }
+        });
+
+        // Get the device object
+        final BluezDevice foundDevice = getDeviceByPath(adapter, propertiesChanged.getPath());
+        if (foundDevice == null) return;
+
+        // Get device properties
+        final String deviceAddress;
+        final String deviceName;
+        final String[] serviceUUIDs;
+        final int rssi;
+        final Map<Integer, byte[]> manufacturerData;
+        try {
+            deviceAddress = foundDevice.getAddress();
+            deviceName = foundDevice.getName();
+            serviceUUIDs = foundDevice.getUuids();
+            rssi = foundDevice.getRssi();
+            manufacturerData = foundDevice.getManufacturerData();
+        } catch (Exception e) {
+            return;
+        }
+
+        // Propagate found device
+        // Create ScanResult
+        final ScanResult scanResult = new ScanResult(deviceName, deviceAddress, serviceUUIDs, rssi, manufacturerData);
+        final BluetoothPeripheral peripheral = new BluetoothPeripheral(foundDevice, deviceName, deviceAddress, internalCallback, null, callBackHandler);
+        onScanResult(peripheral, scanResult);
+    }
+
+    private void handleDeviceSignalWhenNotScanning(Properties.PropertiesChanged propertiesChanged) {
+        // Get the device object
+        final BluezDevice foundDevice = getDeviceByPath(adapter, propertiesChanged.getPath());
+        if (foundDevice == null) return;
+
+        final String deviceAddress;
+        try {
+            deviceAddress = foundDevice.getAddress();
+
+            // See if this is a device we are trying to connect or pair
+            if (deviceAddress.equalsIgnoreCase(currentDeviceAddress)) {
+                propertiesChanged.getPropertiesChanged().forEach((s, value) -> {
+                    if (value.getValue() instanceof Boolean &&
+                            ((s.equalsIgnoreCase(CONNECTED) && currentCommand.equalsIgnoreCase(CONNECTED)) ||
+                                    (s.equalsIgnoreCase(PAIRED) && currentCommand.equalsIgnoreCase(PAIRED)))) {
+                        //                           HBLogger.i(TAG, String.format("Completed %s", s));
+                        completedCommand();
+                    }
+                });
+            }
+        } catch (Exception e) {
+            // Ignore this exception, the device is probably removed already
+        }
+    }
+
+    private void handlePropertiesChangeForAdapter(String propertyName, Variant<?> value) {
+        switch (propertyName) {
+            case DISCOVERING:
+                isScanning = (Boolean) value.getValue();
+                if (isScanning) isStoppingScan = false;
+                HBLogger.i(TAG, String.format("scan %s", isScanning ? "started" : "stopped"));
+                if (currentCommand.equalsIgnoreCase(DISCOVERING)) {
+                    callBackHandler.postDelayed(this::completedCommand, 200L);
+                }
+                break;
+            case POWERED:
+                isPowered = (Boolean) value.getValue();
+                HBLogger.i(TAG, String.format("powered %s", isPowered ? "on" : "off"));
+
+                // Complete the command and add a delay if needed
+                long delay = isPowered ? 0 : 4 * MINUTE;
+                callBackHandler.postDelayed(() -> {
+                    if (currentCommand.equalsIgnoreCase(POWERED)) completedCommand();
+                }, delay);
+                break;
+            default:
+        }
     }
 
     private void setScanFilter(@NotNull Map<DiscoveryFilter, Object> filter) throws BluezInvalidArgumentsException, BluezNotReadyException, BluezNotSupportedException, BluezFailedException {
