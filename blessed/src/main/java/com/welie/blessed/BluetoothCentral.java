@@ -24,36 +24,48 @@ public class BluetoothCentral {
 
     private static final String TAG = BluetoothCentral.class.getSimpleName();
 
-    private BluetoothCentralCallback bluetoothCentralCallback;
-    private Handler callBackHandler;
     private DBusConnection dbusConnection;
     private BluezAdapter adapter;
+    private BluetoothCentralCallback bluetoothCentralCallback;
+    private Handler callBackHandler;
+    private final Handler timeoutHandler = new Handler(this.getClass().getSimpleName());
+    private final Handler queueHandler = new Handler("CentralQueue");
+    private Runnable timeoutRunnable;
     private volatile boolean isScanning = false;
     private volatile boolean isPowered = false;
     private volatile boolean isStoppingScan = false;
+    private volatile boolean commandQueueBusy;
+    private int scanCounter = 0;
     private final Map<DiscoveryFilter, Object> scanFilters = new EnumMap<>(DiscoveryFilter.class);
-    private static final long MINUTE = TimeUnit.MINUTES.toMillis(1);
-
-    // Command queue
     private final Queue<Runnable> commandQueue = new ConcurrentLinkedQueue<>();
-    private boolean commandQueueBusy;
-    private final Handler queueHandler = new Handler("CentralQueue");
     private String currentCommand;
     private String currentDeviceAddress;
+    private final Object connectLock = new Object();
+    private final Map<String, BluetoothPeripheral> connectedPeripherals = new ConcurrentHashMap<>();
+    private final Map<String, BluetoothPeripheral> unconnectedPeripherals = new ConcurrentHashMap<>();
+
+    private static final long MINUTE = TimeUnit.MINUTES.toMillis(1);
+    private static final int MAX_CONNECTED_PERIPHERALS = 7;
+    private static final int ADDRESS_LENGTH = 17;
+
+    // Cycle the adapter power when threshold is reached
+    private static final int CYCLE_ADAPTER_THRESHOLD = 3600;
+
+    // Scan in intervals. Make sure it is less than 10seconds to avoid issues with Bluez internal scanning
+    private static final long SCAN_INTERNAL = TimeUnit.SECONDS.toMillis(8);
 
     // Bluez property strings
-    private static final String DISCOVERING = "Discovering";
-    private static final String POWERED = "Powered";
-    private static final String CONNECTED = "Connected";
-    private static final String SERVICES_RESOLVED = "ServicesResolved";
-    private static final String PAIRED = "Paired";
-    private static final String SERVICE_UUIDS = "UUIDs";
-    private static final String NAME = "Name";
-    private static final String ADDRESS = "Address";
-    private static final String RSSI = "RSSI";
-    private static final String MANUFACTURER_DATA = "ManufacturerData";
-    private static final String SERVICE_DATA = "ServiceData";
-
+    static final String DISCOVERING = "Discovering";
+    static final String POWERED = "Powered";
+    static final String CONNECTED = "Connected";
+    static final String SERVICES_RESOLVED = "ServicesResolved";
+    static final String PAIRED = "Paired";
+    static final String SERVICE_UUIDS = "UUIDs";
+    static final String NAME = "Name";
+    static final String ADDRESS = "Address";
+    static final String RSSI = "RSSI";
+    static final String MANUFACTURER_DATA = "ManufacturerData";
+    static final String SERVICE_DATA = "ServiceData";
 
     static final String DBUS_BUSNAME = "org.freedesktop.DBus";
     static final String BLUEZ_DBUS_BUSNAME = "org.bluez";
@@ -61,17 +73,9 @@ public class BluetoothCentral {
     static final String BLUEZ_ADAPTER_INTERFACE = "org.bluez.Adapter1";
     static final String BLUEZ_GATT_INTERFACE = "org.bluez.GattManager1";
 
-    // Strings
     private static final String ENQUEUE_ERROR = "ERROR: Could not enqueue stop scanning command";
 
-    private final Object connectLock = new Object();
-    private final Map<String, BluetoothPeripheral> connectedPeripherals = new ConcurrentHashMap<>();
-    private final Map<String, BluetoothPeripheral> unconnectedPeripherals = new ConcurrentHashMap<>();
-    private static final int MAX_CONNECTED_PERIPHERALS = 7;
-    private static final int ADDRESS_LENGTH = 17;
-
     private final InternalCallback internalCallback = new InternalCallback() {
-
         @Override
         public void connected(BluetoothPeripheral device) {
 
@@ -197,6 +201,7 @@ public class BluetoothCentral {
         startScanning();
     }
 
+    @SuppressWarnings("unused")
     public void scanForPeripheralsWithServices(final UUID[] serviceUUIDs) {
         // Convert UUID array to string array
         ArrayList<String> uuidStrings = new ArrayList<>();
@@ -511,16 +516,6 @@ public class BluetoothCentral {
         }
     }
 
-    private int scanCounter = 0;
-    private final Handler timeoutHandler = new Handler(this.getClass().getSimpleName());
-    private Runnable timeoutRunnable;
-
-    // Cycle the adapter power when threshold is reached
-    private static final int CYCLE_ADAPTER_THRESHOLD = 3600;
-
-    // Scan in intervals. Make sure it is less than 10seconds to avoid issues with Bluez internal scanning
-    private static final long SCAN_INTERNAL = TimeUnit.SECONDS.toMillis(8);
-
     private void startScanTimer() {
         // Cancel runnable if it exists
         cancelTimeoutTimer();
@@ -553,6 +548,7 @@ public class BluetoothCentral {
         }
     }
 
+    @SuppressWarnings("unused")
     public void adapterOn() {
         boolean result = commandQueue.add(() -> {
 
@@ -574,6 +570,7 @@ public class BluetoothCentral {
         }
     }
 
+    @SuppressWarnings("unused")
     public void adapterOff() {
         boolean result = commandQueue.add(() -> {
             if (adapter.isPowered()) {
@@ -628,6 +625,7 @@ public class BluetoothCentral {
         }
     }
 
+    @SuppressWarnings("unused")
     public void cancelConnection(final BluetoothPeripheral peripheral) {
         if (peripheral.getConnectionState() == ConnectionState.Connected) {
             currentDeviceAddress = peripheral.getAddress();
@@ -641,6 +639,7 @@ public class BluetoothCentral {
      * @param peripheralAddress mac address
      * @return a BluetoothPeripheral object matching the specified mac address or null if it was not found
      */
+    @SuppressWarnings("unused")
     public BluetoothPeripheral getPeripheral(String peripheralAddress) {
         if (!checkBluetoothAddress(peripheralAddress)) {
             HBLogger.e(TAG, String.format("%s is not a valid address. Make sure all alphabetic characters are uppercase.", peripheralAddress));
@@ -692,6 +691,7 @@ public class BluetoothCentral {
      *
      * @return list of connected peripherals
      */
+    @SuppressWarnings("unused")
     public List<BluetoothPeripheral> getConnectedPeripherals() {
         return new ArrayList<>(connectedPeripherals.values());
     }
@@ -750,7 +750,7 @@ public class BluetoothCentral {
         return new ArrayList<>(bluetoothAdaptersByAdapterName.values());
     }
 
-    private BluezDevice getDeviceByPath(@NotNull BluezAdapter adapter, @NotNull String devicePath) {
+    private @Nullable BluezDevice getDeviceByPath(@NotNull BluezAdapter adapter, @NotNull String devicePath) {
         Device1 device = DbusHelper.getRemoteObject(dbusConnection, devicePath, Device1.class);
         if (device != null) {
             return new BluezDevice(device, adapter, devicePath, dbusConnection);
@@ -766,7 +766,7 @@ public class BluetoothCentral {
     /*
      * Function to clean up device from Bluetooth cache
      */
-    protected void removeDevice(final BluetoothPeripheral device) {
+    protected void removeDevice(@NotNull final BluetoothPeripheral device) {
         BluezDevice bluetoothDevice = getDeviceByAddress(adapter, device.getAddress());
         if (bluetoothDevice == null) return;
 
@@ -782,9 +782,5 @@ public class BluetoothCentral {
                 HBLogger.e(TAG, "Error removing device");
             }
         }
-    }
-
-    public boolean isScanning() {
-        return isScanning;
     }
 }
