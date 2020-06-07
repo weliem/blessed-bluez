@@ -476,24 +476,13 @@ public class BluetoothCentral {
     }
 
     private void startScanTimer() {
-        // Cancel runnable if it exists
         cancelTimeoutTimer();
 
-        // Prepare runnable
         this.timeoutRunnable = () -> {
-            HBLogger.i(TAG, String.format("Scanning timeout, stopping scan (%d)", scanCounter));
+            HBLogger.i(TAG, String.format("scanning timeout, stopping scan (%d)", scanCounter));
             stopScanning();
             startScanning();
-
-            // See if we need to cycle the adapter
-//            if (scanCounter >= CYCLE_ADAPTER_THRESHOLD) {
-//                scanCounter = 0;
-//                adapterOff();
-//                adapterOn();
-//            }
         };
-
-        // Start timer
         timeoutHandler.postDelayed(timeoutRunnable, SCAN_INTERNAL);
     }
 
