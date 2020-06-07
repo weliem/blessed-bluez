@@ -165,6 +165,7 @@ public class BluetoothCentral {
 
     public void scanForPeripherals() {
         // Setup scan filter
+        scanFilters.clear();
         scanFilters.put(DiscoveryFilter.Transport, DiscoveryTransport.LE);
         scanFilters.put(DiscoveryFilter.RSSI, DISCOVERY_RSSI_THRESHOLD);
         scanFilters.put(DiscoveryFilter.DuplicateData, true);
@@ -176,13 +177,17 @@ public class BluetoothCentral {
     @SuppressWarnings("unused")
     public void scanForPeripheralsWithServices(final UUID[] serviceUUIDs) {
         // Setup service uuids
+        scanFilters.clear();
+        scanFilters.put(DiscoveryFilter.Transport, DiscoveryTransport.LE);
+        scanFilters.put(DiscoveryFilter.RSSI, DISCOVERY_RSSI_THRESHOLD);
+        scanFilters.put(DiscoveryFilter.DuplicateData, true);
         String[] scanUUIDs = convertUUIDArrayToStringArray(serviceUUIDs);
         if (scanUUIDs.length > 0) {
             scanFilters.put(DiscoveryFilter.UUIDs, scanUUIDs);
         }
 
         // Start scan
-        scanForPeripherals();
+        startScanning();
     }
 
     private String[] convertUUIDArrayToStringArray(final UUID[] uuidArray) {
