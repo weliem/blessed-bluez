@@ -20,14 +20,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
+import static com.welie.blessed.BluetoothPeripheral.*;
+
 public class BluetoothCentral {
 
     private static final String TAG = BluetoothCentral.class.getSimpleName();
 
     private DBusConnection dbusConnection;
     private BluezAdapter adapter;
-    private BluetoothCentralCallback bluetoothCentralCallback;
-    private Handler callBackHandler;
+    private final BluetoothCentralCallback bluetoothCentralCallback;
+    private final Handler callBackHandler;
     private final Handler timeoutHandler = new Handler(this.getClass().getSimpleName());
     private final Handler queueHandler = new Handler("CentralQueue");
     private Runnable timeoutRunnable;
@@ -40,47 +42,36 @@ public class BluetoothCentral {
     private final Queue<Runnable> commandQueue = new ConcurrentLinkedQueue<>();
     private String currentCommand;
     private String currentDeviceAddress;
-    private final Object connectLock = new Object();
     private final Map<String, BluetoothPeripheral> connectedPeripherals = new ConcurrentHashMap<>();
     private final Map<String, BluetoothPeripheral> unconnectedPeripherals = new ConcurrentHashMap<>();
 
     private static final long MINUTE = TimeUnit.MINUTES.toMillis(1);
-    private static final int MAX_CONNECTED_PERIPHERALS = 7;
     private static final int ADDRESS_LENGTH = 17;
     private static final short DISCOVERY_RSSI_THRESHOLD = -70;
-
-    // Cycle the adapter power when threshold is reached
-    private static final int CYCLE_ADAPTER_THRESHOLD = 3600;
 
     // Scan in intervals. Make sure it is less than 10seconds to avoid issues with Bluez internal scanning
     private static final long SCAN_INTERNAL = TimeUnit.SECONDS.toMillis(8);
 
-    // Bluez property strings
-    static final String DISCOVERING = "Discovering";
-    static final String POWERED = "Powered";
-    static final String CONNECTED = "Connected";
-    static final String SERVICES_RESOLVED = "ServicesResolved";
-    static final String PAIRED = "Paired";
-    static final String SERVICE_UUIDS = "UUIDs";
-    static final String NAME = "Name";
-    static final String ADDRESS = "Address";
-    static final String RSSI = "RSSI";
-    static final String MANUFACTURER_DATA = "ManufacturerData";
-    static final String SERVICE_DATA = "ServiceData";
+    // Bluez Adapter property strings
+    private static final String PROPERTY_DISCOVERING = "Discovering";
+    private static final String PROPERTY_POWERED = "Powered";
 
-    static final String DBUS_BUSNAME = "org.freedesktop.DBus";
-    static final String BLUEZ_DBUS_BUSNAME = "org.bluez";
-    static final String BLUEZ_DEVICE_INTERFACE = "org.bluez.Device1";
-    static final String BLUEZ_ADAPTER_INTERFACE = "org.bluez.Adapter1";
-    static final String BLUEZ_GATT_INTERFACE = "org.bluez.GattManager1";
+    // Bluez interface names
+    private static final String BLUEZ_ADAPTER_INTERFACE = "org.bluez.Adapter1";
 
     private static final String ENQUEUE_ERROR = "ERROR: Could not enqueue stop scanning command";
 
     private final InternalCallback internalCallback = new InternalCallback() {
         @Override
-        public void connected(BluetoothPeripheral device) {
-            connectedPeripherals.put(device.getAddress(), device);
-            unconnectedPeripherals.remove(device.getAddress());
+        public void connected(final BluetoothPeripheral device) {
+            final String deviceAddress = device.getAddress();
+            connectedPeripherals.put(deviceAddress, device);
+            unconnectedPeripherals.remove(deviceAddress);
+
+            // Complete the 'connect' command if this was the device we were connecting
+            if (currentCommand.equalsIgnoreCase(PROPERTY_CONNECTED) && deviceAddress.equalsIgnoreCase(currentDeviceAddress)) {
+                completedCommand();
+            }
 
             callBackHandler.post(() -> {
                 if (bluetoothCentralCallback != null) {
@@ -90,20 +81,26 @@ public class BluetoothCentral {
         }
 
         @Override
-        public void servicesDiscovered(BluetoothPeripheral device) {
+        public void servicesDiscovered(final BluetoothPeripheral device) {
             // TODO , is this needed?
             HBLogger.i(TAG, "service discovery succeeded");
         }
 
         @Override
-        public void serviceDiscoveryFailed(BluetoothPeripheral device) {
+        public void serviceDiscoveryFailed(final BluetoothPeripheral device) {
             HBLogger.i(TAG, "Service discovery failed");
         }
 
         @Override
-        public void connectFailed(BluetoothPeripheral device) {
-            connectedPeripherals.remove(device.getAddress());
-            unconnectedPeripherals.remove(device.getAddress());
+        public void connectFailed(final BluetoothPeripheral device) {
+            final String deviceAddress = device.getAddress();
+            connectedPeripherals.remove(deviceAddress);
+            unconnectedPeripherals.remove(deviceAddress);
+
+            // Complete the 'connect' command if this was the device we were connecting
+            if (currentCommand.equalsIgnoreCase(PROPERTY_CONNECTED) && deviceAddress.equalsIgnoreCase(currentDeviceAddress)) {
+                completedCommand();
+            }
 
             callBackHandler.post(() -> {
                 if (bluetoothCentralCallback != null) {
@@ -113,11 +110,12 @@ public class BluetoothCentral {
         }
 
         @Override
-        public void disconnected(BluetoothPeripheral device) {
-            connectedPeripherals.remove(device.getAddress());
-            unconnectedPeripherals.remove(device.getAddress());
+        public void disconnected(final BluetoothPeripheral device) {
+            final String deviceAddress = device.getAddress();
+            connectedPeripherals.remove(deviceAddress);
+            unconnectedPeripherals.remove(deviceAddress);
 
-            // Remove unbonded devices to make setting notifications work (Bluez issue)
+            // Remove unbonded devices from DBsus to make setting notifications work on reconnection (Bluez issue)
             if (!device.isPaired()) {
                 removeDevice(device);
             }
@@ -232,8 +230,8 @@ public class BluetoothCentral {
         ArrayList<String> serviceUUIDs = null;
 
         // Grab address
-        if ((value.get(ADDRESS) != null) && (value.get(ADDRESS).getValue() instanceof String)) {
-            deviceAddress = (String) value.get(ADDRESS).getValue();
+        if ((value.get(PROPERTY_ADDRESS) != null) && (value.get(PROPERTY_ADDRESS).getValue() instanceof String)) {
+            deviceAddress = (String) value.get(PROPERTY_ADDRESS).getValue();
         } else {
             // There MUST be an address, so if not bail out...
             return;
@@ -244,20 +242,20 @@ public class BluetoothCentral {
         if (device == null) return;
 
         // Grab name
-        if ((value.get(NAME) != null) && (value.get(NAME).getValue() instanceof String)) {
-            deviceName = (String) value.get(NAME).getValue();
+        if ((value.get(PROPERTY_NAME) != null) && (value.get(PROPERTY_NAME).getValue() instanceof String)) {
+            deviceName = (String) value.get(PROPERTY_NAME).getValue();
         } else {
             deviceName = null;
         }
 
         // Grab service UUIDs
-        if ((value.get(SERVICE_UUIDS) != null) && (value.get(SERVICE_UUIDS).getValue() instanceof ArrayList)) {
-            serviceUUIDs = (ArrayList) value.get(SERVICE_UUIDS).getValue();
+        if ((value.get(PROPERTY_SERVICE_UUIDS) != null) && (value.get(PROPERTY_SERVICE_UUIDS).getValue() instanceof ArrayList)) {
+            serviceUUIDs = (ArrayList) value.get(PROPERTY_SERVICE_UUIDS).getValue();
         }
 
         // Grab RSSI
-        if ((value.get(RSSI) != null) && (value.get(RSSI).getValue() instanceof Short)) {
-            rssi = (Short) value.get(RSSI).getValue();
+        if ((value.get(PROPERTY_RSSI) != null) && (value.get(PROPERTY_RSSI).getValue() instanceof Short)) {
+            rssi = (Short) value.get(PROPERTY_RSSI).getValue();
         } else {
             rssi = -100;
         }
@@ -281,13 +279,14 @@ public class BluetoothCentral {
         public void handle(Properties.PropertiesChanged propertiesChanged) {
             switch (propertiesChanged.getInterfaceName()) {
                 case BLUEZ_DEVICE_INTERFACE:
+                    // If we are not scanning, we ignore device propertiesChanged
+                    if ((!isScanning) || isStoppingScan) return;
+
+                    // Get the BluezDevice object
                     final BluezDevice bluezDevice = getDeviceByPath(adapter, propertiesChanged.getPath());
                     if (bluezDevice == null) return;
 
-                    if ((!isScanning) || isStoppingScan) {
-                        handlePropertiesChangedForDeviceWhenNotScanning(bluezDevice, propertiesChanged);
-                        return;
-                    }
+                    // Handle the propertiesChanged object
                     handlePropertiesChangedForDeviceWhenScanning(bluezDevice, propertiesChanged);
                     break;
                 case BLUEZ_ADAPTER_INTERFACE:
@@ -302,7 +301,7 @@ public class BluetoothCentral {
         propertiesChangedHandler.handle(propertiesChanged);
     }
 
-    private void handlePropertiesChangedForDeviceWhenScanning(BluezDevice bluezDevice, Properties.PropertiesChanged propertiesChanged) {
+    private void handlePropertiesChangedForDeviceWhenScanning(@NotNull BluezDevice bluezDevice, Properties.PropertiesChanged propertiesChanged) {
         // Since we are scanning any property change is an indication that we are seeing a device
         final String deviceAddress;
         final String deviceName;
@@ -326,41 +325,24 @@ public class BluetoothCentral {
         onScanResult(peripheral, scanResult);
     }
 
-    private void handlePropertiesChangedForDeviceWhenNotScanning(BluezDevice bluezDevice, Properties.PropertiesChanged propertiesChanged) {
-        try {
-            final String deviceAddress = bluezDevice.getAddress();
-            if (!deviceAddress.equalsIgnoreCase(currentDeviceAddress)) return;
-
-            propertiesChanged.getPropertiesChanged().forEach((s, value) -> {
-                if (value.getValue() instanceof Boolean &&
-                        ((s.equalsIgnoreCase(CONNECTED) && currentCommand.equalsIgnoreCase(CONNECTED)) ||
-                                (s.equalsIgnoreCase(PAIRED) && currentCommand.equalsIgnoreCase(PAIRED)))) {
-                    completedCommand();
-                }
-            });
-        } catch (Exception e) {
-            // Ignore this exception, the device is probably removed already
-        }
-    }
-
     private void handlePropertiesChangedForAdapter(String propertyName, Variant<?> value) {
         switch (propertyName) {
-            case DISCOVERING:
+            case PROPERTY_DISCOVERING:
                 isScanning = (Boolean) value.getValue();
                 if (isScanning) isStoppingScan = false;
                 HBLogger.i(TAG, String.format("scan %s", isScanning ? "started" : "stopped"));
-                if (currentCommand.equalsIgnoreCase(DISCOVERING)) {
+                if (currentCommand.equalsIgnoreCase(PROPERTY_DISCOVERING)) {
                     callBackHandler.postDelayed(this::completedCommand, 200L);
                 }
                 break;
-            case POWERED:
+            case PROPERTY_POWERED:
                 isPowered = (Boolean) value.getValue();
                 HBLogger.i(TAG, String.format("powered %s", isPowered ? "on" : "off"));
 
                 // Complete the command and add a delay if needed
                 long delay = isPowered ? 0 : 4 * MINUTE;
                 callBackHandler.postDelayed(() -> {
-                    if (currentCommand.equalsIgnoreCase(POWERED)) completedCommand();
+                    if (currentCommand.equalsIgnoreCase(PROPERTY_POWERED)) completedCommand();
                 }, delay);
                 break;
             default:
@@ -413,7 +395,7 @@ public class BluetoothCentral {
             // Start the discovery
             try {
                 HBLogger.i(TAG, "Starting scan");
-                currentCommand = DISCOVERING;
+                currentCommand = PROPERTY_DISCOVERING;
                 adapter.startDiscovery();
                 scanCounter++;
                 startScanTimer();
@@ -460,7 +442,7 @@ public class BluetoothCentral {
             // Stop the discovery
             try {
                 HBLogger.i(TAG, "Stopping scan");
-                currentCommand = DISCOVERING;
+                currentCommand = PROPERTY_DISCOVERING;
                 cancelTimeoutTimer();
                 adapter.stopDiscovery();
             } catch (BluezNotReadyException e) {
@@ -531,7 +513,7 @@ public class BluetoothCentral {
 
             if (!adapter.isPowered()) {
                 HBLogger.i(TAG, "Turning on adapter");
-                currentCommand = POWERED;
+                currentCommand = PROPERTY_POWERED;
                 adapter.setPowered(true);
             } else {
                 // If it is already on we won't receive a callback so just complete the command
@@ -552,7 +534,7 @@ public class BluetoothCentral {
         boolean result = commandQueue.add(() -> {
             if (adapter.isPowered()) {
                 HBLogger.i(TAG, "Turning off adapter");
-                currentCommand = POWERED;
+                currentCommand = PROPERTY_POWERED;
                 adapter.setPowered(false);
             } else {
                 // If it is already off we won't receive a callback so just complete the command
@@ -591,7 +573,7 @@ public class BluetoothCentral {
         unconnectedPeripherals.put(peripheral.getAddress(), peripheral);
         boolean result = commandQueue.add(() -> {
             currentDeviceAddress = peripheral.getAddress();
-            currentCommand = CONNECTED;
+            currentCommand = PROPERTY_CONNECTED;
             peripheral.connect();
         });
 
@@ -608,6 +590,16 @@ public class BluetoothCentral {
             currentDeviceAddress = peripheral.getAddress();
             peripheral.disconnect();
         }
+    }
+
+    /**
+     * Get the list of connected peripherals.
+     *
+     * @return list of connected peripherals
+     */
+    @SuppressWarnings("unused")
+    public List<BluetoothPeripheral> getConnectedPeripherals() {
+        return new ArrayList<>(connectedPeripherals.values());
     }
 
     /**
@@ -663,15 +655,7 @@ public class BluetoothCentral {
         return true;
     }
 
-    /**
-     * Get the list of connected peripherals.
-     *
-     * @return list of connected peripherals
-     */
-    @SuppressWarnings("unused")
-    public List<BluetoothPeripheral> getConnectedPeripherals() {
-        return new ArrayList<>(connectedPeripherals.values());
-    }
+
 
     /**
      * The current command has been completed, move to the next command in the queue (if any)

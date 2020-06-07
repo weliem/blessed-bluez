@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Map;
 
 public class ScanResult {
+    private final long timestampNanos;
     private final String name;
     private final String address;
     private final String[] uuids;
@@ -12,6 +13,7 @@ public class ScanResult {
     private final Map<String, byte[]> serviceData;
 
     public ScanResult(String deviceName, String deviceAddress, String[] uuids, int rssi, Map<Integer, byte[]> manufacturerData, Map<String, byte[]> serviceData ) {
+        this.timestampNanos = System.nanoTime();
         this.name = deviceName;
         this.address = deviceAddress;
         this.uuids = uuids;
@@ -20,18 +22,18 @@ public class ScanResult {
         this.serviceData = serviceData;
     }
 
-    public String getAddress() {
-        return address;
+    public long getTimestampNanos() {
+        return timestampNanos;
     }
-
     public String getName() {
         return name;
     }
-
+    public String getAddress() {
+        return address;
+    }
     public String[] getUuids() {
         return uuids;
     }
-
     public Map<Integer, byte[]> getManufacturerData() {
         return manufacturerData;
     }
@@ -39,7 +41,8 @@ public class ScanResult {
     @Override
     public String toString() {
         return "ScanResult{" +
-                "name='" + name + '\'' +
+                "timestampNanos=" + timestampNanos +
+                ", name='" + name + '\'' +
                 ", address='" + address + '\'' +
                 ", uuids=" + Arrays.toString(uuids) +
                 ", rssi=" + rssi +

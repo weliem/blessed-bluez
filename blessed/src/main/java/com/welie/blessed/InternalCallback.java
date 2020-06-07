@@ -17,23 +17,23 @@ public interface InternalCallback {
      *
      * @param device {@link BluetoothPeripheral} that connected.
      */
-    void connected(BluetoothPeripheral device);
+    void connected(final BluetoothPeripheral device);
 
     /**
      * Connecting with {@link BluetoothPeripheral} has failed.
      *
      * @param device {@link BluetoothPeripheral} of which connect failed.
      */
-    void connectFailed(BluetoothPeripheral device);
+    void connectFailed(final BluetoothPeripheral device);
 
     /**
      * {@link BluetoothPeripheral} has disconnected.
      *
      * @param device {@link BluetoothPeripheral} that disconnected.
      */
-    void disconnected(BluetoothPeripheral device);
+    void disconnected(final BluetoothPeripheral device);
 
-    void servicesDiscovered(BluetoothPeripheral device);
+    void servicesDiscovered(final BluetoothPeripheral device);
 
-    void serviceDiscoveryFailed(BluetoothPeripheral device);
+    void serviceDiscoveryFailed(final BluetoothPeripheral device);
 }

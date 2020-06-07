@@ -16,7 +16,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import static com.welie.blessed.BluetoothCentral.BLUEZ_DEVICE_INTERFACE;
 import static com.welie.blessed.BluetoothGattCharacteristic.*;
 
 public class BluetoothPeripheral {
@@ -58,12 +57,24 @@ public class BluetoothPeripheral {
     private int nrTries;
     private static final int MAX_TRIES = 2;
 
-    private static final String BLUEZ_CHARACTERISTIC_INTERFACE = "org.bluez.GattCharacteristic1";
-    private static final String PROPERTY_NOTIFYING = "Notifying";
-    private static final String PROPERTY_VALUE = "Value";
-    private static final String PROPERTY_SERVICES_RESOLVED = "ServicesResolved";
-    private static final String PROPERTY_CONNECTED = "Connected";
-    private static final String PROPERTY_PAIRED = "Paired";
+    // Bluez interface names
+    static final String BLUEZ_CHARACTERISTIC_INTERFACE = "org.bluez.GattCharacteristic1";
+    static final String BLUEZ_DEVICE_INTERFACE = "org.bluez.Device1";
+
+    // Bluez Characteristic properties
+    static final String PROPERTY_NOTIFYING = "Notifying";
+    static final String PROPERTY_VALUE = "Value";
+
+    // Bluez Device properties
+    static final String PROPERTY_SERVICES_RESOLVED = "ServicesResolved";
+    static final String PROPERTY_CONNECTED = "Connected";
+    static final String PROPERTY_PAIRED = "Paired";
+    static final String PROPERTY_SERVICE_UUIDS = "UUIDs";
+    static final String PROPERTY_NAME = "Name";
+    static final String PROPERTY_ADDRESS = "Address";
+    static final String PROPERTY_RSSI = "RSSI";
+    static final String PROPERTY_MANUFACTURER_DATA = "ManufacturerData";
+    static final String PROPERTY_SERVICE_DATA = "ServiceData";
 
     /**
      * A GATT operation completed successfully
@@ -602,27 +613,27 @@ public class BluetoothPeripheral {
     };
 
     private void handlePropertyChangedForCharacteristic(BluetoothGattCharacteristic bluetoothGattCharacteristic, String propertyName, Variant<?> value) {
-       switch (propertyName) {
-           case PROPERTY_NOTIFYING:
-               boolean isNotifying = (Boolean) value.getValue();
-               gattCallback.onNotifySet(bluetoothGattCharacteristic, isNotifying);
-               break;
-           case PROPERTY_VALUE:
-               if (value.getType() instanceof DBusListType) {
-                   if (value.getValue() instanceof byte[]) {
-                       byte[] byteVal = (byte[]) value.getValue();
-                       byte[] valueCopy = copyOf(byteVal);
-                       gattCallback.onCharacteristicChanged(valueCopy, bluetoothGattCharacteristic);
-                   } else {
-                       HBLogger.e(TAG, "got VALUE update that is not byte array");
-                   }
-               } else {
-                   HBLogger.e(TAG, "got unknown type for VALUE update");
-               }
-               break;
-           default:
-               HBLogger.e(TAG, String.format("Unhandled characteristic property change %s", propertyName));
-       }
+        switch (propertyName) {
+            case PROPERTY_NOTIFYING:
+                boolean isNotifying = (Boolean) value.getValue();
+                gattCallback.onNotifySet(bluetoothGattCharacteristic, isNotifying);
+                break;
+            case PROPERTY_VALUE:
+                if (value.getType() instanceof DBusListType) {
+                    if (value.getValue() instanceof byte[]) {
+                        byte[] byteVal = (byte[]) value.getValue();
+                        byte[] valueCopy = copyOf(byteVal);
+                        gattCallback.onCharacteristicChanged(valueCopy, bluetoothGattCharacteristic);
+                    } else {
+                        HBLogger.e(TAG, "got VALUE update that is not byte array");
+                    }
+                } else {
+                    HBLogger.e(TAG, "got unknown type for VALUE update");
+                }
+                break;
+            default:
+                HBLogger.e(TAG, String.format("Unhandled characteristic property change %s", propertyName));
+        }
     }
 
     private void handlePropertyChangeForDevice(String propertyName, Variant<?> value) {

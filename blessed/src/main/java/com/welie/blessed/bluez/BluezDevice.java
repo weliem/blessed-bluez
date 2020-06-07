@@ -184,7 +184,7 @@ public class BluezDevice extends AbstractBluetoothObject {
     public String[] getUuids() {
         List<?> typed = getTyped("UUIDs", ArrayList.class);
         if (typed != null) {
-            return typed.toArray(new String[]{});
+            return typed.toArray(new String[0]);
         }
         return null;
     }
