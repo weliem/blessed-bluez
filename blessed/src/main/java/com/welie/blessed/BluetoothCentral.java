@@ -175,25 +175,25 @@ public class BluetoothCentral {
 
     @SuppressWarnings("unused")
     public void scanForPeripheralsWithServices(final UUID[] serviceUUIDs) {
-        // Convert UUID array to string array
-        ArrayList<String> uuidStrings = new ArrayList<>();
-        if (serviceUUIDs != null) {
-            for (UUID uuid : serviceUUIDs) {
-                uuidStrings.add(uuid.toString());
-            }
-        }
-        String[] scanUUIDs = uuidStrings.toArray(new String[0]);
-
-        // Setup scan filter
-        scanFilters.put(DiscoveryFilter.Transport, DiscoveryTransport.LE);
-        scanFilters.put(DiscoveryFilter.RSSI, DISCOVERY_RSSI_THRESHOLD);
-        scanFilters.put(DiscoveryFilter.DuplicateData, true);
+        // Setup service uuids
+        String[] scanUUIDs = convertUUIDArrayToStringArray(serviceUUIDs);
         if (scanUUIDs.length > 0) {
             scanFilters.put(DiscoveryFilter.UUIDs, scanUUIDs);
         }
 
         // Start scan
-        startScanning();
+        scanForPeripherals();
+    }
+
+    private String[] convertUUIDArrayToStringArray(final UUID[] uuidArray) {
+        // Convert UUID array to string array
+        ArrayList<String> uuidStrings = new ArrayList<>();
+        if (uuidArray != null) {
+            for (UUID uuid : uuidArray) {
+                uuidStrings.add(uuid.toString());
+            }
+        }
+        return uuidStrings.toArray(new String[0]);
     }
 
     private void onScanResult(BluetoothPeripheral peripheral, ScanResult scanResult) {
