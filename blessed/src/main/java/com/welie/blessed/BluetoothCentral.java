@@ -23,9 +23,7 @@ import java.util.concurrent.TimeUnit;
 import static com.welie.blessed.BluetoothPeripheral.*;
 
 public class BluetoothCentral {
-
     private static final String TAG = BluetoothCentral.class.getSimpleName();
-
     private DBusConnection dbusConnection;
     private BluezAdapter adapter;
     private final BluetoothCentralCallback bluetoothCentralCallback;
@@ -45,7 +43,6 @@ public class BluetoothCentral {
     private final Map<String, BluetoothPeripheral> connectedPeripherals = new ConcurrentHashMap<>();
     private final Map<String, BluetoothPeripheral> unconnectedPeripherals = new ConcurrentHashMap<>();
 
-    private static final long MINUTE = TimeUnit.MINUTES.toMillis(1);
     private static final int ADDRESS_LENGTH = 17;
     private static final short DISCOVERY_RSSI_THRESHOLD = -70;
 
@@ -82,7 +79,6 @@ public class BluetoothCentral {
 
         @Override
         public void servicesDiscovered(final BluetoothPeripheral device) {
-            // TODO , is this needed?
             HBLogger.i(TAG, "service discovery succeeded");
         }
 
@@ -331,6 +327,7 @@ public class BluetoothCentral {
                 isScanning = (Boolean) value.getValue();
                 if (isScanning) isStoppingScan = false;
                 HBLogger.i(TAG, String.format("scan %s", isScanning ? "started" : "stopped"));
+
                 if (currentCommand.equalsIgnoreCase(PROPERTY_DISCOVERING)) {
                     callBackHandler.postDelayed(this::completedCommand, 200L);
                 }
@@ -339,11 +336,9 @@ public class BluetoothCentral {
                 isPowered = (Boolean) value.getValue();
                 HBLogger.i(TAG, String.format("powered %s", isPowered ? "on" : "off"));
 
-                // Complete the command and add a delay if needed
-                long delay = isPowered ? 0 : 4 * MINUTE;
-                callBackHandler.postDelayed(() -> {
-                    if (currentCommand.equalsIgnoreCase(PROPERTY_POWERED)) completedCommand();
-                }, delay);
+                if (currentCommand.equalsIgnoreCase(PROPERTY_POWERED)) {
+                    callBackHandler.postDelayed(this::completedCommand, 200L);
+                }
                 break;
             default:
         }
