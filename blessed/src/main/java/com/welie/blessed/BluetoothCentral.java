@@ -205,6 +205,7 @@ public class BluetoothCentral {
 
     private void initScanFilters() {
         scanPeripheralNames = new String[0];
+        scanPeripheralAddresses = new String[0];
         scanFilters.clear();
         scanFilters.put(DiscoveryFilter.Transport, DiscoveryTransport.LE);
         scanFilters.put(DiscoveryFilter.RSSI, DISCOVERY_RSSI_THRESHOLD);
@@ -261,6 +262,8 @@ public class BluetoothCentral {
 
         if (reconnectPeripheralAddresses.size() > 0) {
             autoScanActive = true;
+            startScanning();
+        } else if (normalScanActive) {
             startScanning();
         }
     }
