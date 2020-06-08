@@ -184,7 +184,10 @@ public class BluetoothHandler {
     void startScanning() {
  //       central.scanForPeripheralsWithServices(new UUID[]{HTS_SERVICE_UUID});
  //       central.scanForPeripheralsWithNames(new String[]{"TAIDOC"});
-        central.scanForPeripheralsWithAddresses(new String[]{"C0:26:DF:01:F2:72"});
+ //       central.scanForPeripheralsWithAddresses(new String[]{"C0:26:DF:01:F2:72"});
  //       central.scanForPeripherals();
+
+        BluetoothPeripheral peripheral = central.getPeripheral("C0:26:DF:01:F2:72");
+        central.autoConnectPeripheral(peripheral, peripheralCallback);
     }
 }

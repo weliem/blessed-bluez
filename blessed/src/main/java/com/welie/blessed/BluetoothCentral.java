@@ -34,6 +34,8 @@ public class BluetoothCentral {
     private volatile boolean isScanning = false;
     private volatile boolean isPowered = false;
     private volatile boolean isStoppingScan = false;
+    private volatile boolean autoScanActive = false;
+    private volatile boolean normalScanActive = false;
     private volatile boolean commandQueueBusy;
     private int scanCounter = 0;
     private final Map<DiscoveryFilter, Object> scanFilters = new EnumMap<>(DiscoveryFilter.class);
@@ -44,6 +46,8 @@ public class BluetoothCentral {
     private final Map<String, BluetoothPeripheral> unconnectedPeripherals = new ConcurrentHashMap<>();
     private @NotNull String[] scanPeripheralNames = new String[0];
     private @NotNull String[] scanPeripheralAddresses = new String[0];
+    private final List<String> reconnectPeripheralAddresses = new ArrayList<>();
+    private final Map<String, BluetoothPeripheralCallback> reconnectCallbacks = new ConcurrentHashMap<>();
 
     private static final int ADDRESS_LENGTH = 17;
     private static final short DISCOVERY_RSSI_THRESHOLD = -70;
@@ -168,6 +172,7 @@ public class BluetoothCentral {
     @SuppressWarnings("unused")
     public void scanForPeripherals() {
         initScanFilters();
+        normalScanActive = true;
         startScanning();
     }
 
@@ -178,6 +183,7 @@ public class BluetoothCentral {
         if (scanUUIDs.length > 0) {
             scanFilters.put(DiscoveryFilter.UUIDs, scanUUIDs);
         }
+        normalScanActive = true;
         startScanning();
     }
 
@@ -185,6 +191,7 @@ public class BluetoothCentral {
     public void scanForPeripheralsWithNames(final String[] peripheralNames) {
         initScanFilters();
         scanPeripheralNames = peripheralNames;
+        normalScanActive = true;
         startScanning();
     }
 
@@ -192,6 +199,7 @@ public class BluetoothCentral {
     public void scanForPeripheralsWithAddresses(final String[] peripheralAddresses) {
         initScanFilters();
         scanPeripheralAddresses = peripheralAddresses;
+        normalScanActive = true;
         startScanning();
     }
 
@@ -237,8 +245,34 @@ public class BluetoothCentral {
         return false;
     }
 
+    private void onFoundReconnectionPeripheral(BluetoothPeripheral peripheral) {
+        final String deviceAddress = peripheral.getAddress();
+        final BluetoothPeripheralCallback peripheralCallback = reconnectCallbacks.get(deviceAddress);
+
+        HBLogger.i(TAG, String.format("found peripheral to autoconnect '%s'", deviceAddress));
+        autoScanActive = false;
+        stopScanning();
+
+        reconnectPeripheralAddresses.remove(deviceAddress);
+        reconnectCallbacks.remove(deviceAddress);
+        unconnectedPeripherals.remove(deviceAddress);
+
+        connectPeripheral(peripheral, peripheralCallback);
+
+        if (reconnectPeripheralAddresses.size() > 0) {
+            autoScanActive = true;
+            startScanning();
+        }
+    }
+
     private void onScanResult(BluetoothPeripheral peripheral, ScanResult scanResult) {
-        if (isScanning && !isStoppingScan) {
+        // Check first if we are autoconnecting to this peripheral
+        if (reconnectPeripheralAddresses.contains(scanResult.getAddress())) {
+            onFoundReconnectionPeripheral(peripheral);
+            return;
+        }
+
+        if (normalScanActive && isScanning && !isStoppingScan) {
             if (notAllowedByFilter(scanResult)) return;
 
             callBackHandler.post(() -> {
@@ -609,6 +643,22 @@ public class BluetoothCentral {
         } else {
             HBLogger.e(TAG, ENQUEUE_ERROR);
         }
+    }
+
+    public boolean autoConnectPeripheral(BluetoothPeripheral peripheral, BluetoothPeripheralCallback peripheralCallback) {
+        final String deviceAddress = peripheral.getAddress();
+        if (reconnectPeripheralAddresses.contains(deviceAddress)) return false;
+
+        reconnectPeripheralAddresses.add(deviceAddress);
+        reconnectCallbacks.put(deviceAddress, peripheralCallback);
+        unconnectedPeripherals.put(deviceAddress, peripheral);
+
+        if (!isScanning) {
+            initScanFilters();
+            autoScanActive = true;
+            startScanning();
+        }
+        return true;
     }
 
     @SuppressWarnings("unused")
