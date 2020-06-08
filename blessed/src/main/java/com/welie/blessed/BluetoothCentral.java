@@ -42,6 +42,8 @@ public class BluetoothCentral {
     private String currentDeviceAddress;
     private final Map<String, BluetoothPeripheral> connectedPeripherals = new ConcurrentHashMap<>();
     private final Map<String, BluetoothPeripheral> unconnectedPeripherals = new ConcurrentHashMap<>();
+    private @NotNull String[] scanPeripheralNames = new String[0];
+    private @NotNull String[] scanPeripheralAddresses = new String[0];
 
     private static final int ADDRESS_LENGTH = 17;
     private static final short DISCOVERY_RSSI_THRESHOLD = -70;
@@ -163,31 +165,42 @@ public class BluetoothCentral {
         dbusConnection.addSigHandler(handler.getImplementationClass(), handler);
     }
 
+    @SuppressWarnings("unused")
     public void scanForPeripherals() {
-        // Setup scan filter
-        scanFilters.clear();
-        scanFilters.put(DiscoveryFilter.Transport, DiscoveryTransport.LE);
-        scanFilters.put(DiscoveryFilter.RSSI, DISCOVERY_RSSI_THRESHOLD);
-        scanFilters.put(DiscoveryFilter.DuplicateData, true);
-
-        // Start scan
+        initScanFilters();
         startScanning();
     }
 
     @SuppressWarnings("unused")
     public void scanForPeripheralsWithServices(final UUID[] serviceUUIDs) {
-        // Setup service uuids
-        scanFilters.clear();
-        scanFilters.put(DiscoveryFilter.Transport, DiscoveryTransport.LE);
-        scanFilters.put(DiscoveryFilter.RSSI, DISCOVERY_RSSI_THRESHOLD);
-        scanFilters.put(DiscoveryFilter.DuplicateData, true);
+        initScanFilters();
         String[] scanUUIDs = convertUUIDArrayToStringArray(serviceUUIDs);
         if (scanUUIDs.length > 0) {
             scanFilters.put(DiscoveryFilter.UUIDs, scanUUIDs);
         }
-
-        // Start scan
         startScanning();
+    }
+
+    @SuppressWarnings("unused")
+    public void scanForPeripheralsWithNames(final String[] peripheralNames) {
+        initScanFilters();
+        scanPeripheralNames = peripheralNames;
+        startScanning();
+    }
+
+    @SuppressWarnings("unused")
+    public void scanForPeripheralsWithAddresses(final String[] peripheralAddresses) {
+        initScanFilters();
+        scanPeripheralAddresses = peripheralAddresses;
+        startScanning();
+    }
+
+    private void initScanFilters() {
+        scanPeripheralNames = new String[0];
+        scanFilters.clear();
+        scanFilters.put(DiscoveryFilter.Transport, DiscoveryTransport.LE);
+        scanFilters.put(DiscoveryFilter.RSSI, DISCOVERY_RSSI_THRESHOLD);
+        scanFilters.put(DiscoveryFilter.DuplicateData, true);
     }
 
     private String[] convertUUIDArrayToStringArray(final UUID[] uuidArray) {
@@ -201,8 +214,33 @@ public class BluetoothCentral {
         return uuidStrings.toArray(new String[0]);
     }
 
+    private boolean notAllowedByFilter(ScanResult scanResult) {
+        // Check if peripheral name filter is set
+        if (scanPeripheralNames.length > 0) {
+            for (String name : scanPeripheralNames) {
+                if (scanResult.getName() != null && scanResult.getName().contains(name)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // Check if peripheral address filter is set
+        if (scanPeripheralAddresses.length > 0) {
+            for (String name : scanPeripheralAddresses) {
+                if (scanResult.getAddress() != null && scanResult.getAddress().equals(name)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
     private void onScanResult(BluetoothPeripheral peripheral, ScanResult scanResult) {
         if (isScanning && !isStoppingScan) {
+            if (notAllowedByFilter(scanResult)) return;
+
             callBackHandler.post(() -> {
                 if (bluetoothCentralCallback != null) {
                     bluetoothCentralCallback.onDiscoveredPeripheral(peripheral, scanResult);
