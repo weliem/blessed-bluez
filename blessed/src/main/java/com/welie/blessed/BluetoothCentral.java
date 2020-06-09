@@ -474,7 +474,6 @@ public class BluetoothCentral {
 
             // Start the discovery
             try {
-                HBLogger.i(TAG, "Starting scan");
                 currentCommand = PROPERTY_DISCOVERING;
                 adapter.startDiscovery();
                 scanCounter++;
@@ -521,7 +520,6 @@ public class BluetoothCentral {
 
             // Stop the discovery
             try {
-                HBLogger.i(TAG, "Stopping scan");
                 currentCommand = PROPERTY_DISCOVERING;
                 cancelTimeoutTimer();
                 adapter.stopDiscovery();
@@ -559,7 +557,6 @@ public class BluetoothCentral {
         cancelTimeoutTimer();
 
         this.timeoutRunnable = () -> {
-            HBLogger.i(TAG, String.format("scanning timeout, stopping scan (%d)", scanCounter));
             stopScanning();
             startScanning();
         };
