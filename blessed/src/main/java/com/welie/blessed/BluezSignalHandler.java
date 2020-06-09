@@ -16,6 +16,7 @@ public class BluezSignalHandler {
 
     private static BluezSignalHandler instance = null;
     private DBusConnection dbusConnection;
+    private final Handler handler = new Handler("BluezSignalHandler");
 
     private final Map<String, BluetoothPeripheral> devicesMap = new ConcurrentHashMap<>();
     private final List<BluetoothCentral> centralList = new ArrayList<>();
@@ -36,24 +37,26 @@ public class BluezSignalHandler {
 
     private final AbstractPropertiesChangedHandler signalHandler = new AbstractPropertiesChangedHandler() {
         @Override
-        public void handle(Properties.PropertiesChanged propertiesChanged) {
+        public void handle(final Properties.PropertiesChanged propertiesChanged) {
             // Make sure the propertiesChanged is not empty. Note that we also get called because of propertiesRemoved.
             if (propertiesChanged.getPropertiesChanged().isEmpty()) return;
 
-            // Send the signal to all centrals
-            for(BluetoothCentral central : centralList) {
-                  central.handleSignal(propertiesChanged);
-            }
-
-            // Send to device adapters if it is for a device
-            String path = propertiesChanged.getPath();
-            Set<String> devices = devicesMap.keySet();
-
-            for(String deviceAddress : devices) {
-                if(path.contains(deviceAddress)) {
-                    devicesMap.get(deviceAddress).handleSignal(propertiesChanged);
+            handler.post(() -> {
+                // Send the signal to all centrals
+                for(BluetoothCentral central : centralList) {
+                    central.handleSignal(propertiesChanged);
                 }
-            }
+
+                // Send to device adapters if it is for a device
+                String path = propertiesChanged.getPath();
+                Set<String> devices = devicesMap.keySet();
+
+                for(String deviceAddress : devices) {
+                    if(path.contains(deviceAddress)) {
+                        devicesMap.get(deviceAddress).handleSignal(propertiesChanged);
+                    }
+                }
+            });
         }
     };
 
