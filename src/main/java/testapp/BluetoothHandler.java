@@ -168,7 +168,7 @@ public class BluetoothHandler {
 //            HBLogger.i(TAG, String.format("Found %s (%s)", peripheral.getName(), peripheral.getAddress()));
             HBLogger.i(TAG, scanResult.toString());
             if (peripheral.getName() != null && (peripheral.getName().startsWith("IH") || peripheral.getName().startsWith("TAID"))) {
-                central.stopScanning();
+                central.stopScan();
                 central.connectPeripheral(peripheral, peripheralCallback);
             }
         }
@@ -183,7 +183,7 @@ public class BluetoothHandler {
 
     void startScanning() {
  //       central.scanForPeripheralsWithServices(new UUID[]{HTS_SERVICE_UUID});
- //       central.scanForPeripheralsWithNames(new String[]{"TAIDOC"});
+        central.scanForPeripheralsWithNames(new String[]{"OMRON"});
  //       central.scanForPeripheralsWithAddresses(new String[]{"C0:26:DF:01:F2:72"});
  //       central.scanForPeripherals();
 

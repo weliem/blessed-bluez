@@ -664,7 +664,7 @@ public class BluetoothPeripheral {
                     cancelServiceDiscoveryTimer();
                     BluezSignalHandler.getInstance().removeDevice(deviceAddress);
                     gattCallback.onConnectionStateChanged(ConnectionState.Disconnected, GATT_SUCCESS);
-                    timeoutHandler.stop();
+                    if (timeoutHandler != null) timeoutHandler.stop();
                     timeoutHandler = null;
                 }
                 break;

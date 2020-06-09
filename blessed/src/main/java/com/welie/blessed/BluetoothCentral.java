@@ -203,6 +203,11 @@ public class BluetoothCentral {
         startScanning();
     }
 
+    public void stopScan() {
+        normalScanActive = false;
+        stopScanning();
+    }
+
     private void initScanFilters() {
         scanPeripheralNames = new String[0];
         scanPeripheralAddresses = new String[0];
@@ -443,7 +448,7 @@ public class BluetoothCentral {
      * Start a continuous scan with scan filters set to find all devices.
      * This will try to start a scan even if one is running already
      */
-    public void startScanning() {
+    private void startScanning() {
         // Make sure the adapter is on
         if (!isPowered) return;
 
@@ -499,7 +504,7 @@ public class BluetoothCentral {
     /*
      * Stop the scanner
      */
-    public void stopScanning() {
+    private void stopScanning() {
         // Make sure the adapter is on
         if (!isPowered) return;
 
