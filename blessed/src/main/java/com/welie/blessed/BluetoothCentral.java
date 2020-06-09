@@ -146,6 +146,12 @@ public class BluetoothCentral {
         }
     };
 
+    /**
+     * Construct a new BluetoothCentral object
+     *
+     * @param bluetoothCentralCallback the callback to call for updates
+     * @param handler the handler to receive the callbacks on
+     */
     public BluetoothCentral(@NotNull BluetoothCentralCallback bluetoothCentralCallback, @Nullable Handler handler) {
         this.bluetoothCentralCallback = bluetoothCentralCallback;
         this.callBackHandler = (handler != null) ? handler : new Handler("Central-callBackHandler");
@@ -185,6 +191,9 @@ public class BluetoothCentral {
         dbusConnection.addSigHandler(handler.getImplementationClass(), handler);
     }
 
+    /**
+     * Scan for any peripheral that is advertising.
+     */
     @SuppressWarnings("unused")
     public void scanForPeripherals() {
         initScanFilters();
@@ -192,6 +201,11 @@ public class BluetoothCentral {
         startScanning();
     }
 
+    /**
+     * Scan for peripherals that advertise at least one of the specified service UUIDs.
+     *
+     * @param serviceUUIDs an array of service UUIDs
+     */
     @SuppressWarnings("unused")
     public void scanForPeripheralsWithServices(final UUID[] serviceUUIDs) {
         initScanFilters();
@@ -203,6 +217,13 @@ public class BluetoothCentral {
         startScanning();
     }
 
+    /**
+     * Scan for peripherals with advertisement names containing any of the specified peripheral names.
+     *
+     * Substring matching is used so only a partial peripheral names has to be supplied.
+     *
+     * @param peripheralNames array of partial peripheral names
+     */
     @SuppressWarnings("unused")
     public void scanForPeripheralsWithNames(final String[] peripheralNames) {
         initScanFilters();
@@ -211,6 +232,11 @@ public class BluetoothCentral {
         startScanning();
     }
 
+    /**
+     * Scan for peripherals that have any of the specified peripheral mac addresses.
+     *
+     * @param peripheralAddresses array of peripheral mac addresses to scan for
+     */
     @SuppressWarnings("unused")
     public void scanForPeripheralsWithAddresses(final String[] peripheralAddresses) {
         initScanFilters();
@@ -219,6 +245,9 @@ public class BluetoothCentral {
         startScanning();
     }
 
+    /**
+     * Stop scanning for peripherals.
+     */
     public void stopScan() {
         normalScanActive = false;
         stopScanning();
@@ -591,6 +620,9 @@ public class BluetoothCentral {
         }
     }
 
+    /**
+     * Turn on the Bluetooth adaptor
+     */
     @SuppressWarnings("unused")
     public void adapterOn() {
         boolean result = commandQueue.add(() -> {
@@ -613,6 +645,10 @@ public class BluetoothCentral {
         }
     }
 
+
+    /**
+     * Turn off the Bluetooth adaptor
+     */
     @SuppressWarnings("unused")
     public void adapterOff() {
         boolean result = commandQueue.add(() -> {
@@ -634,6 +670,12 @@ public class BluetoothCentral {
         }
     }
 
+    /**
+     * Connect to a known peripheral immediately. The peripheral must have been found by scanning for this call to succeed. This method will time out in max 30 seconds on most phones and in 5 seconds on Samsung phones.
+     * If the peripheral is already connected, no connection attempt will be made. This method is asynchronous and there can be only one outstanding connect.
+     *
+     * @param peripheral BLE peripheral to connect with
+     */
     public void connectPeripheral(final BluetoothPeripheral peripheral, final BluetoothPeripheralCallback peripheralCallback) {
         // Make sure peripheral is valid
         if (peripheral == null) {
@@ -671,6 +713,11 @@ public class BluetoothCentral {
         }
     }
 
+    /**
+     * Automatically connect to a peripheral when it is advertising. It is not necessary to scan for the peripheral first. This call is asynchronous and will not time out.
+     *
+     * @param peripheral the peripheral
+     */
     public boolean autoConnectPeripheral(BluetoothPeripheral peripheral, BluetoothPeripheralCallback peripheralCallback) {
         final String deviceAddress = peripheral.getAddress();
         if (reconnectPeripheralAddresses.contains(deviceAddress)) return false;
@@ -689,6 +736,11 @@ public class BluetoothCentral {
         return true;
     }
 
+    /**
+     * Cancel an active or pending connection for a peripheral.
+     *
+     * @param peripheral the peripheral
+     */
     @SuppressWarnings("unused")
     public void cancelConnection(final BluetoothPeripheral peripheral) {
         if (peripheral.getConnectionState() == ConnectionState.Connected) {
