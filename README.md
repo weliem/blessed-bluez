@@ -16,11 +16,13 @@ The BLESSED library was inspired by CoreBluetooth on iOS and provides the same l
 
 ## Scanning
 
-There are 2 different scanning methods:
+There are 4 different scanning methods:
 
 ```java
 public void scanForPeripherals()
 public void scanForPeripheralsWithServices(UUID[] serviceUUIDs)
+public void scanForPeripheralsWithNames(String[] peripheralNames)
+public void scanForPeripheralsWithAddresses(String[] peripheralAddresses)
 ```
 
 They all work in the same way and take an array of either service UUIDs, peripheral names or mac addresses. So in order to setup a scan for a device with the Bloodpressure service and connect to it, you do:
