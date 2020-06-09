@@ -662,7 +662,9 @@ public class BluetoothCentral {
         unconnectedPeripherals.put(deviceAddress, peripheral);
 
         if (!isScanning) {
-            initScanFilters();
+            scanFilters.put(DiscoveryFilter.Transport, DiscoveryTransport.LE);
+            scanFilters.put(DiscoveryFilter.RSSI, DISCOVERY_RSSI_THRESHOLD);
+            scanFilters.put(DiscoveryFilter.DuplicateData, true);
             autoScanActive = true;
             startScanning();
         }
