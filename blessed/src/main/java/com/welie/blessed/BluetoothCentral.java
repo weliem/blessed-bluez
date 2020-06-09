@@ -81,6 +81,10 @@ public class BluetoothCentral {
                     bluetoothCentralCallback.onConnectedPeripheral(device);
                 }
             });
+
+            if (autoScanActive || normalScanActive) {
+                startScanning();
+            }
         }
 
         @Override
@@ -109,6 +113,10 @@ public class BluetoothCentral {
                     bluetoothCentralCallback.onConnectionFailed(device, 0);
                 }
             });
+
+            if (autoScanActive || normalScanActive) {
+                startScanning();
+            }
         }
 
         @Override
@@ -127,6 +135,14 @@ public class BluetoothCentral {
                     bluetoothCentralCallback.onDisconnectedPeripheral(device, 0);
                 }
             });
+
+            // Complete the 'connect' command if this was the device we were connecting
+            if (currentCommand.equalsIgnoreCase(PROPERTY_CONNECTED) && deviceAddress.equalsIgnoreCase(currentDeviceAddress)) {
+                completedCommand();
+            }
+            if (autoScanActive || normalScanActive) {
+                startScanning();
+            }
         }
     };
 
@@ -351,7 +367,7 @@ public class BluetoothCentral {
 
         // Create ScanResult
         final ScanResult scanResult = new ScanResult(deviceName, deviceAddress, finalServiceUUIDs, rssi, device.getManufacturerData(), device.getServiceData());
-        final BluetoothPeripheral peripheral = new BluetoothPeripheral(device, deviceName, deviceAddress, internalCallback, null, callBackHandler);
+        final BluetoothPeripheral peripheral = new BluetoothPeripheral(this, device, deviceName, deviceAddress, internalCallback, null, callBackHandler);
         onScanResult(peripheral, scanResult);
     }
 
@@ -402,7 +418,7 @@ public class BluetoothCentral {
         }
 
         final ScanResult scanResult = new ScanResult(deviceName, deviceAddress, serviceUUIDs, rssi, manufacturerData, serviceData);
-        final BluetoothPeripheral peripheral = new BluetoothPeripheral(bluezDevice, deviceName, deviceAddress, internalCallback, null, callBackHandler);
+        final BluetoothPeripheral peripheral = new BluetoothPeripheral(this, bluezDevice, deviceName, deviceAddress, internalCallback, null, callBackHandler);
         onScanResult(peripheral, scanResult);
     }
 
@@ -460,6 +476,7 @@ public class BluetoothCentral {
             // If we are already scanning then complete the command immediately
             isScanning = adapter.isDiscovering();
             if (isScanning) {
+ //               HBLogger.i(TAG, "Already scanning so completing command");
                 completedCommand();
                 return;
             }
@@ -474,6 +491,7 @@ public class BluetoothCentral {
 
             // Start the discovery
             try {
+ //               HBLogger.i(TAG, "Trying to start scanning");
                 currentCommand = PROPERTY_DISCOVERING;
                 adapter.startDiscovery();
                 scanCounter++;
@@ -636,6 +654,9 @@ public class BluetoothCentral {
             return;
         }
 
+        // Some adapters have issues with (dis)connecting while scanning, so stop scan first
+        stopScanning();
+
         unconnectedPeripherals.put(peripheral.getAddress(), peripheral);
         boolean result = commandQueue.add(() -> {
             currentDeviceAddress = peripheral.getAddress();
@@ -671,8 +692,21 @@ public class BluetoothCentral {
     @SuppressWarnings("unused")
     public void cancelConnection(final BluetoothPeripheral peripheral) {
         if (peripheral.getConnectionState() == ConnectionState.Connected) {
-            currentDeviceAddress = peripheral.getAddress();
-            peripheral.disconnect();
+            // Some adapters have issues with (dis)connecting while scanning, so stop scan first
+            stopScanning();
+
+            // Queue the low level disconnect
+            boolean result = commandQueue.add(() -> {
+                currentDeviceAddress = peripheral.getAddress();
+                currentCommand = PROPERTY_CONNECTED;
+                peripheral.disconnectBluezDevice();
+            });
+
+            if (result) {
+                nextCommand();
+            } else {
+                HBLogger.e(TAG, ENQUEUE_ERROR);
+            }
         }
     }
 
@@ -704,7 +738,7 @@ public class BluetoothCentral {
         } else if (unconnectedPeripherals.containsKey(peripheralAddress)) {
             return unconnectedPeripherals.get(peripheralAddress);
         } else {
-            return new BluetoothPeripheral(null, null, peripheralAddress, internalCallback, null, callBackHandler);
+            return new BluetoothPeripheral(this,null, null, peripheralAddress, internalCallback, null, callBackHandler);
         }
     }
 

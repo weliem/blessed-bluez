@@ -22,6 +22,7 @@ public class BluetoothPeripheral {
     private static final String TAG = BluetoothPeripheral.class.getSimpleName();
 
     // Core variables
+    private final BluetoothCentral central;
     private final BluezDevice device;
     private final String deviceName;
     private final String deviceAddress;
@@ -254,7 +255,8 @@ public class BluetoothPeripheral {
     /*
      * PUBLIC HBDeviceAdapter Interface Methods
      */
-    public BluetoothPeripheral(BluezDevice bluezDevice, String deviceName, String deviceAddress, InternalCallback listener, BluetoothPeripheralCallback peripheralCallback, Handler callBackHandler) {
+    public BluetoothPeripheral(@NotNull BluetoothCentral central, BluezDevice bluezDevice, String deviceName, String deviceAddress, InternalCallback listener, BluetoothPeripheralCallback peripheralCallback, Handler callBackHandler) {
+        this.central = central;
         this.device = bluezDevice;
         this.deviceAddress = deviceAddress;
         this.deviceName = deviceName;
@@ -318,6 +320,10 @@ public class BluetoothPeripheral {
     }
 
     public void disconnect() {
+        central.cancelConnection(this);
+    }
+
+    void disconnectBluezDevice() {
         HBLogger.i(TAG, "disconnecting on request");
         gattCallback.onConnectionStateChanged(ConnectionState.Disconnecting, GATT_SUCCESS);
         device.disconnect();
