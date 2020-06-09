@@ -718,7 +718,7 @@ public class BluetoothCentral {
      *
      * @param peripheral the peripheral
      */
-    public boolean autoConnectPeripheral(BluetoothPeripheral peripheral, BluetoothPeripheralCallback peripheralCallback) {
+    public boolean autoConnectPeripheral(@NotNull BluetoothPeripheral peripheral, @NotNull BluetoothPeripheralCallback peripheralCallback) {
         final String deviceAddress = peripheral.getAddress();
         if (reconnectPeripheralAddresses.contains(deviceAddress)) return false;
 
@@ -726,14 +726,40 @@ public class BluetoothCentral {
         reconnectCallbacks.put(deviceAddress, peripheralCallback);
         unconnectedPeripherals.put(deviceAddress, peripheral);
 
+        autoScanActive = true;
         if (!isScanning) {
             scanFilters.put(DiscoveryFilter.Transport, DiscoveryTransport.LE);
             scanFilters.put(DiscoveryFilter.RSSI, DISCOVERY_RSSI_THRESHOLD);
             scanFilters.put(DiscoveryFilter.DuplicateData, true);
-            autoScanActive = true;
             startScanning();
         }
         return true;
+    }
+
+    /**
+     * Autoconnect to a batch of peripherals.
+     * <p>
+     * Use this function to autoConnect to a batch of peripherals, instead of calling autoConnect on each of them.
+     *
+     * @param batch the map of peripherals and their callbacks to autoconnect to
+     */
+    @SuppressWarnings("unused")
+    public void autoConnectPeripheralsBatch(Map<BluetoothPeripheral, BluetoothPeripheralCallback> batch) {
+        for (Map.Entry<BluetoothPeripheral, BluetoothPeripheralCallback> entry : batch.entrySet()) {
+            String deviceAddress = entry.getKey().getAddress();
+            reconnectPeripheralAddresses.add(deviceAddress);
+            reconnectCallbacks.put(deviceAddress, batch.get(entry.getKey()));
+        }
+
+        if (!reconnectPeripheralAddresses.isEmpty()) {
+            autoScanActive = true;
+            if (!isScanning) {
+                scanFilters.put(DiscoveryFilter.Transport, DiscoveryTransport.LE);
+                scanFilters.put(DiscoveryFilter.RSSI, DISCOVERY_RSSI_THRESHOLD);
+                scanFilters.put(DiscoveryFilter.DuplicateData, true);
+                startScanning();
+            }
+        }
     }
 
     /**
