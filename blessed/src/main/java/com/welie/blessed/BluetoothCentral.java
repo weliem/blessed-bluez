@@ -37,7 +37,6 @@ public class BluetoothCentral {
     private volatile boolean autoScanActive = false;
     private volatile boolean normalScanActive = false;
     private volatile boolean commandQueueBusy;
-    private int scanCounter = 0;
     private final Map<DiscoveryFilter, Object> scanFilters = new EnumMap<>(DiscoveryFilter.class);
     private final Queue<Runnable> commandQueue = new ConcurrentLinkedQueue<>();
     private String currentCommand;
@@ -111,7 +110,7 @@ public class BluetoothCentral {
         }
 
         @Override
-        public void disconnected(final BluetoothPeripheral device) {
+        public void disconnected(final BluetoothPeripheral     private int scanCounter = 0;device) {
             final String deviceAddress = device.getAddress();
             connectedPeripherals.remove(deviceAddress);
             unconnectedPeripherals.remove(deviceAddress);
@@ -527,7 +526,6 @@ public class BluetoothCentral {
  //               HBLogger.i(TAG, "Trying to start scanning");
                 currentCommand = PROPERTY_DISCOVERING;
                 adapter.startDiscovery();
-                scanCounter++;
                 startScanTimer();
             } catch (BluezFailedException e) {
                 HBLogger.e(TAG, "Could not start discovery (failed)");
@@ -722,6 +720,7 @@ public class BluetoothCentral {
      *
      * @param peripheral the peripheral
      */
+    @SuppressWarnings("UnusedReturnValue")
     public boolean autoConnectPeripheral(@NotNull BluetoothPeripheral peripheral, @NotNull BluetoothPeripheralCallback peripheralCallback) {
         final String deviceAddress = peripheral.getAddress();
         if (reconnectPeripheralAddresses.contains(deviceAddress)) return false;
