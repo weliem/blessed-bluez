@@ -99,6 +99,9 @@ public class PulseOximeterContinuousMeasurement {
 
     @Override
     public String toString() {
+        if (SpO2 == 2047 || pulseRate == 2047) {
+            return "invalid measurement";
+        }
         return String.format("SpO2 %d%%, Pulse %d bpm, PAI %.1f", SpO2, pulseRate, pulseAmplitudeIndex);
     }
 }
