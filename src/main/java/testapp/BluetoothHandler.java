@@ -3,9 +3,14 @@ package testapp;
 import com.welie.blessed.*;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Calendar;
+import java.util.Date;
 import java.util.UUID;
 
+import static com.welie.blessed.BluetoothGattCharacteristic.PROPERTY_WRITE;
+import static com.welie.blessed.BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT;
 import static com.welie.blessed.BluetoothPeripheral.GATT_SUCCESS;
+import static java.lang.Math.abs;
 
 
 public class BluetoothHandler {
@@ -53,6 +58,19 @@ public class BluetoothHandler {
             if (peripheral.getService(DIS_SERVICE_UUID) != null) {
                 peripheral.readCharacteristic(peripheral.getCharacteristic(DIS_SERVICE_UUID, MANUFACTURER_NAME_CHARACTERISTIC_UUID));
                 peripheral.readCharacteristic(peripheral.getCharacteristic(DIS_SERVICE_UUID, MODEL_NUMBER_CHARACTERISTIC_UUID));
+            }
+
+            // Turn on notifications for Current Time Service
+            if (peripheral.getService(CTS_SERVICE_UUID) != null) {
+                BluetoothGattCharacteristic currentTimeCharacteristic = peripheral.getCharacteristic(CTS_SERVICE_UUID, CURRENT_TIME_CHARACTERISTIC_UUID);
+                peripheral.setNotify(currentTimeCharacteristic, true);
+
+                // If it has the write property we write the current time
+                if ((currentTimeCharacteristic.getProperties() & PROPERTY_WRITE) > 0) {
+                    BluetoothBytesParser parser = new BluetoothBytesParser();
+                    parser.setCurrentTime(Calendar.getInstance());
+                    peripheral.writeCharacteristic(currentTimeCharacteristic, parser.getValue(), WRITE_TYPE_DEFAULT);
+                }
             }
 
             // Turn on notifications for Blood Pressure Service
@@ -112,12 +130,15 @@ public class BluetoothHandler {
             } else if (characteristicUUID.equals(PLX_CONTINUOUS_MEASUREMENT_CHAR_UUID)) {
                 PulseOximeterContinuousMeasurement measurement = new PulseOximeterContinuousMeasurement(value);
                 HBLogger.i(TAG, measurement.toString());
-            }  else if (characteristicUUID.equals(PLX_SPOT_MEASUREMENT_CHAR_UUID)) {
+            } else if (characteristicUUID.equals(PLX_SPOT_MEASUREMENT_CHAR_UUID)) {
                 PulseOximeterSpotMeasurement measurement = new PulseOximeterSpotMeasurement(value);
                 HBLogger.i(TAG, measurement.toString());
             } else if (characteristicUUID.equals(HEARTRATE_MEASUREMENT_CHARACTERISTIC_UUID)) {
                 HeartRateMeasurement measurement = new HeartRateMeasurement(value);
                 HBLogger.d(TAG, measurement.toString());
+            } else if (characteristicUUID.equals(CURRENT_TIME_CHARACTERISTIC_UUID)) {
+                Date currentTime = parser.getDateTime();
+                HBLogger.i(TAG, String.format("Received device time: %s", currentTime));
             }
         }
 
