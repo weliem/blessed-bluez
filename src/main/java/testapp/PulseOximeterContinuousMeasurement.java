@@ -99,6 +99,6 @@ public class PulseOximeterContinuousMeasurement {
 
     @Override
     public String toString() {
-        return String.format("%d%% %d bpm", SpO2, pulseRate);
+        return String.format("SpO2 %d%%, Pulse %d bpm, PAI %.1f", SpO2, pulseRate, pulseAmplitudeIndex);
     }
 }

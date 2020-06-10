@@ -51,31 +51,31 @@ public class BluetoothHandler {
             HBLogger.i(TAG, "services discovered, starting initialization");
 
             // Read manufacturer and model number from the Device Information Service
-            if(peripheral.getService(DIS_SERVICE_UUID) != null) {
+            if (peripheral.getService(DIS_SERVICE_UUID) != null) {
                 peripheral.readCharacteristic(peripheral.getCharacteristic(DIS_SERVICE_UUID, MANUFACTURER_NAME_CHARACTERISTIC_UUID));
                 peripheral.readCharacteristic(peripheral.getCharacteristic(DIS_SERVICE_UUID, MODEL_NUMBER_CHARACTERISTIC_UUID));
             }
 
             // Turn on notifications for Blood Pressure Service
-            if(peripheral.getService(BLP_SERVICE_UUID) != null) {
+            if (peripheral.getService(BLP_SERVICE_UUID) != null) {
                 peripheral.setNotify(peripheral.getCharacteristic(BLP_SERVICE_UUID, BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID), true);
             }
 
             // Turn on notification for Health Thermometer Service
-            if(peripheral.getService(HTS_SERVICE_UUID) != null) {
+            if (peripheral.getService(HTS_SERVICE_UUID) != null) {
                 peripheral.setNotify(peripheral.getCharacteristic(HTS_SERVICE_UUID, TEMPERATURE_MEASUREMENT_CHARACTERISTIC_UUID), true);
             }
 
             // Turn on notification for Pulse Oximeter Service
-            if(peripheral.getService(PLX_SERVICE_UUID) != null) {
+            if (peripheral.getService(PLX_SERVICE_UUID) != null) {
                 peripheral.setNotify(peripheral.getCharacteristic(PLX_SERVICE_UUID, PLX_CONTINUOUS_MEASUREMENT_CHAR_UUID), true);
             }
         }
 
         @Override
         public void onNotificationStateUpdate(@NotNull BluetoothPeripheral peripheral, @NotNull BluetoothGattCharacteristic characteristic, int status) {
-            if( status == GATT_SUCCESS) {
-                if(peripheral.isNotifying(characteristic)) {
+            if (status == GATT_SUCCESS) {
+                if (peripheral.isNotifying(characteristic)) {
                     HBLogger.i(TAG, String.format("SUCCESS: Notify set to 'on' for %s", characteristic.getUuid()));
                 } else {
                     HBLogger.i(TAG, String.format("SUCCESS: Notify set to 'off' for %s", characteristic.getUuid()));
@@ -87,29 +87,25 @@ public class BluetoothHandler {
 
         @Override
         public void onCharacteristicUpdate(@NotNull BluetoothPeripheral peripheral, byte[] value, @NotNull BluetoothGattCharacteristic characteristic, int status) {
- //           HBLogger.i(TAG, String.format("Received %s", bytes2String(value)));
+            //           HBLogger.i(TAG, String.format("Received %s", bytes2String(value)));
             UUID characteristicUUID = characteristic.getUuid();
             BluetoothBytesParser parser = new BluetoothBytesParser(value);
 
-            if(characteristicUUID.equals(MANUFACTURER_NAME_CHARACTERISTIC_UUID)) {
+            if (characteristicUUID.equals(MANUFACTURER_NAME_CHARACTERISTIC_UUID)) {
                 String manufacturer = parser.getStringValue(0);
                 HBLogger.i(TAG, String.format("Received manufacturer: %s", manufacturer));
-            }
-            else if(characteristicUUID.equals(MODEL_NUMBER_CHARACTERISTIC_UUID)) {
+            } else if (characteristicUUID.equals(MODEL_NUMBER_CHARACTERISTIC_UUID)) {
                 String modelNumber = parser.getStringValue(0);
                 HBLogger.i(TAG, String.format("Received modelnumber: %s", modelNumber));
-            }
-            else if(characteristicUUID.equals(TEMPERATURE_MEASUREMENT_CHARACTERISTIC_UUID)) {
+            } else if (characteristicUUID.equals(TEMPERATURE_MEASUREMENT_CHARACTERISTIC_UUID)) {
                 TemperatureMeasurement measurement = new TemperatureMeasurement(value);
                 HBLogger.i(TAG, measurement.toString());
                 peripheral.disconnect();
-            }
-            else if(characteristicUUID.equals(BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID)) {
+            } else if (characteristicUUID.equals(BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID)) {
                 BloodPressureMeasurement measurement = new BloodPressureMeasurement(value);
                 HBLogger.i(TAG, measurement.toString());
                 peripheral.disconnect();
-            }
-            else if(characteristicUUID.equals(PLX_CONTINUOUS_MEASUREMENT_CHAR_UUID)) {
+            } else if (characteristicUUID.equals(PLX_CONTINUOUS_MEASUREMENT_CHAR_UUID)) {
                 PulseOximeterContinuousMeasurement measurement = new PulseOximeterContinuousMeasurement(value);
                 HBLogger.i(TAG, measurement.toString());
             }
@@ -160,8 +156,8 @@ public class BluetoothHandler {
         @Override
         public void onConnectedPeripheral(@NotNull BluetoothPeripheral peripheral) {
             super.onConnectedPeripheral(peripheral);
- //           HBLogger.i(TAG, "connected peripheral");
- //           startScanning();
+            //           HBLogger.i(TAG, "connected peripheral");
+            //           startScanning();
         }
 
         @Override
@@ -179,12 +175,9 @@ public class BluetoothHandler {
 
         @Override
         public void onDiscoveredPeripheral(final @NotNull BluetoothPeripheral peripheral, final @NotNull ScanResult scanResult) {
-//            HBLogger.i(TAG, String.format("Found %s (%s)", peripheral.getName(), peripheral.getAddress()));
             HBLogger.i(TAG, scanResult.toString());
-            if (peripheral.getName() != null && (peripheral.getName().startsWith("IH") || peripheral.getName().startsWith("TAID"))) {
-                central.stopScan();
-                central.connectPeripheral(peripheral, peripheralCallback);
-            }
+            central.stopScan();
+            central.connectPeripheral(peripheral, peripheralCallback);
         }
     };
 
@@ -196,12 +189,12 @@ public class BluetoothHandler {
     }
 
     void startScanning() {
- //       central.scanForPeripheralsWithServices(new UUID[]{HTS_SERVICE_UUID});
-        central.scanForPeripheralsWithNames(new String[]{"OMRON"});
- //       central.scanForPeripheralsWithAddresses(new String[]{"C0:26:DF:01:F2:72"});
- //       central.scanForPeripherals();
-
-        BluetoothPeripheral peripheral = central.getPeripheral("C0:26:DF:01:F2:72");
-        central.autoConnectPeripheral(peripheral, peripheralCallback);
+        central.scanForPeripheralsWithServices(new UUID[]{HTS_SERVICE_UUID, PLX_SERVICE_UUID, BLP_SERVICE_UUID});
+//        central.scanForPeripheralsWithNames(new String[]{"Nonin"});
+//        central.scanForPeripheralsWithAddresses(new String[]{"C0:26:DF:01:F2:72"});
+//        central.scanForPeripherals();
+//
+//        BluetoothPeripheral peripheral = central.getPeripheral("C0:26:DF:01:F2:72");
+//        central.autoConnectPeripheral(peripheral, peripheralCallback);
     }
 }
