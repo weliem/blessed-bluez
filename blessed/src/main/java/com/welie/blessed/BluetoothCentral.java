@@ -112,7 +112,7 @@ public class BluetoothCentral {
         }
 
         @Override
-        public void disconnected(final BluetoothPeripheral     private int scanCounter = 0;device) {
+        public void disconnected(final BluetoothPeripheral device) {
             final String deviceAddress = device.getAddress();
             connectedPeripherals.remove(deviceAddress);
             unconnectedPeripherals.remove(deviceAddress);
