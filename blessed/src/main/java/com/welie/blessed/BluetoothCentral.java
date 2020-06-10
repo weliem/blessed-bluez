@@ -48,7 +48,8 @@ public class BluetoothCentral {
     private @NotNull String[] scanPeripheralAddresses = new String[0];
     private final List<String> reconnectPeripheralAddresses = new ArrayList<>();
     private final Map<String, BluetoothPeripheralCallback> reconnectCallbacks = new ConcurrentHashMap<>();
-    private Map<String, String> passCodes = new ConcurrentHashMap<>();
+    private final Map<String, String> pinCodes = new ConcurrentHashMap<>();
+    private BluezAgentManager bluetoothAgentManager = null;
 
     private static final int ADDRESS_LENGTH = 17;
     private static final short DISCOVERY_RSSI_THRESHOLD = -70;
@@ -195,7 +196,7 @@ public class BluetoothCentral {
             HBLogger.i(TAG, String.format("Received passcode request for %s", deviceAddress));
 
             // See if we have a pass code for this device
-            String passCode = passCodes.get(deviceAddress);
+            String passCode = pinCodes.get(deviceAddress);
 
             // If we don't have one try "000000"
             if(passCode == null) {
@@ -220,7 +221,7 @@ public class BluetoothCentral {
         }
     }
 
-    private BluezAgentManager bluetoothAgentManager = null;
+
     private BluezAgentManager getBluetoothAgentManager() {
         if(bluetoothAgentManager == null) {
             AgentManager1 agentManager1 = DbusHelper.getRemoteObject(dbusConnection, "/org/bluez", AgentManager1.class);
@@ -358,7 +359,7 @@ public class BluetoothCentral {
 
         connectPeripheral(peripheral, peripheralCallback);
 
-        if (reconnectPeripheralAddresses.size() > 0) {
+        if (!reconnectPeripheralAddresses.isEmpty()) {
             autoScanActive = true;
             startScanning();
         } else if (normalScanActive) {
@@ -862,6 +863,37 @@ public class BluetoothCentral {
         } else {
             return new BluetoothPeripheral(this,null, null, peripheralAddress, internalCallback, null, callBackHandler);
         }
+    }
+
+    /**
+     * Set a fixed PIN code for a peripheral that asks fir a PIN code during bonding.
+     * <p>
+     * This PIN code will be used to programmatically bond with the peripheral when it asks for a PIN code.
+     * Note that this only works for devices with a fixed PIN code.
+     *
+     * @param peripheralAddress the address of the peripheral
+     * @param pin               the 6 digit PIN code as a string, e.g. "123456"
+     * @return true if the pin code and peripheral address are valid and stored internally
+     */
+    @SuppressWarnings("unused")
+    public boolean setPinCodeForPeripheral(String peripheralAddress, String pin) {
+        if (!checkBluetoothAddress(peripheralAddress)) {
+            HBLogger.e(TAG, String.format("%s is not a valid address. Make sure all alphabetic characters are uppercase.", peripheralAddress));
+            return false;
+        }
+
+        if (pin == null) {
+            HBLogger.e(TAG, "pin code is null");
+            return false;
+        }
+
+        if (pin.length() != 6) {
+            HBLogger.e(TAG, String.format("%s is not 6 digits long", pin));
+            return false;
+        }
+
+        pinCodes.put(peripheralAddress, pin);
+        return true;
     }
 
     /**
