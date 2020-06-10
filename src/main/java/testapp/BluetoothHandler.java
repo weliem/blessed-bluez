@@ -68,6 +68,7 @@ public class BluetoothHandler {
             // Turn on notification for Pulse Oximeter Service
             if (peripheral.getService(PLX_SERVICE_UUID) != null) {
                 peripheral.setNotify(peripheral.getCharacteristic(PLX_SERVICE_UUID, PLX_CONTINUOUS_MEASUREMENT_CHAR_UUID), true);
+                peripheral.setNotify(peripheral.getCharacteristic(PLX_SERVICE_UUID, PLX_SPOT_MEASUREMENT_CHAR_UUID), true);
             }
 
             // Turn on notification for Heart Rate  Service
