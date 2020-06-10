@@ -71,10 +71,7 @@ public class BluetoothCentral {
             connectedPeripherals.put(deviceAddress, device);
             unconnectedPeripherals.remove(deviceAddress);
 
-            // Complete the 'connect' command if this was the device we were connecting
-            if (currentCommand.equalsIgnoreCase(PROPERTY_CONNECTED) && deviceAddress.equalsIgnoreCase(currentDeviceAddress)) {
-                completedCommand();
-            }
+            completeConnectOrDisconnectCommand(deviceAddress);
 
             callBackHandler.post(() -> {
                 if (bluetoothCentralCallback != null) {
@@ -82,9 +79,7 @@ public class BluetoothCentral {
                 }
             });
 
-            if (autoScanActive || normalScanActive) {
-                startScanning();
-            }
+            restartScannerIfNeeded();
         }
 
         @Override
@@ -104,9 +99,7 @@ public class BluetoothCentral {
             unconnectedPeripherals.remove(deviceAddress);
 
             // Complete the 'connect' command if this was the device we were connecting
-            if (currentCommand.equalsIgnoreCase(PROPERTY_CONNECTED) && deviceAddress.equalsIgnoreCase(currentDeviceAddress)) {
-                completedCommand();
-            }
+            completeConnectOrDisconnectCommand(deviceAddress);
 
             callBackHandler.post(() -> {
                 if (bluetoothCentralCallback != null) {
@@ -114,9 +107,7 @@ public class BluetoothCentral {
                 }
             });
 
-            if (autoScanActive || normalScanActive) {
-                startScanning();
-            }
+            restartScannerIfNeeded();
         }
 
         @Override
@@ -124,6 +115,8 @@ public class BluetoothCentral {
             final String deviceAddress = device.getAddress();
             connectedPeripherals.remove(deviceAddress);
             unconnectedPeripherals.remove(deviceAddress);
+
+            completeConnectOrDisconnectCommand(deviceAddress);
 
             // Remove unbonded devices from DBsus to make setting notifications work on reconnection (Bluez issue)
             if (!device.isPaired()) {
@@ -136,15 +129,22 @@ public class BluetoothCentral {
                 }
             });
 
-            // Complete the 'connect' command if this was the device we were connecting
-            if (currentCommand.equalsIgnoreCase(PROPERTY_CONNECTED) && deviceAddress.equalsIgnoreCase(currentDeviceAddress)) {
-                completedCommand();
-            }
-            if (autoScanActive || normalScanActive) {
-                startScanning();
-            }
+            restartScannerIfNeeded();
         }
     };
+
+    private void restartScannerIfNeeded() {
+        if (autoScanActive || normalScanActive) {
+            startScanning();
+        }
+    }
+
+    private void completeConnectOrDisconnectCommand(String deviceAddress) {
+        // Complete the 'connect' command if this was the device we were connecting
+        if (currentCommand.equalsIgnoreCase(PROPERTY_CONNECTED) && deviceAddress.equalsIgnoreCase(currentDeviceAddress)) {
+            completedCommand();
+        }
+    }
 
     /**
      * Construct a new BluetoothCentral object
@@ -257,6 +257,10 @@ public class BluetoothCentral {
         scanPeripheralNames = new String[0];
         scanPeripheralAddresses = new String[0];
         scanFilters.clear();
+        setBasicFilters();
+    }
+
+    private void setBasicFilters() {
         scanFilters.put(DiscoveryFilter.Transport, DiscoveryTransport.LE);
         scanFilters.put(DiscoveryFilter.RSSI, DISCOVERY_RSSI_THRESHOLD);
         scanFilters.put(DiscoveryFilter.DuplicateData, true);
@@ -726,13 +730,7 @@ public class BluetoothCentral {
         reconnectCallbacks.put(deviceAddress, peripheralCallback);
         unconnectedPeripherals.put(deviceAddress, peripheral);
 
-        autoScanActive = true;
-        if (!isScanning) {
-            scanFilters.put(DiscoveryFilter.Transport, DiscoveryTransport.LE);
-            scanFilters.put(DiscoveryFilter.RSSI, DISCOVERY_RSSI_THRESHOLD);
-            scanFilters.put(DiscoveryFilter.DuplicateData, true);
-            startScanning();
-        }
+        startAutoConnectScan();
         return true;
     }
 
@@ -752,13 +750,15 @@ public class BluetoothCentral {
         }
 
         if (!reconnectPeripheralAddresses.isEmpty()) {
-            autoScanActive = true;
-            if (!isScanning) {
-                scanFilters.put(DiscoveryFilter.Transport, DiscoveryTransport.LE);
-                scanFilters.put(DiscoveryFilter.RSSI, DISCOVERY_RSSI_THRESHOLD);
-                scanFilters.put(DiscoveryFilter.DuplicateData, true);
-                startScanning();
-            }
+            startAutoConnectScan();
+        }
+    }
+
+    private void startAutoConnectScan() {
+        autoScanActive = true;
+        if (!isScanning) {
+            setBasicFilters();
+            startScanning();
         }
     }
 
