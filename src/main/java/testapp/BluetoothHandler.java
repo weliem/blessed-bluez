@@ -40,6 +40,11 @@ public class BluetoothHandler {
     private static final UUID BTS_SERVICE_UUID = UUID.fromString("0000180F-0000-1000-8000-00805f9b34fb");
     private static final UUID BATTERY_LEVEL_CHARACTERISTIC_UUID = UUID.fromString("00002A19-0000-1000-8000-00805f9b34fb");
 
+    // UUIDs for the Pulse Oximeter Service (PLX)
+    public static final UUID PLX_SERVICE_UUID = UUID.fromString("00001822-0000-1000-8000-00805f9b34fb");
+    private static final UUID PLX_SPOT_MEASUREMENT_CHAR_UUID = UUID.fromString("00002a5e-0000-1000-8000-00805f9b34fb");
+    private static final UUID PLX_CONTINUOUS_MEASUREMENT_CHAR_UUID = UUID.fromString("00002a5f-0000-1000-8000-00805f9b34fb");
+
     private final BluetoothPeripheralCallback peripheralCallback = new BluetoothPeripheralCallback() {
         @Override
         public void onServicesDiscovered(@NotNull BluetoothPeripheral peripheral) {
@@ -59,6 +64,11 @@ public class BluetoothHandler {
             // Turn on notification for Health Thermometer Service
             if(peripheral.getService(HTS_SERVICE_UUID) != null) {
                 peripheral.setNotify(peripheral.getCharacteristic(HTS_SERVICE_UUID, TEMPERATURE_MEASUREMENT_CHARACTERISTIC_UUID), true);
+            }
+
+            // Turn on notification for Pulse Oximeter Service
+            if(peripheral.getService(PLX_SERVICE_UUID) != null) {
+                peripheral.setNotify(peripheral.getCharacteristic(PLX_SERVICE_UUID, PLX_CONTINUOUS_MEASUREMENT_CHAR_UUID), true);
             }
         }
 
@@ -98,6 +108,10 @@ public class BluetoothHandler {
                 BloodPressureMeasurement measurement = new BloodPressureMeasurement(value);
                 HBLogger.i(TAG, measurement.toString());
                 peripheral.disconnect();
+            }
+            else if(characteristicUUID.equals(PLX_CONTINUOUS_MEASUREMENT_CHAR_UUID)) {
+                PulseOximeterContinuousMeasurement measurement = new PulseOximeterContinuousMeasurement(value);
+                HBLogger.i(TAG, measurement.toString());
             }
         }
 
