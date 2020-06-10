@@ -2,6 +2,7 @@ package com.welie.blessed;
 
 import com.welie.blessed.bluez.*;
 import org.bluez.Adapter1;
+import org.bluez.AgentManager1;
 import org.bluez.Device1;
 import org.bluez.exceptions.*;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
@@ -48,6 +49,7 @@ public class BluetoothCentral {
     private @NotNull String[] scanPeripheralAddresses = new String[0];
     private final List<String> reconnectPeripheralAddresses = new ArrayList<>();
     private final Map<String, BluetoothPeripheralCallback> reconnectCallbacks = new ConcurrentHashMap<>();
+    private Map<String, String> passCodes = new ConcurrentHashMap<>();
 
     private static final int ADDRESS_LENGTH = 17;
     private static final short DISCOVERY_RSSI_THRESHOLD = -70;
@@ -180,11 +182,54 @@ public class BluetoothCentral {
                 return;
             }
 
+            setupPairingAgent();
             BluezSignalHandler.createInstance(dbusConnection).addCentral(this);
             registerInterfaceAddedHandler(interfacesAddedHandler);
         } catch (DBusException e) {
             e.printStackTrace();
         }
+    }
+
+    private void setupPairingAgent() throws BluezInvalidArgumentsException, BluezAlreadyExistsException, BluezDoesNotExistException {
+        // Setup pairing agent
+        PairingAgent agent = new PairingAgent("/test/agent", dbusConnection, deviceAddress -> {
+            HBLogger.i(TAG, String.format("Received passcode request for %s", deviceAddress));
+
+            // See if we have a pass code for this device
+            String passCode = passCodes.get(deviceAddress);
+
+            // If we don't have one try "000000"
+            if(passCode == null) {
+                HBLogger.i(TAG, "No passcode available for this device, trying 000000");
+                passCode = "000000";
+            }
+            HBLogger.i(TAG, String.format("Sending passcode %s", passCode));
+            return passCode;
+        });
+        BluezAgentManager agentManager = getBluetoothAgentManager();
+        if(agentManager != null) {
+//                The capability parameter can have the values
+//                "DisplayOnly", "DisplayYesNo", "KeyboardOnly",
+//                "NoInputNoOutput" and "KeyboardDisplay" which
+//                reflects the input and output capabilities of the
+//                agent.
+//                agentManager.registerAgent(agent, "NoInputNoOutput");
+//                agentManager.registerAgent(agent, "DisplayOnly");   // not working for Omron
+//                agentManager.registerAgent(agent, "DisplayYesNo");   // not working for Omron
+            agentManager.registerAgent(agent, "KeyboardOnly");   // Works for Omron, must supply PIN
+            agentManager.requestDefaultAgent(agent);
+        }
+    }
+
+    private BluezAgentManager bluetoothAgentManager = null;
+    private BluezAgentManager getBluetoothAgentManager() {
+        if(bluetoothAgentManager == null) {
+            AgentManager1 agentManager1 = DbusHelper.getRemoteObject(dbusConnection, "/org/bluez", AgentManager1.class);
+            if(agentManager1 != null) {
+                bluetoothAgentManager = new BluezAgentManager(agentManager1, adapter, agentManager1.getObjectPath(), dbusConnection);
+            }
+        }
+        return bluetoothAgentManager;
     }
 
     private void registerInterfaceAddedHandler(@NotNull AbstractInterfacesAddedHandler handler) throws DBusException {

@@ -11,13 +11,13 @@ import org.freedesktop.dbus.interfaces.DBusInterface;
 import org.freedesktop.dbus.types.UInt16;
 import org.freedesktop.dbus.types.UInt32;
 
-public class HBPairingAgent extends AbstractBluetoothObject implements Agent1 {
+public class PairingAgent extends AbstractBluetoothObject implements Agent1 {
 
     private static String TAG = "Agent";
-    private HBPairingDelegate pairingDelegate;
+    private PairingDelegate pairingDelegate;
 
     // Constructor for creating a new agent. This will create a new object on the DBus
-    public HBPairingAgent(String _dbusPath, DBusConnection _dbusConnection, HBPairingDelegate pairingDelegate) {
+    public PairingAgent(String _dbusPath, DBusConnection _dbusConnection, PairingDelegate pairingDelegate) {
         super(BluezDeviceType.AGENT, _dbusConnection, _dbusPath);
         this.pairingDelegate = pairingDelegate;
 

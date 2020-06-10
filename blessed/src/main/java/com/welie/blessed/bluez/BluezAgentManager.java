@@ -62,7 +62,7 @@ public class BluezAgentManager extends AbstractBluetoothObject  {
      * @throws BluezInvalidArgumentsException when argument is invalid
      * @throws BluezAlreadyExistsException when item already exists
      */
-    public void registerAgent(HBPairingAgent bluetoothAgent, String _capability) throws BluezInvalidArgumentsException, BluezAlreadyExistsException {
+    public void registerAgent(PairingAgent bluetoothAgent, String _capability) throws BluezInvalidArgumentsException, BluezAlreadyExistsException {
         rawAgentManager.RegisterAgent(new DBusPath(bluetoothAgent.getDbusPath()), _capability);
     }
 
@@ -79,7 +79,7 @@ public class BluezAgentManager extends AbstractBluetoothObject  {
      *
      * @throws BluezDoesNotExistException when item does not exist
      */
-    public void unregisterAgent(HBPairingAgent bluetoothAgent) throws BluezDoesNotExistException {
+    public void unregisterAgent(PairingAgent bluetoothAgent) throws BluezDoesNotExistException {
         rawAgentManager.UnregisterAgent(new DBusPath(bluetoothAgent.getDbusPath()));
     }
 
@@ -98,7 +98,7 @@ public class BluezAgentManager extends AbstractBluetoothObject  {
      *
      * @throws BluezDoesNotExistException when item does not exist
      */
-    public void requestDefaultAgent(HBPairingAgent bluetoothAgent) throws BluezDoesNotExistException {
+    public void requestDefaultAgent(PairingAgent bluetoothAgent) throws BluezDoesNotExistException {
         rawAgentManager.RequestDefaultAgent((new DBusPath(bluetoothAgent.getDbusPath())));
     }
 }
