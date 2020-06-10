@@ -1,6 +1,5 @@
 package testapp;
 
-
 import com.welie.blessed.BluetoothBytesParser;
 
 import java.text.DateFormat;
@@ -103,6 +102,6 @@ public class PulseOximeterSpotMeasurement {
     public String toString() {
         DateFormat df = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
         String formattedTimestamp = df.format(timestamp);
-        return String.format("%.0f%% HR: %.0f PAI: %.1f (%s)", spO2, pulseRate, pulseAmplitudeIndex, formattedTimestamp);
+        return String.format("SpO2 %.0f%% HR: %.0f PAI: %.1f (%s)", spO2, pulseRate, pulseAmplitudeIndex, formattedTimestamp);
     }
 }
