@@ -38,35 +38,37 @@ public class PairingAgent extends AbstractBluetoothObject implements Agent1 {
     }
 
     public String RequestPinCode(DBusPath _device) throws BluezRejectedException, BluezCanceledException {
-        HBLogger.i(TAG,"called agent RequestPinCode");
+        HBLogger.i(TAG,"peripheral sending RequestPinCode");
         return null;
     }
 
     public void DisplayPinCode(DBusPath _device, String _pincode) throws BluezRejectedException, BluezCanceledException {
-        HBLogger.i(TAG,"called agent DisplayPinCode");
+        HBLogger.i(TAG,"peripheral sending DisplayPinCode");
     }
 
     public UInt32 RequestPasskey(DBusPath _device) throws BluezRejectedException, BluezCanceledException {
         // Ask delegate for passkey
-        String passKeyString = pairingDelegate.requestPassCode(path2deviceAddress(_device));
-        UInt32 passkey = new UInt32(passKeyString);
-        return passkey;
+        final String deviceAddress = path2deviceAddress(_device);
+        pairingDelegate.onPairingStarted(deviceAddress);
+        String passKeyString = pairingDelegate.requestPassCode(deviceAddress);
+        return new UInt32(passKeyString);
     }
 
     public void DisplayPasskey(DBusPath _device, UInt32 _passkey, UInt16 _entered) {
-        HBLogger.i(TAG,"called agent DisplayPasskey");
+        HBLogger.i(TAG,"peripheral sending DisplayPasskey");
     }
 
     public void RequestConfirmation(DBusPath _device, UInt32 _passkey) throws BluezRejectedException, BluezCanceledException {
-        HBLogger.i(TAG,"called agent RequestConfirmation");
+        HBLogger.i(TAG,"peripheral sending RequestConfirmation");
     }
 
     public void RequestAuthorization(DBusPath _device) throws BluezRejectedException, BluezCanceledException {
-        HBLogger.i(TAG,"called agent RequestAuthorization");
+        pairingDelegate.onPairingStarted(path2deviceAddress(_device));
+        HBLogger.i(TAG,"peripheral sending RequestAuthorization");
     }
 
     public void AuthorizeService(DBusPath _device, String _uuid) throws BluezRejectedException, BluezCanceledException {
-        HBLogger.i(TAG,"called agent AuthorizeService");
+        HBLogger.i(TAG,"peripheral sending AuthorizeService");
     }
 
     public void Cancel() {
@@ -85,7 +87,6 @@ public class PairingAgent extends AbstractBluetoothObject implements Agent1 {
     String path2deviceAddress(DBusPath device) {
         String[] pathElements = device.getPath().split("/");
         String deviceName = pathElements[pathElements.length-1];
-        String deviceAddress = deviceName.substring(4).replace("_", ":");
-        return  deviceAddress;
+        return deviceName.substring(4).replace("_", ":");
     }
 }

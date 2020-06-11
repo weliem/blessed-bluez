@@ -92,6 +92,9 @@ public class BluetoothCentral {
         @Override
         public void serviceDiscoveryFailed(final BluetoothPeripheral device) {
             HBLogger.i(TAG, "Service discovery failed");
+            if (device.isPaired()) {
+                callBackHandler.postDelayed(() -> { removeDevice(device); }, 200L);
+            }
         }
 
         @Override
@@ -120,7 +123,7 @@ public class BluetoothCentral {
 
             completeConnectOrDisconnectCommand(deviceAddress);
 
-            // Remove unbonded devices from DBsus to make setting notifications work on reconnection (Bluez issue)
+            // Remove unbonded devices from DBus to make setting notifications work on reconnection (Bluez issue)
             if (!device.isPaired()) {
                 removeDevice(device);
             }
@@ -152,7 +155,7 @@ public class BluetoothCentral {
      * Construct a new BluetoothCentral object
      *
      * @param bluetoothCentralCallback the callback to call for updates
-     * @param handler the handler to receive the callbacks on
+     * @param handler                  the handler to receive the callbacks on
      */
     public BluetoothCentral(@NotNull BluetoothCentralCallback bluetoothCentralCallback, @Nullable Handler handler) {
         this.bluetoothCentralCallback = bluetoothCentralCallback;
@@ -192,22 +195,34 @@ public class BluetoothCentral {
 
     private void setupPairingAgent() throws BluezInvalidArgumentsException, BluezAlreadyExistsException, BluezDoesNotExistException {
         // Setup pairing agent
-        PairingAgent agent = new PairingAgent("/test/agent", dbusConnection, deviceAddress -> {
-            HBLogger.i(TAG, String.format("Received passcode request for %s", deviceAddress));
+        PairingAgent agent = new PairingAgent("/test/agent", dbusConnection, new PairingDelegate() {
+            @Override
+            public String requestPassCode(String deviceAddress) {
+                HBLogger.i(TAG, String.format("received passcode request for %s", deviceAddress));
 
-            // See if we have a pass code for this device
-            String passCode = pinCodes.get(deviceAddress);
+                // See if we have a pass code for this device
+                String passCode = pinCodes.get(deviceAddress);
 
-            // If we don't have one try "000000"
-            if(passCode == null) {
-                HBLogger.i(TAG, "No passcode available for this device, trying 000000");
-                passCode = "000000";
+                // If we don't have one try "000000"
+                if (passCode == null) {
+                    HBLogger.i(TAG, "No passcode available for this device, trying 000000");
+                    passCode = "000000";
+                }
+                HBLogger.i(TAG, String.format("sending passcode %s", passCode));
+                return passCode;
             }
-            HBLogger.i(TAG, String.format("Sending passcode %s", passCode));
-            return passCode;
+
+            @Override
+            public void onPairingStarted(String deviceAddress) {
+                BluetoothPeripheral peripheral = getPeripheral(deviceAddress);
+                if (peripheral != null) {
+                    peripheral.gattCallback.onPairingStarted();
+                }
+            }
         });
+
         BluezAgentManager agentManager = getBluetoothAgentManager();
-        if(agentManager != null) {
+        if (agentManager != null) {
 //                The capability parameter can have the values
 //                "DisplayOnly", "DisplayYesNo", "KeyboardOnly",
 //                "NoInputNoOutput" and "KeyboardDisplay" which
@@ -223,9 +238,9 @@ public class BluetoothCentral {
 
 
     private BluezAgentManager getBluetoothAgentManager() {
-        if(bluetoothAgentManager == null) {
+        if (bluetoothAgentManager == null) {
             AgentManager1 agentManager1 = DbusHelper.getRemoteObject(dbusConnection, "/org/bluez", AgentManager1.class);
-            if(agentManager1 != null) {
+            if (agentManager1 != null) {
                 bluetoothAgentManager = new BluezAgentManager(agentManager1, adapter, agentManager1.getObjectPath(), dbusConnection);
             }
         }
@@ -264,7 +279,7 @@ public class BluetoothCentral {
 
     /**
      * Scan for peripherals with advertisement names containing any of the specified peripheral names.
-     *
+     * <p>
      * Substring matching is used so only a partial peripheral names has to be supplied.
      *
      * @param peripheralNames array of partial peripheral names
@@ -554,7 +569,7 @@ public class BluetoothCentral {
             // If we are already scanning then complete the command immediately
             isScanning = adapter.isDiscovering();
             if (isScanning) {
- //               HBLogger.i(TAG, "Already scanning so completing command");
+                //               HBLogger.i(TAG, "Already scanning so completing command");
                 completedCommand();
                 return;
             }
@@ -569,7 +584,7 @@ public class BluetoothCentral {
 
             // Start the discovery
             try {
- //               HBLogger.i(TAG, "Trying to start scanning");
+                //               HBLogger.i(TAG, "Trying to start scanning");
                 currentCommand = PROPERTY_DISCOVERING;
                 adapter.startDiscovery();
                 startScanTimer();
@@ -861,7 +876,7 @@ public class BluetoothCentral {
         } else if (unconnectedPeripherals.containsKey(peripheralAddress)) {
             return unconnectedPeripherals.get(peripheralAddress);
         } else {
-            return new BluetoothPeripheral(this,null, null, peripheralAddress, internalCallback, null, callBackHandler);
+            return new BluetoothPeripheral(this, null, null, peripheralAddress, internalCallback, null, callBackHandler);
         }
     }
 
@@ -926,7 +941,6 @@ public class BluetoothCentral {
         }
         return true;
     }
-
 
 
     /**

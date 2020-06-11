@@ -128,7 +128,7 @@ public class BluetoothPeripheral {
     public static final int GATT_AUTH_FAIL = 137;
 
     // GattCallback will deal with managing low-level callbacks
-    private final GattCallback gattCallback = new GattCallback() {
+    final GattCallback gattCallback = new GattCallback() {
         @Override
         public void onConnectionStateChanged(ConnectionState connectionState, int status) {
             ConnectionState previousState = state;
@@ -149,6 +149,12 @@ public class BluetoothPeripheral {
                         }
                     } else {
                         if (!serviceDiscoveryCompleted) {
+                            if (isBonded) {
+                                // Assume we lost the bond
+                                if (peripheralCallback != null) {
+                                    callBackHandler.post(() -> peripheralCallback.onBondLost(BluetoothPeripheral.this));
+                                }
+                            }
                             listener.serviceDiscoveryFailed(BluetoothPeripheral.this);
                         }
                         completeDisconnect(true);
@@ -223,6 +229,14 @@ public class BluetoothPeripheral {
                 callBackHandler.post(() -> peripheralCallback.onCharacteristicWrite(BluetoothPeripheral.this, currentWriteBytes, characteristic, status));
             }
             completedCommand();
+        }
+
+        @Override
+        public void onPairingStarted() {
+            HBLogger.i(TAG, "pairing (bonding) started");
+            if (peripheralCallback != null) {
+                callBackHandler.post(() -> peripheralCallback.onBondingStarted(BluetoothPeripheral.this));
+            }
         }
 
         @Override

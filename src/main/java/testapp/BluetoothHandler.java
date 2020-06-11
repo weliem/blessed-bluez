@@ -18,6 +18,7 @@ public class BluetoothHandler {
 
     private final BluetoothCentral central;
     private final Handler handler = new Handler("testapp.BluetoothHandler");
+    private boolean justBonded = false;
 
     // UUIDs for the Blood Pressure service (BLP)
     private static final UUID BLP_SERVICE_UUID = UUID.fromString("00001810-0000-1000-8000-00805f9b34fb");
@@ -100,6 +101,12 @@ public class BluetoothHandler {
             if (status == GATT_SUCCESS) {
                 if (peripheral.isNotifying(characteristic)) {
                     HBLogger.i(TAG, String.format("SUCCESS: Notify set to 'on' for %s", characteristic.getUuid()));
+
+                    // If we just bonded wit the A&D 651BLE, issue a disconnect to finish the pairing process
+                    if (justBonded && peripheral.getName().contains("651BLE")) {
+                        peripheral.disconnect();
+                        justBonded = false;
+                    }
                 } else {
                     HBLogger.i(TAG, String.format("SUCCESS: Notify set to 'off' for %s", characteristic.getUuid()));
                 }
@@ -164,7 +171,7 @@ public class BluetoothHandler {
 
         @Override
         public void onBondingSucceeded(@NotNull BluetoothPeripheral peripheral) {
-            super.onBondingSucceeded(peripheral);
+            justBonded = true;
         }
 
         @Override
@@ -213,7 +220,7 @@ public class BluetoothHandler {
     public BluetoothHandler() {
 
         central = new BluetoothCentral(bluetoothCentralCallback, handler);
-
+        central.setPinCodeForPeripheral("B0:49:5F:01:20:8F", "635227");
         startScanning();
     }
 

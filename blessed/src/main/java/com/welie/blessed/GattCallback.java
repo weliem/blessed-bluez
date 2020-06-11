@@ -17,6 +17,8 @@ public abstract class GattCallback {
 
     public abstract void onServicesDiscovered(List<BluetoothGattService> services, int status);
 
+    public abstract void onPairingStarted();
+
     public abstract void onPaired();
 
     public abstract void onPairingFailed();
