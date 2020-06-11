@@ -227,7 +227,7 @@ public class BluetoothPeripheral {
 
         @Override
         public void onPaired() {
-            HBLogger.i(TAG, "Pairing (bonding) succeeded");
+            HBLogger.i(TAG, "pairing (bonding) succeeded");
 //            if(getName().startsWith("PDL") || getName().startsWith("Philips health band")) disconnect();
             if (peripheralCallback != null) {
                 callBackHandler.post(() -> peripheralCallback.onBondingSucceeded(BluetoothPeripheral.this));
@@ -236,7 +236,7 @@ public class BluetoothPeripheral {
 
         @Override
         public void onPairingFailed() {
-            HBLogger.i(TAG, "Pairing failed");
+            HBLogger.i(TAG, "pairing failed");
             if (peripheralCallback != null) {
                 callBackHandler.post(() -> peripheralCallback.onBondingFailed(BluetoothPeripheral.this));
             }
