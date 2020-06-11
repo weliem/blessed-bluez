@@ -104,7 +104,7 @@ public class BluetoothHandler {
 
                     // If we just bonded wit the A&D 651BLE, issue a disconnect to finish the pairing process
                     if (justBonded && peripheral.getName().contains("651BLE")) {
-                        peripheral.disconnect();
+                        peripheral.cancelConnection();
                         justBonded = false;
                     }
                 } else {
@@ -129,11 +129,11 @@ public class BluetoothHandler {
             } else if (characteristicUUID.equals(TEMPERATURE_MEASUREMENT_CHARACTERISTIC_UUID)) {
                 TemperatureMeasurement measurement = new TemperatureMeasurement(value);
                 HBLogger.i(TAG, measurement.toString());
-                peripheral.disconnect();
+                peripheral.cancelConnection();
             } else if (characteristicUUID.equals(BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID)) {
                 BloodPressureMeasurement measurement = new BloodPressureMeasurement(value);
                 HBLogger.i(TAG, measurement.toString());
-                peripheral.disconnect();
+                peripheral.cancelConnection();
             } else if (characteristicUUID.equals(PLX_CONTINUOUS_MEASUREMENT_CHAR_UUID)) {
                 PulseOximeterContinuousMeasurement measurement = new PulseOximeterContinuousMeasurement(value);
                 HBLogger.i(TAG, measurement.toString());

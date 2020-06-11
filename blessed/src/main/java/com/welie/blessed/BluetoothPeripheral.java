@@ -333,7 +333,7 @@ public class BluetoothPeripheral {
         gattCallback.onConnectionStateChanged(ConnectionState.Disconnected, GATT_ERROR);
     }
 
-    public void disconnect() {
+    public void cancelConnection() {
         central.cancelConnection(this);
     }
 
@@ -849,7 +849,7 @@ public class BluetoothPeripheral {
         return nativeCharacteristic.isNotifying();
     }
 
-    public boolean pair() {
+    public boolean createBond() {
         HBLogger.i(TAG, String.format("Pairing with '%s' (%s)", deviceName, deviceAddress));
         manualBonding = true;
         connectTimestamp = System.currentTimeMillis();

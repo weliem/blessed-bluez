@@ -93,7 +93,7 @@ public class BluetoothCentral {
         public void serviceDiscoveryFailed(final BluetoothPeripheral device) {
             HBLogger.i(TAG, "Service discovery failed");
             if (device.isPaired()) {
-                callBackHandler.postDelayed(() -> { removeDevice(device); }, 200L);
+                callBackHandler.postDelayed(() -> removeDevice(device), 200L);
             }
         }
 
@@ -849,6 +849,17 @@ public class BluetoothCentral {
     }
 
     /**
+     * Remove bond for a peripheral
+     *
+     * @param peripheralAddress the address of the peripheral
+     */
+    public void removeBond(String peripheralAddress) {
+        BluezDevice bluezDevice = getDeviceByAddress(adapter, peripheralAddress);
+        if (bluezDevice == null) return;
+        removeDevice(bluezDevice);
+    }
+
+    /**
      * Get the list of connected peripherals.
      *
      * @return list of connected peripherals
@@ -1019,6 +1030,10 @@ public class BluetoothCentral {
 
         boolean isBonded = device.isPaired();
         HBLogger.i(TAG, String.format("removing device %s (%s)", device.getAddress(), isBonded ? "BONDED" : "BOND_NONE"));
+        removeDevice(bluetoothDevice);
+    }
+
+    private void removeDevice(BluezDevice bluetoothDevice) {
         if (adapter != null) {
             try {
                 Device1 rawDevice = bluetoothDevice.getRawDevice();
