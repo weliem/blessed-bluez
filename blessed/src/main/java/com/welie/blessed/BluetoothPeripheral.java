@@ -33,7 +33,7 @@ public class BluetoothPeripheral {
     private boolean isRetrying;
     private byte[] currentWriteBytes;
     private final Handler callBackHandler;
-    private ConnectionState state;
+    private int state;
     private final InternalCallback listener;
     private BluetoothPeripheralCallback peripheralCallback;
     private boolean serviceDiscoveryCompleted = false;
@@ -76,6 +76,30 @@ public class BluetoothPeripheral {
     static final String PROPERTY_RSSI = "RSSI";
     static final String PROPERTY_MANUFACTURER_DATA = "ManufacturerData";
     static final String PROPERTY_SERVICE_DATA = "ServiceData";
+
+    /**
+     * The peripheral is in disconnected state
+     */
+    @SuppressWarnings("WeakerAccess")
+    public static final int STATE_DISCONNECTED = 0;
+
+    /**
+     * The peripheral is in connecting state
+     */
+    @SuppressWarnings("WeakerAccess")
+    public static final int STATE_CONNECTING = 1;
+
+    /**
+     * The peripheral is in connected state
+     */
+    @SuppressWarnings("WeakerAccess")
+    public static final int STATE_CONNECTED = 2;
+
+    /**
+     * The peripheral is in disconnecting state
+     */
+    @SuppressWarnings("WeakerAccess")
+    public static final int STATE_DISCONNECTING = 3;
 
     /**
      * A GATT operation completed successfully
@@ -130,19 +154,19 @@ public class BluetoothPeripheral {
     // GattCallback will deal with managing low-level callbacks
     final GattCallback gattCallback = new GattCallback() {
         @Override
-        public void onConnectionStateChanged(ConnectionState connectionState, int status) {
-            ConnectionState previousState = state;
+        public void onConnectionStateChanged(int connectionState, int status) {
+            int previousState = state;
             state = connectionState;
 
             switch (connectionState) {
-                case Connected:
+                case STATE_CONNECTED:
                     isBonded = isPaired();
                     if (listener != null) {
                         listener.connected(BluetoothPeripheral.this);
                     }
                     break;
-                case Disconnected:
-                    if (previousState == ConnectionState.Connecting) {
+                case STATE_DISCONNECTED:
+                    if (previousState == STATE_CONNECTING) {
                         if (listener != null) {
                             listener.connectFailed(BluetoothPeripheral.this);
                             completeDisconnect(false);
@@ -160,7 +184,7 @@ public class BluetoothPeripheral {
                         completeDisconnect(true);
                     }
                     break;
-                case Connecting:
+                case STATE_CONNECTING:
                     if (status == GATT_ERROR) {
                         HBLogger.i(TAG, String.format("connection failed with status '%s'", statusToString(status)));
                         completeDisconnect(false);
@@ -169,7 +193,7 @@ public class BluetoothPeripheral {
                         }
                     }
                     break;
-                case Disconnecting:
+                case STATE_DISCONNECTING:
                     commandQueue.clear();
                     commandQueueBusy = false;
                     break;
@@ -285,7 +309,7 @@ public class BluetoothPeripheral {
 
     public void connect() {
         // Do the connect
-        gattCallback.onConnectionStateChanged(ConnectionState.Connecting, GATT_SUCCESS);
+        gattCallback.onConnectionStateChanged(STATE_CONNECTING, GATT_SUCCESS);
         try {
             HBLogger.i(TAG, String.format("connecting to '%s' (%s)", deviceName, deviceAddress));
             BluezSignalHandler.getInstance().addDevice(deviceAddress, this);
@@ -301,16 +325,16 @@ public class BluetoothPeripheral {
                 bluezConnectionstate = false;
             }
 
-            HBLogger.e(TAG, String.format("connect exception, dbusexecutionexception (%s %s)", state == ConnectionState.Connected ? "connected" : "not connected", bluezConnectionstate ? "connected" : "not connected"));
+            HBLogger.e(TAG, String.format("connect exception, dbusexecutionexception (%s %s)", state == STATE_CONNECTED ? "connected" : "not connected", bluezConnectionstate ? "connected" : "not connected"));
             HBLogger.e(TAG, e.getMessage());
 
             // Unregister handler only if we are not connected. A connected event may have already been received!
-            if (state != ConnectionState.Connected) {
+            if (state != STATE_CONNECTED) {
                 cleanupAfterFailedConnect();
             }
         } catch (BluezAlreadyConnectedException e) {
             HBLogger.e(TAG, "connect exception: already connected");
-            gattCallback.onConnectionStateChanged(ConnectionState.Connected, GATT_SUCCESS);
+            gattCallback.onConnectionStateChanged(STATE_CONNECTED, GATT_SUCCESS);
         } catch (BluezNotReadyException e) {
             HBLogger.e(TAG, "connect exception: not ready");
             HBLogger.e(TAG, e.getMessage());
@@ -330,16 +354,21 @@ public class BluetoothPeripheral {
         BluezSignalHandler.getInstance().removeDevice(deviceAddress);
         timeoutHandler.stop();
         timeoutHandler = null;
-        gattCallback.onConnectionStateChanged(ConnectionState.Disconnected, GATT_ERROR);
+        gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, GATT_ERROR);
     }
 
+    /**
+     * Cancel an active or pending connection.
+     *
+     * This operation is asynchronous and you will receive a callback on onDisconnectedPeripheral.
+     */
     public void cancelConnection() {
         central.cancelConnection(this);
     }
 
     void disconnectBluezDevice() {
         HBLogger.i(TAG, "disconnecting on request");
-        gattCallback.onConnectionStateChanged(ConnectionState.Disconnecting, GATT_SUCCESS);
+        gattCallback.onConnectionStateChanged(STATE_DISCONNECTING, GATT_SUCCESS);
         device.disconnect();
     }
 
@@ -356,15 +385,19 @@ public class BluetoothPeripheral {
     }
 
     /**
-     * Read a characteristic of the connected device.
-     * The command contains information about the service and characteristic to read.
+     * Read the value of a characteristic.
+     *
+     * <p>The characteristic must support reading it, otherwise the operation will not be enqueued.
+     *
+     * <p>{@link BluetoothPeripheralCallback#onCharacteristicUpdate(BluetoothPeripheral, byte[], BluetoothGattCharacteristic, int)}   will be triggered as a result of this call.
      *
      * @param characteristic Specifies the characteristic to read.
+     * @return true if the operation was enqueued, false if the characteristic does not support reading or the characteristic was invalid
      */
     @SuppressWarnings("UnusedReturnValue")
     public boolean readCharacteristic(final BluetoothGattCharacteristic characteristic) {
         // Make sure we are still connected
-        if (state != ConnectionState.Connected) {
+        if (state != STATE_CONNECTED) {
             gattCallback.onCharacteristicRead(characteristic, GATT_ERROR);
             return false;
         }
@@ -391,7 +424,7 @@ public class BluetoothPeripheral {
 
         // All in order, do the read
         boolean result = commandQueue.add(() -> {
-            if (state == ConnectionState.Connected) {
+            if (state == STATE_CONNECTED) {
                 try {
                     HBLogger.i(TAG, String.format("reading characteristic <%s>", nativeCharacteristic.getUuid()));
                     nativeCharacteristic.readValue(new HashMap<>());
@@ -426,15 +459,22 @@ public class BluetoothPeripheral {
     }
 
     /**
-     * Write a value of a characteristic of the connected device
-     * The command contains information about the service, characteristic and value to write.
+     * Write a value to a characteristic using the specified write type.
      *
-     * @param characteristic Specifies which service, characteristic and value to write.
+     * <p>All parameters must have a valid value in order for the operation
+     * to be enqueued. If the characteristic does not support writing with the specified writeType, the operation will not be enqueued.
+     *
+     * <p>{@link BluetoothPeripheralCallback#onCharacteristicWrite(BluetoothPeripheral, byte[], BluetoothGattCharacteristic, int)} will be triggered as a result of this call.
+     *
+     * @param characteristic the characteristic to write to
+     * @param value          the byte array to write
+     * @param writeType      the write type to use when writing. Must be WRITE_TYPE_DEFAULT, WRITE_TYPE_NO_RESPONSE or WRITE_TYPE_SIGNED
+     * @return true if a write operation was succesfully enqueued, otherwise false
      */
     @SuppressWarnings({"UnusedReturnValue", "unused"})
     public boolean writeCharacteristic(BluetoothGattCharacteristic characteristic, final byte[] value, final int writeType) {
         // Make sure we are still connected
-        if (state != ConnectionState.Connected) {
+        if (state != STATE_CONNECTED) {
             gattCallback.onCharacteristicWrite(characteristic, GATT_ERROR);
             return false;
         }
@@ -484,7 +524,7 @@ public class BluetoothPeripheral {
 
         // All in order, do the write
         boolean result = commandQueue.add(() -> {
-            if (state == ConnectionState.Connected) {
+            if (state == STATE_CONNECTED) {
                 try {
                     // Perform the write
                     currentWriteBytes = bytesToWrite;
@@ -516,11 +556,19 @@ public class BluetoothPeripheral {
         return result;
     }
 
-    // A Handler is passed in because notifies are async so need to post on the handler for the HBDevice this adapter is tied to
+    /**
+     * Set the notification state of a characteristic to 'on' or 'off'. The characteristic must support notifications or indications.
+     *
+     * <p>{@link BluetoothPeripheralCallback#onNotificationStateUpdate(BluetoothPeripheral, BluetoothGattCharacteristic, int)} will be triggered as a result of this call.
+     *
+     * @param characteristic the characteristic to turn notification on/off for
+     * @param enable         true for setting notification on, false for turning it off
+     * @return true if the operation was enqueued, false if the characteristic doesn't support notification or indications or
+     */
     @SuppressWarnings("UnusedReturnValue")
     public boolean setNotify(BluetoothGattCharacteristic characteristic, boolean enable) {
         // Make sure we are still connected
-        if (state != ConnectionState.Connected) {
+        if (state != STATE_CONNECTED) {
             gattCallback.onNotifySet(characteristic, false);
             return false;
         }
@@ -548,7 +596,7 @@ public class BluetoothPeripheral {
 
         // All in order, do the set notify
         boolean result = commandQueue.add(() -> {
-            if (state == ConnectionState.Connected) {
+            if (state == STATE_CONNECTED) {
                 try {
                     if (enable) {
                         HBLogger.i(TAG, String.format("setNotify for characteristic <%s>", nativeCharacteristic.getUuid()));
@@ -585,7 +633,7 @@ public class BluetoothPeripheral {
      */
     private void servicesResolved() {
         // Make sure we are connected
-        if (state != ConnectionState.Connected) {
+        if (state != STATE_CONNECTED) {
             HBLogger.e(TAG, "Services resolved but not connected");
             return;
         }
@@ -675,7 +723,7 @@ public class BluetoothPeripheral {
                 if (value.getValue().equals(true)) {
                     long timePassed = System.currentTimeMillis() - connectTimestamp;
                     HBLogger.i(TAG, String.format("connected to '%s' (%s) in %.1fs", deviceName, isPaired() ? "BONDED" : "BOND_NONE", timePassed / 1000.0f));
-                    gattCallback.onConnectionStateChanged(ConnectionState.Connected, GATT_SUCCESS);
+                    gattCallback.onConnectionStateChanged(STATE_CONNECTED, GATT_SUCCESS);
                     startServiceDiscoveryTimer();
                 } else {
                     HBLogger.i(TAG, String.format("peripheral disconnected '%s' (%s)", deviceName, deviceAddress));
@@ -683,7 +731,7 @@ public class BluetoothPeripheral {
                     // Clean up
                     cancelServiceDiscoveryTimer();
                     BluezSignalHandler.getInstance().removeDevice(deviceAddress);
-                    gattCallback.onConnectionStateChanged(ConnectionState.Disconnected, GATT_SUCCESS);
+                    gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, GATT_SUCCESS);
                     if (timeoutHandler != null) timeoutHandler.stop();
                     timeoutHandler = null;
                 }
@@ -738,7 +786,7 @@ public class BluetoothPeripheral {
     private void nextCommand() {
         synchronized (this) {
             // Check if we are still connected
-            if (state != ConnectionState.Connected) {
+            if (state != STATE_CONNECTED) {
                 HBLogger.i(TAG, String.format("device %s is not connected, clearing command queue", getAddress()));
                 commandQueue.clear();
                 commandQueueBusy = false;
@@ -794,10 +842,22 @@ public class BluetoothPeripheral {
     }
 
 
+    /**
+     * Get the services supported by the connected bluetooth peripheral.
+     * Only services that are also supported by {@link BluetoothCentral} are included.
+     *
+     * @return Supported services.
+     */
     public List<BluetoothGattService> getServices() {
         return mServices;
     }
 
+    /**
+     * Get the BluetoothGattService object for a service UUID.
+     *
+     * @param serviceUUID the UUID of the service
+     * @return the BluetoothGattService object for the service UUID or null if the peripheral does not have a service with the specified UUID
+     */
     public BluetoothGattService getService(UUID serviceUUID) {
         for (BluetoothGattService service : mServices) {
             if (service.getUuid().equals(serviceUUID)) {
@@ -823,15 +883,36 @@ public class BluetoothPeripheral {
         }
     }
 
+    /**
+     * Get the name of the bluetooth peripheral.
+     *
+     * @return name of the bluetooth peripheral
+     */
     public String getName() {
         return deviceName;
     }
 
+    /**
+     * Get the mac address of the bluetooth peripheral.
+     *
+     * @return Address of the bluetooth peripheral
+     */
     public String getAddress() {
         return deviceAddress;
     }
 
-    public ConnectionState getConnectionState() {
+    /**
+     * Returns the connection state of the peripheral.
+     *
+     * <p>Possible values for the connection state are:
+     * {@link #STATE_CONNECTED},
+     * {@link #STATE_CONNECTING},
+     * {@link #STATE_DISCONNECTED},
+     * {@link #STATE_DISCONNECTING}.
+     *
+     * @return the connection state.
+     */
+    public int getState() {
         return state;
     }
 
@@ -840,6 +921,12 @@ public class BluetoothPeripheral {
         return isBonded;
     }
 
+    /**
+     * Boolean to indicate if the specified characteristic is currently notifying or indicating.
+     *
+     * @param characteristic the characteristic to check
+     * @return true if the characteristic is notifying or indicating, false if it is not
+     */
     public boolean isNotifying(BluetoothGattCharacteristic characteristic) {
         final BluezGattCharacteristic nativeCharacteristic = getBluezGattCharacteristic(characteristic.getUuid());
         if (nativeCharacteristic == null) {
@@ -849,6 +936,14 @@ public class BluetoothPeripheral {
         return nativeCharacteristic.isNotifying();
     }
 
+    /**
+     * Create a bond with the peripheral.
+     *
+     * The bonding command will be enqueued and you will
+     * receive updates via the {@link BluetoothPeripheralCallback}.
+     *
+     * @return true if bonding was started/enqueued, false if not
+     */
     public boolean createBond() {
         HBLogger.i(TAG, String.format("Pairing with '%s' (%s)", deviceName, deviceAddress));
         manualBonding = true;

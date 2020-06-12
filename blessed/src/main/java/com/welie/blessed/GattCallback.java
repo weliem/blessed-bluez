@@ -3,7 +3,7 @@ package com.welie.blessed;
 import java.util.List;
 
 public abstract class GattCallback {
-    public abstract void onConnectionStateChanged(ConnectionState connectionState, int status);
+    public abstract void onConnectionStateChanged(int connectionState, int status);
 
     public abstract void onCharacteristicRead(BluetoothGattCharacteristic characteristic, int status);
 

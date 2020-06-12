@@ -829,7 +829,7 @@ public class BluetoothCentral {
      */
     @SuppressWarnings("unused")
     public void cancelConnection(final BluetoothPeripheral peripheral) {
-        if (peripheral.getConnectionState() == ConnectionState.Connected) {
+        if (peripheral.getState() == STATE_CONNECTED) {
             // Some adapters have issues with (dis)connecting while scanning, so stop scan first
             stopScanning();
 
