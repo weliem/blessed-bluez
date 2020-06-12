@@ -678,7 +678,7 @@ public class BluetoothPeripheral {
                     gattCallback.onConnectionStateChanged(ConnectionState.Connected, GATT_SUCCESS);
                     startServiceDiscoveryTimer();
                 } else {
-                    HBLogger.i(TAG, String.format("connected is false (%s)", deviceName));
+                    HBLogger.i(TAG, String.format("peripheral disconnected '%s' (%s)", deviceName, deviceAddress));
 
                     // Clean up
                     cancelServiceDiscoveryTimer();
