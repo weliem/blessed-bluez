@@ -219,7 +219,7 @@ public class BluetoothHandler {
 
     public BluetoothHandler() {
 
-        central = new BluetoothCentral(bluetoothCentralCallback, handler);
+        central = new BluetoothCentral(bluetoothCentralCallback);
         central.setPinCodeForPeripheral("B0:49:5F:01:20:8F", "635227");
         startScanning();
     }
