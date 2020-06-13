@@ -352,7 +352,7 @@ public class BluetoothPeripheral {
 
     private void cleanupAfterFailedConnect() {
         BluezSignalHandler.getInstance().removeDevice(deviceAddress);
-        timeoutHandler.stop();
+        if (timeoutHandler != null) timeoutHandler.stop();
         timeoutHandler = null;
         gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, GATT_ERROR);
     }
@@ -374,7 +374,9 @@ public class BluetoothPeripheral {
 
     private void completeDisconnect(boolean notify) {
         // Do some cleanup
-        queueHandler.stop();
+        if (queueHandler != null) {
+            queueHandler.stop();
+        }
         queueHandler = null;
         commandQueue.clear();
         commandQueueBusy = false;

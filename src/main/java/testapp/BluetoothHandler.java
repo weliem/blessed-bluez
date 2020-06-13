@@ -18,6 +18,7 @@ public class BluetoothHandler {
 
     private final BluetoothCentral central;
     private final Handler handler = new Handler("testapp.BluetoothHandler");
+    private Runnable timeoutRunnable;
     private boolean justBonded = false;
 
     // UUIDs for the Blood Pressure service (BLP)
@@ -129,17 +130,18 @@ public class BluetoothHandler {
             } else if (characteristicUUID.equals(TEMPERATURE_MEASUREMENT_CHARACTERISTIC_UUID)) {
                 TemperatureMeasurement measurement = new TemperatureMeasurement(value);
                 HBLogger.i(TAG, measurement.toString());
-                peripheral.cancelConnection();
+                startDisconnectTimer(peripheral);
             } else if (characteristicUUID.equals(BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID)) {
                 BloodPressureMeasurement measurement = new BloodPressureMeasurement(value);
                 HBLogger.i(TAG, measurement.toString());
-                peripheral.cancelConnection();
+                startDisconnectTimer(peripheral);
             } else if (characteristicUUID.equals(PLX_CONTINUOUS_MEASUREMENT_CHAR_UUID)) {
                 PulseOximeterContinuousMeasurement measurement = new PulseOximeterContinuousMeasurement(value);
                 HBLogger.i(TAG, measurement.toString());
             } else if (characteristicUUID.equals(PLX_SPOT_MEASUREMENT_CHAR_UUID)) {
                 PulseOximeterSpotMeasurement measurement = new PulseOximeterSpotMeasurement(value);
                 HBLogger.i(TAG, measurement.toString());
+                startDisconnectTimer(peripheral);
             } else if (characteristicUUID.equals(HEARTRATE_MEASUREMENT_CHARACTERISTIC_UUID)) {
                 HeartRateMeasurement measurement = new HeartRateMeasurement(value);
                 HBLogger.d(TAG, measurement.toString());
@@ -189,6 +191,18 @@ public class BluetoothHandler {
             super.onReadRemoteRssi(peripheral, rssi, status);
         }
     };
+
+    public void startDisconnectTimer(final BluetoothPeripheral peripheral) {
+        if (timeoutRunnable != null) {
+            handler.removeCallbacks(timeoutRunnable);
+            timeoutRunnable = null;
+        }
+
+        this.timeoutRunnable = () -> {
+            peripheral.cancelConnection();
+        };
+        handler.postDelayed(timeoutRunnable, 2000L);
+    }
 
     private final BluetoothCentralCallback bluetoothCentralCallback = new BluetoothCentralCallback() {
         @Override

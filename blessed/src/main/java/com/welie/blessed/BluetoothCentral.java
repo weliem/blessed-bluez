@@ -74,6 +74,7 @@ public class BluetoothCentral {
             final String deviceAddress = device.getAddress();
             connectedPeripherals.put(deviceAddress, device);
             unconnectedPeripherals.remove(deviceAddress);
+            scannedPeripherals.remove(deviceAddress);
 
             completeConnectOrDisconnectCommand(deviceAddress);
 
@@ -104,6 +105,7 @@ public class BluetoothCentral {
             final String deviceAddress = device.getAddress();
             connectedPeripherals.remove(deviceAddress);
             unconnectedPeripherals.remove(deviceAddress);
+            scannedPeripherals.remove(deviceAddress);
 
             // Complete the 'connect' command if this was the device we were connecting
             completeConnectOrDisconnectCommand(deviceAddress);
@@ -122,6 +124,7 @@ public class BluetoothCentral {
             final String deviceAddress = device.getAddress();
             connectedPeripherals.remove(deviceAddress);
             unconnectedPeripherals.remove(deviceAddress);
+            scannedPeripherals.remove(deviceAddress);
 
             completeConnectOrDisconnectCommand(deviceAddress);
 
@@ -532,6 +535,8 @@ public class BluetoothCentral {
 
                 if (!isScanning) {
                     // Clear the cached BluezDevices and BluetoothPeripherals
+                    HBLogger.i(TAG, String.format("removing %d cached bluezDevices", scannedBluezDevices.size()));
+                    HBLogger.i(TAG, String.format("removing %d cached bluetoothPeripherals", scannedPeripherals.size()));
                     scannedPeripherals.clear();
                     scannedBluezDevices.clear();
                 }
@@ -903,7 +908,7 @@ public class BluetoothCentral {
             return unconnectedPeripherals.get(peripheralAddress);
         } else {
             BluezDevice bluezDevice = scannedBluezDevices.get(getPath(adapter, peripheralAddress));
-            BluetoothPeripheral bluetoothPeripheral = new BluetoothPeripheral(this, bluezDevice, null, peripheralAddress, internalCallback, null, callBackHandler);
+            BluetoothPeripheral bluetoothPeripheral = new BluetoothPeripheral(this, bluezDevice, bluezDevice.getName(), peripheralAddress, internalCallback, null, callBackHandler);
             scannedPeripherals.put(peripheralAddress, bluetoothPeripheral);
             return bluetoothPeripheral;
         }
@@ -1004,6 +1009,7 @@ public class BluetoothCentral {
                         bluetoothCommand.run();
                     } catch (Exception ex) {
                         HBLogger.w(TAG, "ERROR: Command exception for central");
+                        HBLogger.w(TAG, ex.getMessage());
                         completedCommand();
                     }
                 });

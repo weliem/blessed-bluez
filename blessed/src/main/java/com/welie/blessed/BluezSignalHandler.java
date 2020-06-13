@@ -1,5 +1,6 @@
 package com.welie.blessed;
 
+import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.handlers.AbstractPropertiesChangedHandler;
@@ -10,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.welie.blessed.BluetoothPeripheral.BLUEZ_DEVICE_INTERFACE;
 
 public class BluezSignalHandler {
     private static final String TAG = BluezSignalHandler.class.getSimpleName();
@@ -48,6 +51,10 @@ public class BluezSignalHandler {
                 }
 
                 // Send to device adapters if it is for a device
+//                if (propertiesChanged.getInterfaceName().equals(BLUEZ_DEVICE_INTERFACE)) {
+//                    String deviceAddress = path2deviceAddress(propertiesChanged.getPath());
+//                    BluetoothPeripheral peripheral = devicesMap.get
+//                }
                 String path = propertiesChanged.getPath();
                 Set<String> devices = devicesMap.keySet();
 
@@ -86,5 +93,11 @@ public class BluezSignalHandler {
 
     void addCentral(BluetoothCentral central) {
         centralList.add(central);
+    }
+
+    String path2deviceAddress(String path) {
+        String[] pathElements = path.split("/");
+        String deviceName = pathElements[pathElements.length-1];
+        return deviceName.substring(4).replace("_", ":");
     }
 }
