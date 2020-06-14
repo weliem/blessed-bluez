@@ -20,11 +20,13 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 import static com.welie.blessed.BluetoothPeripheral.*;
 
 public class BluetoothCentral {
     private static final String TAG = BluetoothCentral.class.getSimpleName();
+    private final Logger logger = Logger.getLogger(TAG);
     private DBusConnection dbusConnection;
     private BluezAdapter adapter;
     private final BluetoothCentralCallback bluetoothCentralCallback;
@@ -89,12 +91,12 @@ public class BluetoothCentral {
 
         @Override
         public void servicesDiscovered(final BluetoothPeripheral device) {
-            HBLogger.i(TAG, "service discovery succeeded");
+            logger.info("service discovery succeeded");
         }
 
         @Override
         public void serviceDiscoveryFailed(final BluetoothPeripheral device) {
-            HBLogger.i(TAG, "Service discovery failed");
+            logger.info("Service discovery failed");
             if (device.isPaired()) {
                 callBackHandler.postDelayed(() -> removeDevice(device), 200L);
             }
@@ -181,20 +183,20 @@ public class BluetoothCentral {
         // Find all adapters and pick one if there are more than one
         List<BluezAdapter> adapters = scanForBluetoothAdapters();
         if (!adapters.isEmpty()) {
-            HBLogger.i(TAG, String.format("found %d bluetooth adapter(s)", adapters.size()));
+            logger.info(String.format("found %d bluetooth adapter(s)", adapters.size()));
 
             // Take the adapter with the highest number
             adapter = adapters.get(adapters.size() - 1);
-            HBLogger.i(TAG, "using adapter " + adapter.getDeviceName());
+            logger.info("using adapter " + adapter.getDeviceName());
 
             // Make sure the adapter is powered on
             isPowered = adapter.isPowered();
             if (!isPowered) {
-                HBLogger.i(TAG, "adapter not on, so turning it on now");
+                logger.info("adapter not on, so turning it on now");
                 adapterOn();
             }
         } else {
-            HBLogger.e(TAG, "no bluetooth adaptors found");
+            logger.severe("no bluetooth adaptors found");
             return true;
         }
         return false;
@@ -205,17 +207,17 @@ public class BluetoothCentral {
         PairingAgent agent = new PairingAgent("/test/agent", dbusConnection, new PairingDelegate() {
             @Override
             public String requestPassCode(String deviceAddress) {
-                HBLogger.i(TAG, String.format("received passcode request for %s", deviceAddress));
+                logger.info(String.format("received passcode request for %s", deviceAddress));
 
                 // See if we have a pass code for this device
                 String passCode = pinCodes.get(deviceAddress);
 
                 // If we don't have one try "000000"
                 if (passCode == null) {
-                    HBLogger.i(TAG, "No passcode available for this device, trying 000000");
+                    logger.info("No passcode available for this device, trying 000000");
                     passCode = "000000";
                 }
-                HBLogger.i(TAG, String.format("sending passcode %s", passCode));
+                logger.info(String.format("sending passcode %s", passCode));
                 return passCode;
             }
 
@@ -371,7 +373,7 @@ public class BluetoothCentral {
         final String deviceAddress = peripheral.getAddress();
         final BluetoothPeripheralCallback peripheralCallback = reconnectCallbacks.get(deviceAddress);
 
-        HBLogger.i(TAG, String.format("found peripheral to autoconnect '%s'", deviceAddress));
+        logger.info(String.format("found peripheral to autoconnect '%s'", deviceAddress));
         autoScanActive = false;
         stopScanning();
 
@@ -403,7 +405,7 @@ public class BluetoothCentral {
                 if (bluetoothCentralCallback != null) {
                     bluetoothCentralCallback.onDiscoveredPeripheral(peripheral, scanResult);
                 } else {
-                    HBLogger.e(TAG, "bluetoothCentralCallback is null");
+                    logger.severe("bluetoothCentralCallback is null");
                 }
             });
         }
@@ -531,12 +533,12 @@ public class BluetoothCentral {
             case PROPERTY_DISCOVERING:
                 isScanning = (Boolean) value.getValue();
                 if (isScanning) isStoppingScan = false;
-                HBLogger.i(TAG, String.format("scan %s", isScanning ? "started" : "stopped"));
+                logger.info(String.format("scan %s", isScanning ? "started" : "stopped"));
 
                 if (!isScanning) {
                     // Clear the cached BluezDevices and BluetoothPeripherals
-//                    HBLogger.i(TAG, String.format("removing %d cached bluezDevices", scannedBluezDevices.size()));
-//                    HBLogger.i(TAG, String.format("removing %d cached bluetoothPeripherals", scannedPeripherals.size()));
+//                    logger.info(TAG, String.format("removing %d cached bluezDevices", scannedBluezDevices.size()));
+//                    logger.info(TAG, String.format("removing %d cached bluetoothPeripherals", scannedPeripherals.size()));
                     scannedPeripherals.clear();
                     scannedBluezDevices.clear();
                 }
@@ -546,7 +548,7 @@ public class BluetoothCentral {
                 break;
             case PROPERTY_POWERED:
                 isPowered = (Boolean) value.getValue();
-                HBLogger.i(TAG, String.format("powered %s", isPowered ? "on" : "off"));
+                logger.info(String.format("powered %s", isPowered ? "on" : "off"));
 
                 if (currentCommand.equalsIgnoreCase(PROPERTY_POWERED)) {
                     callBackHandler.postDelayed(this::completedCommand, 200L);
@@ -587,7 +589,7 @@ public class BluetoothCentral {
             // If we are already scanning then complete the command immediately
             isScanning = adapter.isDiscovering();
             if (isScanning) {
-                //               HBLogger.i(TAG, "Already scanning so completing command");
+                //               logger.info(TAG, "Already scanning so completing command");
                 completedCommand();
                 return;
             }
@@ -596,26 +598,26 @@ public class BluetoothCentral {
             try {
                 setScanFilter(scanFilters);
             } catch (BluezInvalidArgumentsException | BluezNotReadyException | BluezFailedException | BluezNotSupportedException e) {
-                HBLogger.e(TAG, "Error setting scan filer");
-                HBLogger.e(TAG, e);
+                logger.severe("Error setting scan filer");
+                logger.severe(e.toString());
             }
 
             // Start the discovery
             try {
-                //               HBLogger.i(TAG, "Trying to start scanning");
+                //               logger.info(TAG, "Trying to start scanning");
                 currentCommand = PROPERTY_DISCOVERING;
                 adapter.startDiscovery();
                 startScanTimer();
             } catch (BluezFailedException e) {
-                HBLogger.e(TAG, "Could not start discovery (failed)");
+                logger.severe("Could not start discovery (failed)");
                 completedCommand();
             } catch (BluezNotReadyException e) {
-                HBLogger.e(TAG, "Could not start discovery (not ready)");
+                logger.severe("Could not start discovery (not ready)");
                 completedCommand();
             } catch (DBusExecutionException e) {
                 // Still need to see what this could be
-                HBLogger.e(TAG, "Error starting scanner");
-                HBLogger.e(TAG, e.getMessage());
+                logger.severe("Error starting scanner");
+                logger.severe(e.getMessage());
                 completedCommand();
             }
         });
@@ -623,7 +625,7 @@ public class BluetoothCentral {
         if (result) {
             nextCommand();
         } else {
-            HBLogger.e(TAG, ENQUEUE_ERROR);
+            logger.severe(ENQUEUE_ERROR);
         }
 
     }
@@ -652,23 +654,23 @@ public class BluetoothCentral {
                 cancelTimeoutTimer();
                 adapter.stopDiscovery();
             } catch (BluezNotReadyException e) {
-                HBLogger.e(TAG, "Could not stop discovery (not ready)");
+                logger.severe("Could not stop discovery (not ready)");
                 completedCommand();
             } catch (BluezFailedException e) {
-                HBLogger.e(TAG, "Could not stop discovery (failed)");
+                logger.severe("Could not stop discovery (failed)");
                 completedCommand();
             } catch (BluezNotAuthorizedException e) {
-                HBLogger.e(TAG, "Could not stop discovery (not authorized)");
+                logger.severe("Could not stop discovery (not authorized)");
                 completedCommand();
             } catch (DBusExecutionException e) {
                 // Usually this is the exception "No discovery started"
-                HBLogger.e(TAG, e.getMessage());
+                logger.severe(e.getMessage());
                 if (e.getMessage().equalsIgnoreCase("No discovery started")) {
-                    HBLogger.e(TAG, "Could not stop scan, because we are not scanning!");
+                    logger.severe("Could not stop scan, because we are not scanning!");
                     isStoppingScan = false;
                     isScanning = false;   // This shouldn't be needed but seems it is...
                 } else if (e.getMessage().equalsIgnoreCase("Operation already in progress")) {
-                    HBLogger.e(TAG, "a stopDiscovery is in progress");
+                    logger.severe("a stopDiscovery is in progress");
                 }
                 completedCommand();
             }
@@ -677,7 +679,7 @@ public class BluetoothCentral {
         if (result) {
             nextCommand();
         } else {
-            HBLogger.e(TAG, ENQUEUE_ERROR);
+            logger.severe(ENQUEUE_ERROR);
         }
     }
 
@@ -709,12 +711,12 @@ public class BluetoothCentral {
         boolean result = commandQueue.add(() -> {
 
             if (!adapter.isPowered()) {
-                HBLogger.i(TAG, "Turning on adapter");
+                logger.info("Turning on adapter");
                 currentCommand = PROPERTY_POWERED;
                 adapter.setPowered(true);
             } else {
                 // If it is already on we won't receive a callback so just complete the command
-                HBLogger.i(TAG, "Adapter already on");
+                logger.info("Adapter already on");
                 completedCommand();
             }
         });
@@ -722,7 +724,7 @@ public class BluetoothCentral {
         if (result) {
             nextCommand();
         } else {
-            HBLogger.e(TAG, ENQUEUE_ERROR);
+            logger.severe(ENQUEUE_ERROR);
         }
     }
 
@@ -734,12 +736,12 @@ public class BluetoothCentral {
     public void adapterOff() {
         boolean result = commandQueue.add(() -> {
             if (adapter.isPowered()) {
-                HBLogger.i(TAG, "Turning off adapter");
+                logger.info("Turning off adapter");
                 currentCommand = PROPERTY_POWERED;
                 adapter.setPowered(false);
             } else {
                 // If it is already off we won't receive a callback so just complete the command
-                HBLogger.i(TAG, "Adapter already off");
+                logger.info("Adapter already off");
                 completedCommand();
             }
         });
@@ -747,7 +749,7 @@ public class BluetoothCentral {
         if (result) {
             nextCommand();
         } else {
-            HBLogger.e(TAG, ENQUEUE_ERROR);
+            logger.severe(ENQUEUE_ERROR);
         }
     }
 
@@ -760,20 +762,20 @@ public class BluetoothCentral {
     public void connectPeripheral(final BluetoothPeripheral peripheral, final BluetoothPeripheralCallback peripheralCallback) {
         // Make sure peripheral is valid
         if (peripheral == null) {
-            HBLogger.i(TAG, "no valid peripheral specified, aborting connection");
+            logger.info("no valid peripheral specified, aborting connection");
             return;
         }
         peripheral.setPeripheralCallback(peripheralCallback);
 
         // Check if we are already connected
         if (connectedPeripherals.containsKey(peripheral.getAddress())) {
-            HBLogger.w(TAG, String.format("WARNING: Already connected to %s'", peripheral.getAddress()));
+            logger.warning(String.format("WARNING: Already connected to %s'", peripheral.getAddress()));
             return;
         }
 
         // Check if we already have an outstanding connection request for this peripheral
         if (unconnectedPeripherals.containsKey(peripheral.getAddress())) {
-            HBLogger.w(TAG, String.format("WARNING: Already connecting to %s'", peripheral.getAddress()));
+            logger.warning(String.format("WARNING: Already connecting to %s'", peripheral.getAddress()));
             return;
         }
 
@@ -790,7 +792,7 @@ public class BluetoothCentral {
         if (result) {
             nextCommand();
         } else {
-            HBLogger.e(TAG, ENQUEUE_ERROR);
+            logger.severe(ENQUEUE_ERROR);
         }
     }
 
@@ -799,7 +801,7 @@ public class BluetoothCentral {
      *
      * @param peripheral the peripheral
      */
-    @SuppressWarnings("UnusedReturnValue")
+    @SuppressWarnings("UnusedReturnValue,unused")
     public boolean autoConnectPeripheral(@NotNull BluetoothPeripheral peripheral, @NotNull BluetoothPeripheralCallback peripheralCallback) {
         final String deviceAddress = peripheral.getAddress();
         if (reconnectPeripheralAddresses.contains(deviceAddress)) return false;
@@ -863,7 +865,7 @@ public class BluetoothCentral {
             if (result) {
                 nextCommand();
             } else {
-                HBLogger.e(TAG, ENQUEUE_ERROR);
+                logger.severe(ENQUEUE_ERROR);
             }
             return;
         }
@@ -912,7 +914,7 @@ public class BluetoothCentral {
     @SuppressWarnings("unused")
     public BluetoothPeripheral getPeripheral(String peripheralAddress) {
         if (!checkBluetoothAddress(peripheralAddress)) {
-            HBLogger.e(TAG, String.format("%s is not a valid address. Make sure all alphabetic characters are uppercase.", peripheralAddress));
+            logger.severe(String.format("%s is not a valid address. Make sure all alphabetic characters are uppercase.", peripheralAddress));
             return null;
         }
 
@@ -943,17 +945,17 @@ public class BluetoothCentral {
     @SuppressWarnings("unused")
     public boolean setPinCodeForPeripheral(String peripheralAddress, String pin) {
         if (!checkBluetoothAddress(peripheralAddress)) {
-            HBLogger.e(TAG, String.format("%s is not a valid address. Make sure all alphabetic characters are uppercase.", peripheralAddress));
+            logger.severe(String.format("%s is not a valid address. Make sure all alphabetic characters are uppercase.", peripheralAddress));
             return false;
         }
 
         if (pin == null) {
-            HBLogger.e(TAG, "pin code is null");
+            logger.severe("pin code is null");
             return false;
         }
 
         if (pin.length() != 6) {
-            HBLogger.e(TAG, String.format("%s is not 6 digits long", pin));
+            logger.severe(String.format("%s is not 6 digits long", pin));
             return false;
         }
 
@@ -1024,8 +1026,8 @@ public class BluetoothCentral {
                     try {
                         bluetoothCommand.run();
                     } catch (Exception ex) {
-                        HBLogger.w(TAG, "ERROR: Command exception for central");
-                        HBLogger.w(TAG, ex.getMessage());
+                        logger.warning("ERROR: Command exception for central");
+                        logger.warning(ex.getMessage());
                         completedCommand();
                     }
                 });
@@ -1077,7 +1079,7 @@ public class BluetoothCentral {
         if (bluetoothDevice == null) return;
 
         boolean isBonded = device.isPaired();
-        HBLogger.i(TAG, String.format("removing device %s (%s)", device.getAddress(), isBonded ? "BONDED" : "BOND_NONE"));
+        logger.info(String.format("removing device %s (%s)", device.getAddress(), isBonded ? "BONDED" : "BOND_NONE"));
         removeDevice(bluetoothDevice);
     }
 
@@ -1089,7 +1091,7 @@ public class BluetoothCentral {
                     adapter.removeDevice(rawDevice);
                 }
             } catch (BluezFailedException | BluezInvalidArgumentsException e) {
-                HBLogger.e(TAG, "Error removing device");
+                logger.severe("Error removing device");
             }
         }
     }

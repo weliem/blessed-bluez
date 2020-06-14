@@ -1,6 +1,5 @@
 package com.welie.blessed.bluez;
 
-import com.welie.blessed.HBLogger;
 import org.bluez.Agent1;
 import org.bluez.exceptions.BluezCanceledException;
 import org.bluez.exceptions.BluezRejectedException;
@@ -11,10 +10,14 @@ import org.freedesktop.dbus.interfaces.DBusInterface;
 import org.freedesktop.dbus.types.UInt16;
 import org.freedesktop.dbus.types.UInt32;
 
+import java.util.logging.Logger;
+
 public class PairingAgent extends AbstractBluetoothObject implements Agent1 {
 
-    private static String TAG = "Agent";
-    private PairingDelegate pairingDelegate;
+    private static final String TAG = PairingAgent.class.getSimpleName();
+    private final Logger logger = Logger.getLogger(TAG);
+
+    private final PairingDelegate pairingDelegate;
 
     // Constructor for creating a new agent. This will create a new object on the DBus
     public PairingAgent(String _dbusPath, DBusConnection _dbusConnection, PairingDelegate pairingDelegate) {
@@ -38,12 +41,12 @@ public class PairingAgent extends AbstractBluetoothObject implements Agent1 {
     }
 
     public String RequestPinCode(DBusPath _device) throws BluezRejectedException, BluezCanceledException {
-        HBLogger.i(TAG,"peripheral sending RequestPinCode");
+        logger.info("peripheral sending RequestPinCode");
         return null;
     }
 
     public void DisplayPinCode(DBusPath _device, String _pincode) throws BluezRejectedException, BluezCanceledException {
-        HBLogger.i(TAG,"peripheral sending DisplayPinCode");
+        logger.info("peripheral sending DisplayPinCode");
     }
 
     public UInt32 RequestPasskey(DBusPath _device) throws BluezRejectedException, BluezCanceledException {
@@ -55,20 +58,20 @@ public class PairingAgent extends AbstractBluetoothObject implements Agent1 {
     }
 
     public void DisplayPasskey(DBusPath _device, UInt32 _passkey, UInt16 _entered) {
-        HBLogger.i(TAG,"peripheral sending DisplayPasskey");
+        logger.info("peripheral sending DisplayPasskey");
     }
 
     public void RequestConfirmation(DBusPath _device, UInt32 _passkey) throws BluezRejectedException, BluezCanceledException {
-        HBLogger.i(TAG,"peripheral sending RequestConfirmation");
+        logger.info("peripheral sending RequestConfirmation");
     }
 
     public void RequestAuthorization(DBusPath _device) throws BluezRejectedException, BluezCanceledException {
         pairingDelegate.onPairingStarted(path2deviceAddress(_device));
-        HBLogger.i(TAG,"peripheral sending RequestAuthorization");
+        logger.info("peripheral sending RequestAuthorization");
     }
 
     public void AuthorizeService(DBusPath _device, String _uuid) throws BluezRejectedException, BluezCanceledException {
-        HBLogger.i(TAG,"peripheral sending AuthorizeService");
+        logger.info("peripheral sending AuthorizeService");
     }
 
     public void Cancel() {
