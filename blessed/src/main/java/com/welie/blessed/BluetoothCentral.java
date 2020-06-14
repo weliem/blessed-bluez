@@ -1,6 +1,8 @@
 package com.welie.blessed;
 
 import com.welie.blessed.bluez.*;
+import com.welie.blessed.internal.Handler;
+import com.welie.blessed.internal.InternalCallback;
 import org.bluez.Adapter1;
 import org.bluez.AgentManager1;
 import org.bluez.Device1;

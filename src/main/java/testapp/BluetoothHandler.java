@@ -1,6 +1,7 @@
 package testapp;
 
 import com.welie.blessed.*;
+import com.welie.blessed.internal.Handler;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Calendar;

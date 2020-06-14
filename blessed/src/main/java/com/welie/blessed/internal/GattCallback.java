@@ -1,4 +1,8 @@
-package com.welie.blessed;
+package com.welie.blessed.internal;
+
+import com.welie.blessed.BluetoothGattCharacteristic;
+import com.welie.blessed.BluetoothGattDescriptor;
+import com.welie.blessed.BluetoothGattService;
 
 import java.util.List;
 

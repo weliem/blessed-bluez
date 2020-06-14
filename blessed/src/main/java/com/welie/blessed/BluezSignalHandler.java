@@ -1,5 +1,6 @@
 package com.welie.blessed;
 
+import com.welie.blessed.internal.Handler;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.handlers.AbstractPropertiesChangedHandler;
