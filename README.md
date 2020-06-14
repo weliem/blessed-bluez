@@ -58,7 +58,7 @@ public void autoConnectPeripheralsBatch(Map<BluetoothPeripheral, BluetoothPeriph
 
 The method `connectPeripheral` will try to immediately connect to a device that has already been found using a scan. This method will time out after 30 seconds or less depending on the device manufacturer. Note that there can be **only 1 outstanding** `connectPeripheral`. So if it is called multiple times only 1 will succeed.
 
-The method `autoConnectPeripheral` is for re-connecting to known devices for which you already know the device's mac address. The BLESSED will automatically connect to the device when it sees it in its internal scan. Therefore, it may take longer to connect to a device but this call will never time out! So you can issue the autoConnect command and the device will be connected whenever it is found. 
+The method `autoConnectPeripheral` is for re-connecting to known devices for which you already know the device's mac address. The BLESSED will automatically connect to the device when it sees it in its internal scan. So you can issue the autoConnect command and the device will be connected whenever it is found. 
 
 The method `autoConnectPeripheralsBatch` is for re-connecting to a multiple peripherals in one go. 
 
