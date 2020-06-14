@@ -535,8 +535,8 @@ public class BluetoothCentral {
 
                 if (!isScanning) {
                     // Clear the cached BluezDevices and BluetoothPeripherals
-                    HBLogger.i(TAG, String.format("removing %d cached bluezDevices", scannedBluezDevices.size()));
-                    HBLogger.i(TAG, String.format("removing %d cached bluetoothPeripherals", scannedPeripherals.size()));
+//                    HBLogger.i(TAG, String.format("removing %d cached bluezDevices", scannedBluezDevices.size()));
+//                    HBLogger.i(TAG, String.format("removing %d cached bluetoothPeripherals", scannedPeripherals.size()));
                     scannedPeripherals.clear();
                     scannedBluezDevices.clear();
                 }
