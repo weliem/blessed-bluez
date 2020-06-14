@@ -847,6 +847,8 @@ public class BluetoothCentral {
      */
     @SuppressWarnings("unused")
     public void cancelConnection(final BluetoothPeripheral peripheral) {
+        if (peripheral == null) return;
+
         if (peripheral.getState() == STATE_CONNECTED) {
             // Some adapters have issues with (dis)connecting while scanning, so stop scan first
             stopScanning();
@@ -863,6 +865,20 @@ public class BluetoothCentral {
             } else {
                 HBLogger.e(TAG, ENQUEUE_ERROR);
             }
+            return;
+        }
+
+        // We might be autoconnecting to this peripheral
+        String deviceAddress = peripheral.getAddress();
+        if (reconnectPeripheralAddresses.contains(deviceAddress)) {
+            reconnectPeripheralAddresses.remove(deviceAddress);
+            reconnectCallbacks.remove(deviceAddress);
+
+            callBackHandler.post(() -> {
+                if (bluetoothCentralCallback != null) {
+                    bluetoothCentralCallback.onDisconnectedPeripheral(peripheral, 0);
+                }
+            });
         }
     }
 
