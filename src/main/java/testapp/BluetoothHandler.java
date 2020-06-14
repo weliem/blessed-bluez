@@ -198,9 +198,7 @@ public class BluetoothHandler {
             timeoutRunnable = null;
         }
 
-        this.timeoutRunnable = () -> {
-            peripheral.cancelConnection();
-        };
+        this.timeoutRunnable = peripheral::cancelConnection;
         handler.postDelayed(timeoutRunnable, 2000L);
     }
 
