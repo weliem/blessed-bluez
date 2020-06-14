@@ -50,14 +50,9 @@ public class BluezSignalHandler {
                     central.handleSignal(propertiesChanged);
                 }
 
-                // Send to device adapters if it is for a device
-//                if (propertiesChanged.getInterfaceName().equals(BLUEZ_DEVICE_INTERFACE)) {
-//                    String deviceAddress = path2deviceAddress(propertiesChanged.getPath());
-//                    BluetoothPeripheral peripheral = devicesMap.get
-//                }
+                // If it came from a device, send it to the right peripheral
                 String path = propertiesChanged.getPath();
                 Set<String> devices = devicesMap.keySet();
-
                 for(String deviceAddress : devices) {
                     if(path.contains(deviceAddress)) {
                         devicesMap.get(deviceAddress).handleSignal(propertiesChanged);
@@ -93,11 +88,5 @@ public class BluezSignalHandler {
 
     void addCentral(BluetoothCentral central) {
         centralList.add(central);
-    }
-
-    String path2deviceAddress(String path) {
-        String[] pathElements = path.split("/");
-        String deviceName = pathElements[pathElements.length-1];
-        return deviceName.substring(4).replace("_", ":");
     }
 }
