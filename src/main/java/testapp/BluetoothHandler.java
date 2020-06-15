@@ -14,7 +14,7 @@ import static com.welie.blessed.BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT;
 import static com.welie.blessed.BluetoothPeripheral.GATT_SUCCESS;
 
 public class BluetoothHandler {
-    private static final String TAG = BluetoothCentral.class.getSimpleName();
+    private static final String TAG = BluetoothHandler.class.getSimpleName();
     private final Logger logger = Logger.getLogger(TAG);
     private final BluetoothCentral central;
     private final Handler handler = new Handler("testapp.BluetoothHandler");
