@@ -1,5 +1,6 @@
 package com.welie.blessed;
 
+import com.welie.blessed.internal.Handler;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.handlers.AbstractPropertiesChangedHandler;
@@ -10,9 +11,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 
 public class BluezSignalHandler {
     private static final String TAG = BluezSignalHandler.class.getSimpleName();
+    private static final Logger logger = Logger.getLogger(TAG);
 
     private static BluezSignalHandler instance = null;
     private DBusConnection dbusConnection;
@@ -30,7 +33,7 @@ public class BluezSignalHandler {
 
     public static synchronized BluezSignalHandler getInstance() {
         if (instance == null) {
-            HBLogger.e(TAG, "Using getInstance when no BluezSignalHandler has been created");
+            logger.severe("Using getInstance when no BluezSignalHandler has been created");
         }
         return instance;
     }
@@ -43,16 +46,15 @@ public class BluezSignalHandler {
 
             handler.post(() -> {
                 // Send the signal to all centrals
-                for(BluetoothCentral central : centralList) {
+                for (BluetoothCentral central : centralList) {
                     central.handleSignal(propertiesChanged);
                 }
 
-                // Send to device adapters if it is for a device
+                // If it came from a device, send it to the right peripheral
                 String path = propertiesChanged.getPath();
                 Set<String> devices = devicesMap.keySet();
-
-                for(String deviceAddress : devices) {
-                    if(path.contains(deviceAddress)) {
+                for (String deviceAddress : devices) {
+                    if (path.contains(deviceAddress)) {
                         devicesMap.get(deviceAddress).handleSignal(propertiesChanged);
                     }
                 }
@@ -65,8 +67,8 @@ public class BluezSignalHandler {
             this.dbusConnection = dBusConnection;
             registerPropertyHandler(signalHandler);
         } catch (DBusException e) {
-            HBLogger.e(TAG,"Error registering scan property handler");
-            HBLogger.e(TAG, e);
+            logger.severe("Error registering scan property handler");
+            logger.severe(e.toString());
         }
     }
 
@@ -75,12 +77,12 @@ public class BluezSignalHandler {
     }
 
     void addDevice(String deviceAddress, BluetoothPeripheral peripheral) {
-        String deviceAddressString = deviceAddress.replace(":","_");
+        String deviceAddressString = deviceAddress.replace(":", "_");
         devicesMap.put(deviceAddressString, peripheral);
     }
 
     void removeDevice(String deviceAddress) {
-        String deviceAddressString = deviceAddress.replace(":","_");
+        String deviceAddressString = deviceAddress.replace(":", "_");
         devicesMap.remove(deviceAddressString);
     }
 

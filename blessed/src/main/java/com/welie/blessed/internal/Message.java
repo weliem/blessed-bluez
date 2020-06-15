@@ -1,4 +1,4 @@
-package com.welie.blessed;
+package com.welie.blessed.internal;
 
 public class Message {
 

@@ -3,7 +3,10 @@
  * All rights reserved.
  */
 
-package com.welie.blessed;
+package com.welie.blessed.internal;
+
+import com.welie.blessed.BluetoothCentral;
+import com.welie.blessed.BluetoothPeripheral;
 
 /**
  * Interface between {@link BluetoothCentral} and a {@link BluetoothPeripheral}.

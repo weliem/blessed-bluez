@@ -1,4 +1,6 @@
-package com.welie.blessed;
+package com.welie.blessed.internal;
+
+import com.welie.blessed.internal.Message;
 
 import java.util.*;
 import java.util.concurrent.BlockingQueue;

@@ -2,7 +2,7 @@
 
 [![](https://jitpack.io/v/weliem/blessed-bluez.svg)](https://jitpack.io/#weliem/blessed-bluez)
 
-BLESSED-for-Bluez is a very compact Bluetooth Low Energy (BLE) library for Bluez 5.50 and higher, that makes working with BLE using Bluez very easy. It takes completely hides the DBus messaging needed to use Bluez and provides a CoreBluetooth-like object oriented interface. This library uses the [DBus-Java library](https://github.com/hypfvieh/dbus-java) and parts of the [Bluez-DBus library](https://github.com/hypfvieh/bluez-dbus) for the communication with the DBus and Bluez functionality.
+BLESSED-for-Bluez is a Bluetooth Low Energy (BLE) library for Bluez 5.50 and higher, that makes working with BLE using Bluez very easy. It takes completely hides the DBus messaging needed to use Bluez and provides a CoreBluetooth-like object oriented interface. This library uses the [DBus-Java library](https://github.com/hypfvieh/dbus-java) and parts of the [Bluez-DBus library](https://github.com/hypfvieh/bluez-dbus) for the communication with the DBus and Bluez functionality.
 
 
 The library consists of 3 core classes and 2 callback abstract classes:
@@ -58,7 +58,7 @@ public void autoConnectPeripheralsBatch(Map<BluetoothPeripheral, BluetoothPeriph
 
 The method `connectPeripheral` will try to immediately connect to a device that has already been found using a scan. This method will time out after 30 seconds or less depending on the device manufacturer. Note that there can be **only 1 outstanding** `connectPeripheral`. So if it is called multiple times only 1 will succeed.
 
-The method `autoConnectPeripheral` is for re-connecting to known devices for which you already know the device's mac address. The BLE stack will automatically connect to the device when it sees it in its internal scan. Therefore, it may take longer to connect to a device but this call will never time out! So you can issue the autoConnect command and the device will be connected whenever it is found. 
+The method `autoConnectPeripheral` is for re-connecting to known devices for which you already know the device's mac address. The BLESSED will automatically connect to the device when it sees it in its internal scan. So you can issue the autoConnect command and the device will be connected whenever it is found. 
 
 The method `autoConnectPeripheralsBatch` is for re-connecting to a multiple peripherals in one go. 
 
@@ -74,9 +74,11 @@ public void onConnectionFailed(BluetoothPeripheral peripheral, int status)
 public void onDisconnectedPeripheral(BluetoothPeripheral peripheral, int status)
 ```
 
+If you want to disconnect a device, or cancel an autoConnect on a device, you call `cancelConnection`.
+
 ## Service discovery
 
-The BLESSED library will automatically do the service discovery for you and once it is completed you will receive the following callback:
+The Bluez will automatically do the service discovery for you and once it is completed you will receive the following callback:
 
 ```java
 public void onServicesDiscovered(BluetoothPeripheral peripheral)
@@ -106,7 +108,7 @@ public void onCharacteristicWrite(BluetoothPeripheral peripheral, byte[] value, 
 
 ```
 
-In these callbacks, the *value* parameter is the threadsafe byte array that was received. Use this value instead of the value that is part of the BluetoothGattCharacteristic object, since that one may have changed in the mean time because of incoming notifications or write operations.
+In these callbacks, the *value* parameter is the threadsafe byte array that was received.
 
 ## Turning notifications on/off
 
@@ -155,15 +157,12 @@ In most cases, the peripheral will initiate bonding either at the time of connec
 * Calling `createBond` when not yet connected to a peripheral. In this case, a connection is made and bonding is requested.
 * Calling `createBond` when already connected to a peripheral. In this case, only the bond is created.
 
-It is also possible to remove a bond by calling `removeBond`. Note that this method uses a hidden Android API and may stop working in the future. When calling the `removeBond` method, the peripheral will also disappear from the settings menu on the phone.
+It is also possible to remove a bond by calling `removeBond`. 
 
 Lastly, it is also possible to automatically issue a PIN code when pairing. Use the method `setPinForPeripheral` to register a 6 digit PIN code. Once bonding starts, BLESSED will automatically issue the PIN code and the UI dialog to enter the PIN code will not appear anymore.
 
 
 ## Example application
 
-An example application is provided in the repo. It shows how to connect to Blood Pressure meters, Heart Rate monitors and Thermometers, read the data and show it on screen.
+An example application is provided in the repo. It shows how to connect to Blood Pressure meters, Heart Rate monitors, Pulse Oximeters and Thermometers, read the data and show it in the log.
 
-## Acknowledgements
-
-BLESSED is the result of learning from many others about how to do BLE. Here are some references to material that helped me develop BLESSED:

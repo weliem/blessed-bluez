@@ -3,6 +3,7 @@ package com.welie.blessed;
 import java.util.Arrays;
 import java.util.Map;
 
+@SuppressWarnings("unused")
 public class ScanResult {
     private final long timestampNanos;
     private final String name;

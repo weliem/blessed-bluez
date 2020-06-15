@@ -1,4 +1,8 @@
-package com.welie.blessed;
+package com.welie.blessed.internal;
+
+import com.welie.blessed.internal.Looper;
+import com.welie.blessed.internal.Message;
+import com.welie.blessed.internal.MessageQueue;
 
 public class Handler {
 

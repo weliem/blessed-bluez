@@ -1,23 +1,24 @@
 package testapp;
 
 import com.welie.blessed.*;
+import com.welie.blessed.internal.Handler;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 import static com.welie.blessed.BluetoothGattCharacteristic.PROPERTY_WRITE;
 import static com.welie.blessed.BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT;
 import static com.welie.blessed.BluetoothPeripheral.GATT_SUCCESS;
-import static java.lang.Math.abs;
-
 
 public class BluetoothHandler {
-    private static final String TAG = BluetoothCentral.class.getSimpleName();
-
+    private static final String TAG = BluetoothHandler.class.getSimpleName();
+    private final Logger logger = Logger.getLogger(TAG);
     private final BluetoothCentral central;
     private final Handler handler = new Handler("testapp.BluetoothHandler");
+    private Runnable timeoutRunnable;
     private boolean justBonded = false;
 
     // UUIDs for the Blood Pressure service (BLP)
@@ -53,7 +54,10 @@ public class BluetoothHandler {
     private final BluetoothPeripheralCallback peripheralCallback = new BluetoothPeripheralCallback() {
         @Override
         public void onServicesDiscovered(@NotNull BluetoothPeripheral peripheral) {
-            HBLogger.i(TAG, "services discovered, starting initialization");
+            logger.info("services discovered, starting initialization");
+
+            // Read rssi
+            peripheral.readRemoteRssi();
 
             // Read manufacturer and model number from the Device Information Service
             if (peripheral.getService(DIS_SERVICE_UUID) != null) {
@@ -100,7 +104,7 @@ public class BluetoothHandler {
         public void onNotificationStateUpdate(@NotNull BluetoothPeripheral peripheral, @NotNull BluetoothGattCharacteristic characteristic, int status) {
             if (status == GATT_SUCCESS) {
                 if (peripheral.isNotifying(characteristic)) {
-                    HBLogger.i(TAG, String.format("SUCCESS: Notify set to 'on' for %s", characteristic.getUuid()));
+                    logger.info(String.format("SUCCESS: Notify set to 'on' for %s", characteristic.getUuid()));
 
                     // If we just bonded wit the A&D 651BLE, issue a disconnect to finish the pairing process
                     if (justBonded && peripheral.getName().contains("651BLE")) {
@@ -108,10 +112,10 @@ public class BluetoothHandler {
                         justBonded = false;
                     }
                 } else {
-                    HBLogger.i(TAG, String.format("SUCCESS: Notify set to 'off' for %s", characteristic.getUuid()));
+                    logger.info(String.format("SUCCESS: Notify set to 'off' for %s", characteristic.getUuid()));
                 }
             } else {
-                HBLogger.e(TAG, String.format("ERROR: Changing notification state failed for %s", characteristic.getUuid()));
+                logger.severe(String.format("ERROR: Changing notification state failed for %s", characteristic.getUuid()));
             }
         }
 
@@ -122,30 +126,31 @@ public class BluetoothHandler {
 
             if (characteristicUUID.equals(MANUFACTURER_NAME_CHARACTERISTIC_UUID)) {
                 String manufacturer = parser.getStringValue(0);
-                HBLogger.i(TAG, String.format("Received manufacturer: %s", manufacturer));
+                logger.info(String.format("Received manufacturer: %s", manufacturer));
             } else if (characteristicUUID.equals(MODEL_NUMBER_CHARACTERISTIC_UUID)) {
                 String modelNumber = parser.getStringValue(0);
-                HBLogger.i(TAG, String.format("Received modelnumber: %s", modelNumber));
+                logger.info(String.format("Received modelnumber: %s", modelNumber));
             } else if (characteristicUUID.equals(TEMPERATURE_MEASUREMENT_CHARACTERISTIC_UUID)) {
                 TemperatureMeasurement measurement = new TemperatureMeasurement(value);
-                HBLogger.i(TAG, measurement.toString());
-                peripheral.cancelConnection();
+                logger.info(measurement.toString());
+                startDisconnectTimer(peripheral);
             } else if (characteristicUUID.equals(BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID)) {
                 BloodPressureMeasurement measurement = new BloodPressureMeasurement(value);
-                HBLogger.i(TAG, measurement.toString());
-                peripheral.cancelConnection();
+                logger.info(measurement.toString());
+                startDisconnectTimer(peripheral);
             } else if (characteristicUUID.equals(PLX_CONTINUOUS_MEASUREMENT_CHAR_UUID)) {
                 PulseOximeterContinuousMeasurement measurement = new PulseOximeterContinuousMeasurement(value);
-                HBLogger.i(TAG, measurement.toString());
+                logger.info(measurement.toString());
             } else if (characteristicUUID.equals(PLX_SPOT_MEASUREMENT_CHAR_UUID)) {
                 PulseOximeterSpotMeasurement measurement = new PulseOximeterSpotMeasurement(value);
-                HBLogger.i(TAG, measurement.toString());
+                logger.info(measurement.toString());
+                startDisconnectTimer(peripheral);
             } else if (characteristicUUID.equals(HEARTRATE_MEASUREMENT_CHARACTERISTIC_UUID)) {
                 HeartRateMeasurement measurement = new HeartRateMeasurement(value);
-                HBLogger.d(TAG, measurement.toString());
+                logger.info(measurement.toString());
             } else if (characteristicUUID.equals(CURRENT_TIME_CHARACTERISTIC_UUID)) {
                 Date currentTime = parser.getDateTime();
-                HBLogger.i(TAG, String.format("Received device time: %s", currentTime));
+                logger.info(String.format("Received device time: %s", currentTime));
             }
         }
 
@@ -186,14 +191,24 @@ public class BluetoothHandler {
 
         @Override
         public void onReadRemoteRssi(@NotNull BluetoothPeripheral peripheral, int rssi, int status) {
-            super.onReadRemoteRssi(peripheral, rssi, status);
+            logger.info(String.format("rssi is %d", rssi));
         }
     };
+
+    public void startDisconnectTimer(final BluetoothPeripheral peripheral) {
+        if (timeoutRunnable != null) {
+            handler.removeCallbacks(timeoutRunnable);
+            timeoutRunnable = null;
+        }
+
+        this.timeoutRunnable = peripheral::cancelConnection;
+        handler.postDelayed(timeoutRunnable, 2000L);
+    }
 
     private final BluetoothCentralCallback bluetoothCentralCallback = new BluetoothCentralCallback() {
         @Override
         public void onConnectedPeripheral(@NotNull BluetoothPeripheral peripheral) {
-            super.onConnectedPeripheral(peripheral);
+            startScanning();
         }
 
         @Override
@@ -205,13 +220,13 @@ public class BluetoothHandler {
         @Override
         public void onDisconnectedPeripheral(@NotNull BluetoothPeripheral peripheral, int status) {
             super.onDisconnectedPeripheral(peripheral, status);
-            HBLogger.i(TAG, "disconnected peripheral");
+            logger.info("disconnected peripheral");
             handler.postDelayed(() -> startScanning(), 30000L);
         }
 
         @Override
         public void onDiscoveredPeripheral(final @NotNull BluetoothPeripheral peripheral, final @NotNull ScanResult scanResult) {
-            HBLogger.i(TAG, scanResult.toString());
+            logger.info(scanResult.toString());
             central.stopScan();
             central.connectPeripheral(peripheral, peripheralCallback);
         }
@@ -219,6 +234,7 @@ public class BluetoothHandler {
 
     public BluetoothHandler() {
 
+        logger.info("initializing BluetoothCentral");
         central = new BluetoothCentral(bluetoothCentralCallback);
         central.setPinCodeForPeripheral("B0:49:5F:01:20:8F", "635227");
         startScanning();
