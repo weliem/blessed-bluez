@@ -56,6 +56,9 @@ public class BluetoothHandler {
         public void onServicesDiscovered(@NotNull BluetoothPeripheral peripheral) {
             logger.info("services discovered, starting initialization");
 
+            // Read rssi
+            peripheral.readRemoteRssi();
+
             // Read manufacturer and model number from the Device Information Service
             if (peripheral.getService(DIS_SERVICE_UUID) != null) {
                 peripheral.readCharacteristic(peripheral.getCharacteristic(DIS_SERVICE_UUID, MANUFACTURER_NAME_CHARACTERISTIC_UUID));
@@ -188,7 +191,7 @@ public class BluetoothHandler {
 
         @Override
         public void onReadRemoteRssi(@NotNull BluetoothPeripheral peripheral, int rssi, int status) {
-            super.onReadRemoteRssi(peripheral, rssi, status);
+            logger.info(String.format("rssi is %d", rssi));
         }
     };
 
@@ -205,7 +208,7 @@ public class BluetoothHandler {
     private final BluetoothCentralCallback bluetoothCentralCallback = new BluetoothCentralCallback() {
         @Override
         public void onConnectedPeripheral(@NotNull BluetoothPeripheral peripheral) {
-            super.onConnectedPeripheral(peripheral);
+            startScanning();
         }
 
         @Override

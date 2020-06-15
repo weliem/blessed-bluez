@@ -638,31 +638,23 @@ public class BluetoothPeripheral {
     /**
      * Read the RSSI for a connected peripheral
      * {@BluetoothPeripheralCallback#onReadRemoteRssi(BluetoothPeripheral, int, int)} will be triggered as a result of this call.
-     * @return true if the operation was enqueued, false otherwise
      */
     @SuppressWarnings("unused")
-    public boolean readRemoteRssi() {
-        boolean result = commandQueue.add(() -> {
-            if (state == STATE_CONNECTED) {
-                try {
-                    logger.info(String.format("reading rssi for '%s'", deviceName));
-                    Short rssi = device.getRssi();
-                    if (peripheralCallback != null && rssi != null) {
-                        callBackHandler.post(() -> peripheralCallback.onReadRemoteRssi(BluetoothPeripheral.this, rssi, GATT_SUCCESS));
-                    }
-                    completedCommand();
-                } catch (Exception e) {
-                    logger.severe("ERROR: " + e.getMessage());
-                }
+    public void readRemoteRssi() {
+        try {
+            logger.info(String.format("reading rssi for '%s'", deviceName));
+            Short rssi = device.getRssi();
+            if (peripheralCallback != null && rssi != null) {
+                callBackHandler.post(() -> peripheralCallback.onReadRemoteRssi(BluetoothPeripheral.this, rssi, GATT_SUCCESS));
             }
-        });
-
-        if (result) {
-            nextCommand();
-        } else {
-            logger.severe("ERROR: Could not enqueue read rssi command");
+            completedCommand();
+        } catch (DBusExecutionException e) {
+            if (e.getMessage().equalsIgnoreCase("No such property 'RSSI'")) {
+                logger.severe("rssi not available when not scanning");
+            } else {
+                logger.severe("reading rssi failed: " + e.getMessage());
+            }
         }
-        return result;
     }
 
     /*
@@ -1022,7 +1014,6 @@ public class BluetoothPeripheral {
 
         return result;
     }
-
 
 
     private BluetoothGattCharacteristic getCharacteristicFromPath(String path) {
