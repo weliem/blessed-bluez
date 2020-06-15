@@ -283,6 +283,7 @@ public class BluetoothGattCharacteristic {
      * Returns a descriptor with a given UUID out of the list of
      * descriptors for this characteristic.
      *
+     * @param uuid the UUID of the descriptor
      * @return GATT descriptor object or null if no descriptor with the given UUID was found.
      */
     public BluetoothGattDescriptor getDescriptor(UUID uuid) {

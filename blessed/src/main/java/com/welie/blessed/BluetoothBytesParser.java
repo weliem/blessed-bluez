@@ -31,6 +31,9 @@ import java.util.GregorianCalendar;
 
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
+/**
+ * Parser for Bluetooth data types
+ */
 public class BluetoothBytesParser {
 
     private int offset = 0;
@@ -88,6 +91,8 @@ public class BluetoothBytesParser {
 
     /**
      * Create a BluetoothBytesParser that does not contain a byte array and sets the byteOrder.
+     *
+     * @param byteOrder the byte order to use
      */
     public BluetoothBytesParser(ByteOrder byteOrder) {
         this(null, byteOrder);
@@ -151,6 +156,7 @@ public class BluetoothBytesParser {
      * Return an Integer value of the specified type and specified byte order. This operation will automatically advance the internal offset to the next position.
      *
      * @param formatType the format type used to interpret the byte(s) value
+     * @param byteOrder the byte order to use
      * @return an Integer object or null in case the byte array was not valid
      */
     public Integer getIntValue(int formatType, ByteOrder byteOrder) {
@@ -171,6 +177,7 @@ public class BluetoothBytesParser {
     /**
      * Return a Long value using the specified byte order. This operation will automatically advance the internal offset to the next position.
      *
+     * @param byteOrder the byte order to use
      * @return an Long object or null in case the byte array was not valid
      */
     public long getLongValue(ByteOrder byteOrder) {
@@ -182,6 +189,8 @@ public class BluetoothBytesParser {
     /**
      * Return a Long value using the specified byte order and offset position. This operation will not advance the internal offset to the next position.
      *
+     * @param offset the offset to use
+     * @param byteOrder the byte order to use
      * @return an Long object or null in case the byte array was not valid
      */
     public long getLongValue(int offset, ByteOrder byteOrder) {
@@ -289,6 +298,7 @@ public class BluetoothBytesParser {
      * Return a float value of the specified format, offset and byte order. This operation will not advance the internal offset to the next position.
      *
      * @param formatType The format type used to interpret the byte array
+     * @param offset the offset to use
      * @param byteOrder  the byte order, either LITTLE_ENDIAN or BIG_ENDIAN
      * @return The float value at the position of the internal offset
      */
@@ -751,6 +761,8 @@ public class BluetoothBytesParser {
 
     /**
      * Get the value of the internal offset
+     *
+     * @return returns the current offset
      */
     public int getOffset() {
         return offset;
@@ -758,13 +770,17 @@ public class BluetoothBytesParser {
 
     /**
      * Set the value of the internal offset
+     *
+     * @param offset the offset value
      */
     public void setOffset(int offset) {
         this.offset = offset;
     }
 
     /**
-     * Get the set byte order
+     * Get the current byte order
+     *
+     * @return the current byte order
      */
     public ByteOrder getByteOrder() {
         return byteOrder;

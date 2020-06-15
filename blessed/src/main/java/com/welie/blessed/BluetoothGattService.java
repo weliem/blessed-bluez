@@ -4,20 +4,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Represents a Bluetooth Gatt service
+ */
 public class BluetoothGattService {
 
     /**
      * The remote device his service is associated with.
      * This applies to client applications only.
      *
-     * @hide
      */
     protected BluetoothPeripheral mDevice;
 
     /**
      * The UUID of this service.
      *
-     * @hide
      */
     protected UUID mUuid;
 
@@ -97,6 +98,7 @@ public class BluetoothGattService {
      * UUID, the first instance of a characteristic with the given UUID
      * is returned.
      *
+     * @param uuid the UUID of the characteristic
      * @return GATT characteristic object or null if no characteristic with the given UUID was
      * found.
      */

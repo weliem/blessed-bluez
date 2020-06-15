@@ -2,6 +2,9 @@ package com.welie.blessed;
 
 import java.util.UUID;
 
+/**
+ * Represents a Bluetooth Gatt descriptor
+ */
 public class BluetoothGattDescriptor {
     /**
      * Value used to enable notification for a client configuration descriptor
@@ -63,21 +66,18 @@ public class BluetoothGattDescriptor {
     /**
      * The UUID of this descriptor.
      *
-     * @hide
      */
     protected UUID mUuid;
 
     /**
      * Permissions for this descriptor
      *
-     * @hide
      */
     protected int mPermissions;
 
     /**
      * Back-reference to the characteristic this descriptor belongs to.
      *
-     * @hide
      */
     protected BluetoothGattCharacteristic mCharacteristic;
 
@@ -89,17 +89,6 @@ public class BluetoothGattDescriptor {
      */
     public BluetoothGattDescriptor(UUID uuid, int permissions) {
         initDescriptor(null, uuid, permissions);
-    }
-
-    /**
-     * Create a new BluetoothGattDescriptor.
-     *
-     * @param characteristic The characteristic this descriptor belongs to
-     * @param uuid The UUID for this descriptor
-     * @param permissions Permissions for this descriptor
-     */
-    public BluetoothGattDescriptor(BluetoothGattCharacteristic characteristic, UUID uuid, int instance, int permissions) {
-        initDescriptor(characteristic, uuid, permissions);
     }
 
     private void initDescriptor(BluetoothGattCharacteristic characteristic, UUID uuid, int permissions) {

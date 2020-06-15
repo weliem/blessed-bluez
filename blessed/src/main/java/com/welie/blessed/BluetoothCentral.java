@@ -23,6 +23,9 @@ import java.util.concurrent.TimeUnit;
 
 import static com.welie.blessed.BluetoothPeripheral.*;
 
+/**
+ * Represents a Bluetooth Central object
+ */
 public class BluetoothCentral {
     private static final String TAG = BluetoothCentral.class.getSimpleName();
     private DBusConnection dbusConnection;
@@ -751,6 +754,7 @@ public class BluetoothCentral {
      * If the peripheral is already connected, no connection attempt will be made. This method is asynchronous and there can be only one outstanding connect.
      *
      * @param peripheral BLE peripheral to connect with
+     * @param peripheralCallback the peripheral callback to use
      */
     public void connectPeripheral(final BluetoothPeripheral peripheral, final BluetoothPeripheralCallback peripheralCallback) {
         // Make sure peripheral is valid
@@ -793,6 +797,8 @@ public class BluetoothCentral {
      * Automatically connect to a peripheral when it is advertising. It is not necessary to scan for the peripheral first. This call is asynchronous and will not time out.
      *
      * @param peripheral the peripheral
+     * @param peripheralCallback the peripheral callback to use
+     * @return true if all arguments were valid, otherwise false
      */
     @SuppressWarnings("UnusedReturnValue")
     public boolean autoConnectPeripheral(@NotNull BluetoothPeripheral peripheral, @NotNull BluetoothPeripheralCallback peripheralCallback) {

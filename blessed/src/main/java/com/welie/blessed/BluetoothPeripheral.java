@@ -18,6 +18,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static com.welie.blessed.BluetoothGattCharacteristic.*;
 
+/**
+ * Represents a Bluetooth BLE peripheral
+ */
 public class BluetoothPeripheral {
     private static final String TAG = BluetoothPeripheral.class.getSimpleName();
 

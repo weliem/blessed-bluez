@@ -3,6 +3,9 @@ package com.welie.blessed;
 
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Callbacks for BluetoothPeripheral operations
+ */
 @SuppressWarnings("SpellCheckingInspection")
 public abstract class BluetoothPeripheralCallback {
 
@@ -10,6 +13,7 @@ public abstract class BluetoothPeripheralCallback {
      * Callback invoked when the list of remote services, characteristics and descriptors
      * for the remote device have been updated, ie new services have been discovered.
      *
+     * @param peripheral the peripheral
      */
     public void onServicesDiscovered(@NotNull final BluetoothPeripheral peripheral) {}
 
