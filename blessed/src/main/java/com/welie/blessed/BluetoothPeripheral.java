@@ -159,6 +159,33 @@ public class BluetoothPeripheral {
      */
     public static final int GATT_AUTH_FAIL = 137;
 
+    /**
+     * Indicates the remote device is not bonded (paired).
+     * <p>There is no shared link key with the remote device, so communication
+     * (if it is allowed at all) will be unauthenticated and unencrypted.
+     */
+    @SuppressWarnings("WeakerAccess")
+    public static final int BOND_NONE = 10;
+
+    /**
+     * Indicates bonding (pairing) is in progress with the remote device.
+     */
+    @SuppressWarnings("WeakerAccess")
+    public static final int BOND_BONDING = 11;
+
+    /**
+     * Indicates the remote device is bonded (paired).
+     * <p>A shared link keys exists locally for the remote device, so
+     * communication can be authenticated and encrypted.
+     * <p><i>Being bonded (paired) with a remote device does not necessarily
+     * mean the device is currently connected. It just means that the pending
+     * procedure was completed at some earlier time, and the link key is still
+     * stored locally, ready to use on the next connection.
+     * </i>
+     */
+    @SuppressWarnings("WeakerAccess")
+    public static final int BOND_BONDED = 12;
+
     // GattCallback will deal with managing low-level callbacks
     final GattCallback gattCallback = new GattCallback() {
         @Override
@@ -948,9 +975,27 @@ public class BluetoothPeripheral {
         return state;
     }
 
-    public boolean isPaired() {
+    boolean isPaired() {
         isBonded = device.isPaired();
         return isBonded;
+    }
+
+    /**
+     * Get the bond state of the bluetooth peripheral.
+     *
+     * <p>Possible values for the bond state are:
+     * {@link #BOND_NONE},
+     * {@link #BOND_BONDING},
+     * {@link #BOND_BONDED}.
+     *
+     * @return returns the bond state
+     */
+    public int getBondState() {
+        if (isPaired()) {
+            return BOND_BONDED;
+        } else {
+            return BOND_NONE;
+        }
     }
 
     /**
