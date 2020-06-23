@@ -2,7 +2,7 @@
 
 [![](https://jitpack.io/v/weliem/blessed-bluez.svg)](https://jitpack.io/#weliem/blessed-bluez)
 
-BLESSED-for-Bluez is a Bluetooth Low Energy (BLE) library for Bluez 5.50 and higher, that makes working with BLE using Bluez very easy. It takes completely hides the DBus messaging needed to use Bluez and provides a CoreBluetooth-like object oriented interface. This library uses the [DBus-Java library](https://github.com/hypfvieh/dbus-java) and parts of the [Bluez-DBus library](https://github.com/hypfvieh/bluez-dbus) for the communication with the DBus and Bluez functionality.
+BLESSED-for-Bluez is a Bluetooth Low Energy (BLE) library for Bluez 5.50 and higher, that makes working with BLE using Bluez very easy. It completely hides the DBus messaging needed to use Bluez and provides a CoreBluetooth-like object oriented interface. This library uses the [DBus-Java library](https://github.com/hypfvieh/dbus-java) and parts of the [Bluez-DBus library](https://github.com/hypfvieh/bluez-dbus) for the communication with the DBus and Bluez functionality.
 
 
 The library consists of 3 core classes and 2 callback abstract classes:
@@ -10,7 +10,7 @@ The library consists of 3 core classes and 2 callback abstract classes:
 2. `BluetoothPeripheral`, and it's companion abstract class `BluetoothPeripheralCallback`
 3. `BluetoothBytesParser`
 
-The `BluetoothCentral` class is used to scan for devices and manage connections. The `BluetoothPeripheral` class is a replacement for the standard Android `BluetoothDevice` and `BluetoothGatt` classes. It wraps all GATT related peripheral functionality. The `BluetoothBytesParser` class is a utility class that makes parsing byte arrays easy.
+The `BluetoothCentral` class is used to scan for devices and manage connections. The `BluetoothPeripheral` class represent the peripheral and wraps all GATT related peripheral functionality. The `BluetoothBytesParser` class is a utility class that makes parsing byte arrays easy.
 
 The BLESSED library was inspired by CoreBluetooth on iOS and provides the same level of abstraction. If you already have developed using CoreBluetooth you can very easily port your code to Linux using this library.
 
