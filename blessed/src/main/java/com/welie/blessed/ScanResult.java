@@ -55,9 +55,10 @@ public class ScanResult {
     }
 
     private String manufacturerDataToString() {
+        if (manufacturerData == null) return "null";
         StringBuilder result = new StringBuilder("[");
         manufacturerData.forEach((code, bytes) -> result.append(String.format("0x%04x->0x%s,",code , bytes2String(bytes))));
-        result.deleteCharAt(result.length()-1);
+        result.deleteCharAt(result.length() - 1);
         result.append("]");
         return result.toString();
     }
