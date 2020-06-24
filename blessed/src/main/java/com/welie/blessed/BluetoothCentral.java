@@ -1087,7 +1087,7 @@ public class BluetoothCentral {
         if (bluetoothDevice == null) return;
 
         boolean isBonded = device.isPaired();
-        logger.info(String.format("removing device %s (%s)", device.getAddress(), isBonded ? "BONDED" : "BOND_NONE"));
+        logger.info(String.format("removing peripheral %s (%s)", device.getAddress(), isBonded ? "BONDED" : "BOND_NONE"));
         removeDevice(bluetoothDevice);
     }
 
