@@ -3,6 +3,8 @@ package com.welie.blessed;
 import java.util.Arrays;
 import java.util.Map;
 
+import static com.welie.blessed.BluetoothBytesParser.bytes2String;
+
 @SuppressWarnings("unused")
 public class ScanResult {
     private final long timestampNanos;
@@ -47,8 +49,16 @@ public class ScanResult {
                 ", address='" + address + '\'' +
                 ", uuids=" + Arrays.toString(uuids) +
                 ", rssi=" + rssi +
-                ", manufacturerData=" + manufacturerData +
+                ", manufacturerData=" + manufacturerDataToString() +
                 ", serviceData=" + serviceData +
                 '}';
+    }
+
+    private String manufacturerDataToString() {
+        StringBuilder result = new StringBuilder("[");
+        manufacturerData.forEach((code, bytes) -> result.append(String.format("0x%04x->0x%s,",code , bytes2String(bytes))));
+        result.deleteCharAt(result.length()-1);
+        result.append("]");
+        return result.toString();
     }
 }
