@@ -762,7 +762,7 @@ public class BluetoothCentral {
      * Connect to a known peripheral immediately. The peripheral must have been found by scanning for this call to succeed. This method will time out in max 30 seconds on most phones and in 5 seconds on Samsung phones.
      * If the peripheral is already connected, no connection attempt will be made. This method is asynchronous and there can be only one outstanding connect.
      *
-     * @param peripheral BLE peripheral to connect with
+     * @param peripheral         BLE peripheral to connect with
      * @param peripheralCallback the peripheral callback to use
      */
     public void connectPeripheral(final BluetoothPeripheral peripheral, final BluetoothPeripheralCallback peripheralCallback) {
@@ -805,7 +805,7 @@ public class BluetoothCentral {
     /**
      * Automatically connect to a peripheral when it is advertising. It is not necessary to scan for the peripheral first. This call is asynchronous and will not time out.
      *
-     * @param peripheral the peripheral
+     * @param peripheral         the peripheral
      * @param peripheralCallback the peripheral callback to use
      * @return true if all arguments were valid, otherwise false
      */
@@ -897,10 +897,10 @@ public class BluetoothCentral {
      *
      * @param peripheralAddress the address of the peripheral
      */
-    public void removeBond(String peripheralAddress) {
+    public boolean removeBond(String peripheralAddress) {
         BluezDevice bluezDevice = getDeviceByAddress(adapter, peripheralAddress);
-        if (bluezDevice == null) return;
-        removeDevice(bluezDevice);
+        if (bluezDevice == null) return false;
+        return removeDevice(bluezDevice);
     }
 
     /**
@@ -1091,16 +1091,21 @@ public class BluetoothCentral {
         removeDevice(bluetoothDevice);
     }
 
-    private void removeDevice(BluezDevice bluetoothDevice) {
-        if (adapter != null) {
-            try {
-                Device1 rawDevice = bluetoothDevice.getRawDevice();
-                if (rawDevice != null) {
-                    adapter.removeDevice(rawDevice);
-                }
-            } catch (BluezFailedException | BluezInvalidArgumentsException e) {
-                logger.severe("Error removing device");
+    private boolean removeDevice(BluezDevice bluetoothDevice) {
+        if (adapter == null) {
+            return false;
+        }
+
+        try {
+            Device1 rawDevice = bluetoothDevice.getRawDevice();
+            if (rawDevice != null) {
+                adapter.removeDevice(rawDevice);
+                return true;
             }
+            return false;
+        } catch (BluezFailedException | BluezInvalidArgumentsException e) {
+            logger.severe("Error removing device");
+            return false;
         }
     }
 }
