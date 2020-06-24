@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Logger;
 
 import static com.welie.blessed.BluetoothGattCharacteristic.*;
+import static java.lang.Thread.sleep;
 
 /**
  * Represents a Bluetooth BLE peripheral
@@ -318,6 +319,12 @@ public class BluetoothPeripheral {
     public void connect() {
         // Do the connect
         gattCallback.onConnectionStateChanged(STATE_CONNECTING, GATT_SUCCESS);
+        try {
+            sleep(100);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
         try {
             logger.info(String.format("connecting to '%s' (%s)", deviceName, deviceAddress));
             BluezSignalHandler.getInstance().addDevice(deviceAddress, this);
@@ -705,9 +712,7 @@ public class BluetoothPeripheral {
 
                 propertiesChanged.getPropertiesChanged().forEach((s, value) -> handlePropertyChangedForCharacteristic(bluetoothGattCharacteristic, s, value));
             } else if (propertiesChanged.getInterfaceName().equals(BLUEZ_DEVICE_INTERFACE)) {
-
                 propertiesChanged.getPropertiesChanged().forEach((s, variant) -> handlePropertyChangeForDevice(s, variant));
-
             }
         }
     };
@@ -748,7 +753,7 @@ public class BluetoothPeripheral {
                     cancelServiceDiscoveryTimer();
                     servicesResolved();
                 } else {
-                    logger.info(String.format("servicesResolved is false (%s)", deviceName));
+                    logger.fine(String.format("servicesResolved is false (%s)", deviceName));
                 }
                 break;
             case PROPERTY_CONNECTED:
@@ -758,7 +763,7 @@ public class BluetoothPeripheral {
                     gattCallback.onConnectionStateChanged(STATE_CONNECTED, GATT_SUCCESS);
                     startServiceDiscoveryTimer();
                 } else {
-                    logger.info(String.format("peripheral disconnected '%s' (%s)", deviceName, deviceAddress));
+                    logger.info(String.format("disconnected '%s' (%s)", deviceName, deviceAddress));
 
                     // Clean up
                     cancelServiceDiscoveryTimer();
