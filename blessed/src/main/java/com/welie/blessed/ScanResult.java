@@ -40,6 +40,9 @@ public class ScanResult {
     public Map<Integer, byte[]> getManufacturerData() {
         return manufacturerData;
     }
+    public Map<String, byte[]> getServiceData() {
+        return serviceData;
+    }
 
     @Override
     public String toString() {
@@ -50,7 +53,7 @@ public class ScanResult {
                 ", uuids=" + Arrays.toString(uuids) +
                 ", rssi=" + rssi +
                 ", manufacturerData=" + manufacturerDataToString() +
-                ", serviceData=" + serviceData +
+                ", serviceData=" + serviceDataToString() +
                 '}';
     }
 
@@ -58,6 +61,15 @@ public class ScanResult {
         if (manufacturerData == null) return "null";
         StringBuilder result = new StringBuilder("[");
         manufacturerData.forEach((code, bytes) -> result.append(String.format("0x%04x->0x%s,",code , bytes2String(bytes))));
+        result.deleteCharAt(result.length() - 1);
+        result.append("]");
+        return result.toString();
+    }
+
+    private String serviceDataToString() {
+        if (serviceData == null) return "null";
+        StringBuilder result = new StringBuilder("[");
+        serviceData.forEach((uuid, bytes) -> result.append(String.format("%s->0x%s,",uuid , bytes2String(bytes))));
         result.deleteCharAt(result.length() - 1);
         result.append("]");
         return result.toString();
