@@ -14,6 +14,7 @@ import org.freedesktop.dbus.interfaces.Properties;
 import org.freedesktop.dbus.types.DBusListType;
 import org.freedesktop.dbus.types.Variant;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,8 +33,8 @@ public class BluetoothPeripheral {
 
     // Core variables
     private final BluetoothCentral central;
-    private final BluezDevice device;
-    private final String deviceName;
+    BluezDevice device;
+    String deviceName;
     private final String deviceAddress;
     private boolean isBonded = false;
     private boolean manualBonding = false;
@@ -329,7 +330,7 @@ public class BluetoothPeripheral {
     /*
      * PUBLIC HBDeviceAdapter Interface Methods
      */
-    public BluetoothPeripheral(@NotNull BluetoothCentral central, BluezDevice bluezDevice, String deviceName, String deviceAddress, InternalCallback listener, BluetoothPeripheralCallback peripheralCallback, Handler callBackHandler) {
+    public BluetoothPeripheral(@NotNull BluetoothCentral central, @Nullable BluezDevice bluezDevice, String deviceName, String deviceAddress, InternalCallback listener, BluetoothPeripheralCallback peripheralCallback, Handler callBackHandler) {
         this.central = central;
         this.device = bluezDevice;
         this.deviceAddress = deviceAddress;
@@ -961,7 +962,7 @@ public class BluetoothPeripheral {
      *
      * @return Address of the bluetooth peripheral
      */
-    public String getAddress() {
+    public @NotNull String getAddress() {
         return deviceAddress;
     }
 
