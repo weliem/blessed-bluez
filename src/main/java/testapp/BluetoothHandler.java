@@ -4,9 +4,7 @@ import com.welie.blessed.*;
 import com.welie.blessed.internal.Handler;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.UUID;
+import java.util.*;
 import java.util.logging.Logger;
 
 import static com.welie.blessed.BluetoothGattCharacteristic.PROPERTY_WRITE;
@@ -20,6 +18,7 @@ public class BluetoothHandler {
     private final Handler handler = new Handler("testapp.BluetoothHandler");
     private Runnable timeoutRunnable;
     private boolean justBonded = false;
+    private static List<String> blackList = new ArrayList<>();
 
     // UUIDs for the Blood Pressure service (BLP)
     private static final UUID BLP_SERVICE_UUID = UUID.fromString("00001810-0000-1000-8000-00805f9b34fb");
@@ -203,24 +202,32 @@ public class BluetoothHandler {
     private final BluetoothCentralCallback bluetoothCentralCallback = new BluetoothCentralCallback() {
         @Override
         public void onConnectedPeripheral(@NotNull BluetoothPeripheral peripheral) {
- //           startScanning();
+            startScanning();
         }
 
         @Override
         public void onConnectionFailed(@NotNull BluetoothPeripheral peripheral, int status) {
             super.onConnectionFailed(peripheral, status);
-            handler.postDelayed(() -> startScanning(), 30000L);
+            final String peripheralAddress = peripheral.getAddress();
+            handler.postDelayed(() -> blackList.remove(peripheralAddress), 2000L);
+            startScanning();
         }
 
         @Override
         public void onDisconnectedPeripheral(@NotNull BluetoothPeripheral peripheral, int status) {
-            super.onDisconnectedPeripheral(peripheral, status);
             logger.info("disconnected peripheral");
-            handler.postDelayed(() -> startScanning(), 30000L);
+            final String peripheralAddress = peripheral.getAddress();
+            handler.postDelayed(() -> blackList.remove(peripheralAddress), 32000L);
         }
 
         @Override
         public void onDiscoveredPeripheral(final @NotNull BluetoothPeripheral peripheral, final @NotNull ScanResult scanResult) {
+            // See if this device is on the blacklist
+            final String peripheralAddress = peripheral.getAddress();
+            boolean blacklisted = blackList.contains(peripheralAddress);
+            if (blacklisted) return;
+
+            blackList.add(peripheralAddress);
             logger.info(scanResult.toString());
             central.stopScan();
             central.connectPeripheral(peripheral, peripheralCallback);
@@ -228,7 +235,6 @@ public class BluetoothHandler {
     };
 
     public BluetoothHandler() {
-
         logger.info("initializing BluetoothCentral");
         central = new BluetoothCentral(bluetoothCentralCallback);
         central.setPinCodeForPeripheral("B0:49:5F:01:20:8F", "635227");
