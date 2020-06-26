@@ -409,7 +409,7 @@ public class BluetoothPeripheral {
     }
 
     void disconnectBluezDevice() {
-        logger.info("disconnecting on request");
+        logger.info(String.format("force disconnect '%s' (%s)", getName(), getAddress()));
         gattCallback.onConnectionStateChanged(STATE_DISCONNECTING, GATT_SUCCESS);
         device.disconnect();
     }
