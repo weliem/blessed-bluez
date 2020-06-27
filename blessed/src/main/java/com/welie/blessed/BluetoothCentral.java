@@ -91,12 +91,11 @@ public class BluetoothCentral {
                     bluetoothCentralCallback.onConnectedPeripheral(device);
                 }
             });
-
-            restartScannerIfNeeded();
         }
 
         @Override
         public void servicesDiscovered(final BluetoothPeripheral device) {
+            restartScannerIfNeeded();
             logger.info("service discovery succeeded");
         }
 
@@ -710,6 +709,7 @@ public class BluetoothCentral {
         cancelTimeoutTimer();
 
         this.timeoutRunnable = () -> {
+            logger.info("scan timout");
             stopScanning();
             startScanning();
         };

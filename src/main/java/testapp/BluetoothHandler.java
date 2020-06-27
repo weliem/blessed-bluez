@@ -202,7 +202,6 @@ public class BluetoothHandler {
     private final BluetoothCentralCallback bluetoothCentralCallback = new BluetoothCentralCallback() {
         @Override
         public void onConnectedPeripheral(@NotNull BluetoothPeripheral peripheral) {
-            startScanning();
         }
 
         @Override
@@ -210,7 +209,6 @@ public class BluetoothHandler {
             super.onConnectionFailed(peripheral, status);
             final String peripheralAddress = peripheral.getAddress();
             handler.postDelayed(() -> blackList.remove(peripheralAddress), 2000L);
-            startScanning();
         }
 
         @Override
@@ -229,7 +227,6 @@ public class BluetoothHandler {
 
             blackList.add(peripheralAddress);
             logger.info(scanResult.toString());
-            central.stopScan();
             central.connectPeripheral(peripheral, peripheralCallback);
         }
     };

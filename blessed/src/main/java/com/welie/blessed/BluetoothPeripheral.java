@@ -324,6 +324,10 @@ public class BluetoothPeripheral {
             if (peripheralCallback != null) {
                 callBackHandler.post(() -> peripheralCallback.onServicesDiscovered(BluetoothPeripheral.this));
             }
+
+            if (listener != null) {
+                listener.servicesDiscovered(BluetoothPeripheral.this);
+            }
         }
     };
 
