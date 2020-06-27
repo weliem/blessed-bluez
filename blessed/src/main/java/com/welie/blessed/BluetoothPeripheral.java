@@ -303,7 +303,6 @@ public class BluetoothPeripheral {
         @Override
         public void onPaired() {
             logger.info("pairing (bonding) succeeded");
-//            if(getName().startsWith("PDL") || getName().startsWith("Philips health band")) disconnect();
             if (peripheralCallback != null) {
                 callBackHandler.post(() -> peripheralCallback.onBondingSucceeded(BluetoothPeripheral.this));
             }
