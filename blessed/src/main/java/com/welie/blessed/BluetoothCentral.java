@@ -398,7 +398,7 @@ public class BluetoothCentral {
         reconnectCallbacks.remove(deviceAddress);
         unconnectedPeripherals.remove(deviceAddress);
 
-        // Make sure we have a BluezDevice object with a name
+        // Make sure we have a valid BluezDevice object and refresh the name
         if (peripheral.device == null) {
             peripheral.device = getDeviceByAddress(adapter, deviceAddress);
             peripheral.deviceName = peripheral.device.getName();
