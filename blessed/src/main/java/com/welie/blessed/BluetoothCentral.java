@@ -78,48 +78,48 @@ public class BluetoothCentral {
 
     private final InternalCallback internalCallback = new InternalCallback() {
         @Override
-        public void connected(final BluetoothPeripheral device) {
-            final String deviceAddress = device.getAddress();
-            connectedPeripherals.put(deviceAddress, device);
-            unconnectedPeripherals.remove(deviceAddress);
-            scannedPeripherals.remove(deviceAddress);
+        public void connected(final BluetoothPeripheral peripheral) {
+            final String peripheralAddress = peripheral.getAddress();
+            connectedPeripherals.put(peripheralAddress, peripheral);
+            unconnectedPeripherals.remove(peripheralAddress);
+            scannedPeripherals.remove(peripheralAddress);
 
-            completeConnectOrDisconnectCommand(deviceAddress);
+            completeConnectOrDisconnectCommand(peripheralAddress);
 
             callBackHandler.post(() -> {
                 if (bluetoothCentralCallback != null) {
-                    bluetoothCentralCallback.onConnectedPeripheral(device);
+                    bluetoothCentralCallback.onConnectedPeripheral(peripheral);
                 }
             });
         }
 
         @Override
-        public void servicesDiscovered(final BluetoothPeripheral device) {
+        public void servicesDiscovered(final BluetoothPeripheral peripheral) {
             restartScannerIfNeeded();
             logger.info("service discovery succeeded");
         }
 
         @Override
-        public void serviceDiscoveryFailed(final BluetoothPeripheral device) {
+        public void serviceDiscoveryFailed(final BluetoothPeripheral peripheral) {
             logger.info("Service discovery failed");
-            if (device.isPaired()) {
-                callBackHandler.postDelayed(() -> removeDevice(device), 200L);
+            if (peripheral.isPaired()) {
+                callBackHandler.postDelayed(() -> removeDevice(peripheral), 200L);
             }
         }
 
         @Override
-        public void connectFailed(final BluetoothPeripheral device) {
-            final String deviceAddress = device.getAddress();
-            connectedPeripherals.remove(deviceAddress);
-            unconnectedPeripherals.remove(deviceAddress);
-            scannedPeripherals.remove(deviceAddress);
+        public void connectFailed(final BluetoothPeripheral peripheral) {
+            final String peripheralAddress = peripheral.getAddress();
+            connectedPeripherals.remove(peripheralAddress);
+            unconnectedPeripherals.remove(peripheralAddress);
+            scannedPeripherals.remove(peripheralAddress);
 
             // Complete the 'connect' command if this was the device we were connecting
-            completeConnectOrDisconnectCommand(deviceAddress);
+            completeConnectOrDisconnectCommand(peripheralAddress);
 
             callBackHandler.post(() -> {
                 if (bluetoothCentralCallback != null) {
-                    bluetoothCentralCallback.onConnectionFailed(device, 0);
+                    bluetoothCentralCallback.onConnectionFailed(peripheral, 0);
                 }
             });
 
@@ -127,22 +127,22 @@ public class BluetoothCentral {
         }
 
         @Override
-        public void disconnected(final BluetoothPeripheral device) {
-            final String deviceAddress = device.getAddress();
-            connectedPeripherals.remove(deviceAddress);
-            unconnectedPeripherals.remove(deviceAddress);
-            scannedPeripherals.remove(deviceAddress);
+        public void disconnected(final BluetoothPeripheral peripheral) {
+            final String peripheralAddress = peripheral.getAddress();
+            connectedPeripherals.remove(peripheralAddress);
+            unconnectedPeripherals.remove(peripheralAddress);
+            scannedPeripherals.remove(peripheralAddress);
 
-            completeConnectOrDisconnectCommand(deviceAddress);
+            completeConnectOrDisconnectCommand(peripheralAddress);
 
             // Remove unbonded devices from DBus to make setting notifications work on reconnection (Bluez issue)
-            if (!device.isPaired()) {
-                removeDevice(device);
+            if (!peripheral.isPaired()) {
+                removeDevice(peripheral);
             }
 
             callBackHandler.post(() -> {
                 if (bluetoothCentralCallback != null) {
-                    bluetoothCentralCallback.onDisconnectedPeripheral(device, 0);
+                    bluetoothCentralCallback.onDisconnectedPeripheral(peripheral, 0);
                 }
             });
 
@@ -383,20 +383,20 @@ public class BluetoothCentral {
     }
 
     private void onFoundReconnectionPeripheral(BluetoothPeripheral peripheral) {
-        final String deviceAddress = peripheral.getAddress();
-        final BluetoothPeripheralCallback peripheralCallback = reconnectCallbacks.get(deviceAddress);
+        final String peripheralAddress = peripheral.getAddress();
+        final BluetoothPeripheralCallback peripheralCallback = reconnectCallbacks.get(peripheralAddress);
 
-        logger.info(String.format("found peripheral to autoconnect '%s'", deviceAddress));
+        logger.info(String.format("found peripheral to autoconnect '%s'", peripheralAddress));
         autoScanActive = false;
         stopScanning();
 
-        reconnectPeripheralAddresses.remove(deviceAddress);
-        reconnectCallbacks.remove(deviceAddress);
-        unconnectedPeripherals.remove(deviceAddress);
+        reconnectPeripheralAddresses.remove(peripheralAddress);
+        reconnectCallbacks.remove(peripheralAddress);
+        unconnectedPeripherals.remove(peripheralAddress);
 
         // Make sure we have a valid BluezDevice object and refresh the name
         if (peripheral.device == null) {
-            peripheral.device = getDeviceByAddress(adapter, deviceAddress);
+            peripheral.device = getDeviceByAddress(adapter, peripheralAddress);
             peripheral.deviceName = peripheral.device.getName();
         }
 
@@ -832,12 +832,12 @@ public class BluetoothCentral {
      */
     @SuppressWarnings("UnusedReturnValue,unused")
     public boolean autoConnectPeripheral(@NotNull BluetoothPeripheral peripheral, @NotNull BluetoothPeripheralCallback peripheralCallback) {
-        final String deviceAddress = peripheral.getAddress();
-        if (reconnectPeripheralAddresses.contains(deviceAddress)) return false;
+        final String peripheralAddress = peripheral.getAddress();
+        if (reconnectPeripheralAddresses.contains(peripheralAddress)) return false;
 
-        reconnectPeripheralAddresses.add(deviceAddress);
-        reconnectCallbacks.put(deviceAddress, peripheralCallback);
-        unconnectedPeripherals.put(deviceAddress, peripheral);
+        reconnectPeripheralAddresses.add(peripheralAddress);
+        reconnectCallbacks.put(peripheralAddress, peripheralCallback);
+        unconnectedPeripherals.put(peripheralAddress, peripheral);
 
         startAutoConnectScan();
         return true;
@@ -853,10 +853,10 @@ public class BluetoothCentral {
     @SuppressWarnings("unused")
     public void autoConnectPeripheralsBatch(Map<BluetoothPeripheral, BluetoothPeripheralCallback> batch) {
         for (Map.Entry<BluetoothPeripheral, BluetoothPeripheralCallback> entry : batch.entrySet()) {
-            String deviceAddress = entry.getKey().getAddress();
-            reconnectPeripheralAddresses.add(deviceAddress);
-            reconnectCallbacks.put(deviceAddress, entry.getValue());
-            unconnectedPeripherals.put(deviceAddress, entry.getKey());
+            String peripheralAddress = entry.getKey().getAddress();
+            reconnectPeripheralAddresses.add(peripheralAddress);
+            reconnectCallbacks.put(peripheralAddress, entry.getValue());
+            unconnectedPeripherals.put(peripheralAddress, entry.getKey());
         }
 
         if (!reconnectPeripheralAddresses.isEmpty()) {
@@ -901,10 +901,10 @@ public class BluetoothCentral {
         }
 
         // We might be autoconnecting to this peripheral
-        String deviceAddress = peripheral.getAddress();
-        if (reconnectPeripheralAddresses.contains(deviceAddress)) {
-            reconnectPeripheralAddresses.remove(deviceAddress);
-            reconnectCallbacks.remove(deviceAddress);
+        String peripheralAddress = peripheral.getAddress();
+        if (reconnectPeripheralAddresses.contains(peripheralAddress)) {
+            reconnectPeripheralAddresses.remove(peripheralAddress);
+            reconnectCallbacks.remove(peripheralAddress);
 
             callBackHandler.post(() -> {
                 if (bluetoothCentralCallback != null) {
@@ -1104,12 +1104,12 @@ public class BluetoothCentral {
     /*
      * Function to clean up device from Bluetooth cache
      */
-    protected void removeDevice(@NotNull final BluetoothPeripheral device) {
-        BluezDevice bluetoothDevice = getDeviceByAddress(adapter, device.getAddress());
+    protected void removeDevice(@NotNull final BluetoothPeripheral peripheral) {
+        BluezDevice bluetoothDevice = getDeviceByAddress(adapter, peripheral.getAddress());
         if (bluetoothDevice == null) return;
 
-        boolean isBonded = device.isPaired();
-        logger.info(String.format("removing peripheral %s (%s)", device.getAddress(), isBonded ? "BONDED" : "BOND_NONE"));
+        boolean isBonded = peripheral.isPaired();
+        logger.info(String.format("removing peripheral %s (%s)", peripheral.getAddress(), isBonded ? "BONDED" : "BOND_NONE"));
         removeDevice(bluetoothDevice);
     }
 
