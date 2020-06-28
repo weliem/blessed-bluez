@@ -341,6 +341,8 @@ public class BluetoothPeripheral {
         this.listener = listener;
         this.callBackHandler = callBackHandler;
         this.peripheralCallback = peripheralCallback;
+        this.state = STATE_DISCONNECTED;
+        this.commandQueueBusy = false;
     }
 
     void setPeripheralCallback(final BluetoothPeripheralCallback peripheralCallback) {

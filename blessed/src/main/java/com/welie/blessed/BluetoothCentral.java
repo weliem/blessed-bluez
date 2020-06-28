@@ -242,10 +242,7 @@ public class BluetoothCentral {
 //                "NoInputNoOutput" and "KeyboardDisplay" which
 //                reflects the input and output capabilities of the
 //                agent.
-//                agentManager.registerAgent(agent, "NoInputNoOutput");
-//                agentManager.registerAgent(agent, "DisplayOnly");   // not working for Omron
-//                agentManager.registerAgent(agent, "DisplayYesNo");   // not working for Omron
-            agentManager.registerAgent(agent, "KeyboardOnly");   // Works for Omron, must supply PIN
+            agentManager.registerAgent(agent, "KeyboardOnly");
             agentManager.requestDefaultAgent(agent);
         }
     }
@@ -858,7 +855,8 @@ public class BluetoothCentral {
         for (Map.Entry<BluetoothPeripheral, BluetoothPeripheralCallback> entry : batch.entrySet()) {
             String deviceAddress = entry.getKey().getAddress();
             reconnectPeripheralAddresses.add(deviceAddress);
-            reconnectCallbacks.put(deviceAddress, batch.get(entry.getKey()));
+            reconnectCallbacks.put(deviceAddress, entry.getValue());
+            unconnectedPeripherals.put(deviceAddress, entry.getKey());
         }
 
         if (!reconnectPeripheralAddresses.isEmpty()) {
@@ -1067,7 +1065,7 @@ public class BluetoothCentral {
         }
     }
 
-    private List<BluezAdapter> scanForBluetoothAdapters() {
+    private @NotNull List<BluezAdapter> scanForBluetoothAdapters() {
         final Map<String, BluezAdapter> bluetoothAdaptersByAdapterName = new LinkedHashMap<>();
 
         Set<String> scanObjectManager = DbusHelper.findNodes(dbusConnection, "/org/bluez");
