@@ -560,6 +560,7 @@ public class BluetoothCentral {
             } catch (Exception e) {
                 return;
             }
+            logger.info("created scanResult");
             scanResult = new ScanResult(deviceName, deviceAddress, serviceUUIDs, rssi, manufacturerData, serviceData);
             scanResultCache.put(deviceAddress, scanResult);
         } else {
@@ -585,9 +586,7 @@ public class BluetoothCentral {
                 logger.info(String.format("scan %s", isScanning ? "started" : "stopped"));
 
                 if (!isScanning) {
-                    // Clear the cached BluezDevices and BluetoothPeripherals
-//                    logger.info(TAG, String.format("removing %d cached bluezDevices", scannedBluezDevices.size()));
-//                    logger.info(TAG, String.format("removing %d cached bluetoothPeripherals", scannedPeripherals.size()));
+                    // Clear the cached BluezDevices, BluetoothPeripherals and ScanResults
                     scannedPeripherals.clear();
                     scannedBluezDevices.clear();
                     scanResultCache.clear();
