@@ -560,16 +560,13 @@ public class BluetoothCentral {
             } catch (Exception e) {
                 return;
             }
-            logger.info("created scanResult");
+
             scanResult = new ScanResult(deviceName, deviceAddress, serviceUUIDs, rssi, manufacturerData, serviceData);
             scanResultCache.put(deviceAddress, scanResult);
-        } else {
-            logger.info("using cached scanResult");
         }
 
         // Update the scanResult
         Set<String> keys = propertiesChanged.keySet();
-        logger.info(keys.toString());
         if (keys.contains(PROPERTY_RSSI)) {
             scanResult.setRssi((Short) propertiesChanged.get(PROPERTY_RSSI).getValue());
         }
