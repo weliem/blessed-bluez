@@ -7,6 +7,7 @@ import org.bluez.Adapter1;
 import org.bluez.AgentManager1;
 import org.bluez.Device1;
 import org.bluez.exceptions.*;
+import org.freedesktop.dbus.DBusMap;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
@@ -458,7 +459,7 @@ public class BluetoothCentral {
 
         // Get the device
         final BluezDevice device = getDeviceByAddress(adapter, deviceAddress);
-        if (device != null) {
+        if (device == null) {
             // Something is very wrong, don't handle this signal
             return;
         }
@@ -490,8 +491,14 @@ public class BluetoothCentral {
             finalServiceUUIDs = null;
         }
 
+        final Map<String, byte[]> serviceData = new HashMap<>();
+        if ((value.get(PROPERTY_SERVICE_DATA) != null) && (value.get(PROPERTY_SERVICE_DATA).getValue() instanceof Map)){
+            final DBusMap<String, Variant<byte[]>> sdata = (DBusMap) value.get(PROPERTY_SERVICE_DATA).getValue();
+            sdata.forEach((k, v) -> serviceData.put(k, v.getValue()));
+        }
+
         // Create ScanResult
-        final ScanResult scanResult = new ScanResult(deviceName, deviceAddress, finalServiceUUIDs, rssi, device.getManufacturerData(), device.getServiceData());
+        final ScanResult scanResult = new ScanResult(deviceName, deviceAddress, finalServiceUUIDs, rssi, device.getManufacturerData(), serviceData);
         final BluetoothPeripheral peripheral = getPeripheral(deviceAddress);
         onScanResult(peripheral, scanResult);
     }
