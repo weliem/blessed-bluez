@@ -55,6 +55,7 @@ public class BluetoothCentral {
     private final Map<String, BluetoothPeripheral> unconnectedPeripherals = new ConcurrentHashMap<>();
     private final Map<String, BluezDevice> scannedBluezDevices = new ConcurrentHashMap<>();
     private final Map<String, BluetoothPeripheral> scannedPeripherals = new ConcurrentHashMap<>();
+    private final Map<String, ScanResult> scanResultCache = new ConcurrentHashMap<>();
     private @NotNull String[] scanPeripheralNames = new String[0];
     private @NotNull String[] scanPeripheralAddresses = new String[0];
     private @NotNull String[] scanUUIDs = new String[0];
@@ -372,7 +373,7 @@ public class BluetoothCentral {
         // Check if peripheral uuid filter is set
         if (scanUUIDs.length > 0) {
             Set<String> scanResultUUIDs = new HashSet<>(Arrays.asList(scanResult.getUuids()));
-            for(String uuid : scanUUIDs) {
+            for (String uuid : scanUUIDs) {
                 if (scanResultUUIDs.contains(uuid)) {
                     return false;
                 }
@@ -492,21 +493,24 @@ public class BluetoothCentral {
             finalServiceUUIDs = null;
         }
 
-        final Map<String, byte[]> serviceData = new HashMap<>();
-        if ((value.get(PROPERTY_SERVICE_DATA) != null) && (value.get(PROPERTY_SERVICE_DATA).getValue() instanceof Map)){
-            final DBusMap<String, Variant<byte[]>> sdata = (DBusMap) value.get(PROPERTY_SERVICE_DATA).getValue();
-            sdata.forEach((k, v) -> serviceData.put(k, v.getValue()));
-        }
-
+        // Get manufacturer data
         final Map<Integer, byte[]> manufacturerData = new HashMap<>();
-        if ((value.get(PROPERTY_MANUFACTURER_DATA) != null) && (value.get(PROPERTY_MANUFACTURER_DATA).getValue() instanceof Map)){
+        if ((value.get(PROPERTY_MANUFACTURER_DATA) != null) && (value.get(PROPERTY_MANUFACTURER_DATA).getValue() instanceof Map)) {
             final DBusMap<UInt16, Variant<byte[]>> mdata = (DBusMap) value.get(PROPERTY_MANUFACTURER_DATA).getValue();
             mdata.forEach((k, v) -> manufacturerData.put(k.intValue(), v.getValue()));
+        }
+
+        // Get service data
+        final Map<String, byte[]> serviceData = new HashMap<>();
+        if ((value.get(PROPERTY_SERVICE_DATA) != null) && (value.get(PROPERTY_SERVICE_DATA).getValue() instanceof Map)) {
+            final DBusMap<String, Variant<byte[]>> sdata = (DBusMap) value.get(PROPERTY_SERVICE_DATA).getValue();
+            sdata.forEach((k, v) -> serviceData.put(k, v.getValue()));
         }
 
         // Create ScanResult
         final ScanResult scanResult = new ScanResult(deviceName, deviceAddress, finalServiceUUIDs, rssi, manufacturerData, serviceData);
         final BluetoothPeripheral peripheral = getPeripheral(deviceAddress);
+        scanResultCache.put(deviceAddress, scanResult);
         onScanResult(peripheral, scanResult);
     }
 
@@ -523,7 +527,7 @@ public class BluetoothCentral {
                     if (bluezDevice == null) return;
 
                     // Handle the propertiesChanged object
-                    handlePropertiesChangedForDeviceWhenScanning(bluezDevice, propertiesChanged);
+                    handlePropertiesChangedForDeviceWhenScanning(bluezDevice, propertiesChanged.getPropertiesChanged());
                     break;
                 case BLUEZ_ADAPTER_INTERFACE:
                     propertiesChanged.getPropertiesChanged().forEach((propertyName, value) -> handlePropertiesChangedForAdapter(propertyName, value));
@@ -537,26 +541,38 @@ public class BluetoothCentral {
         propertiesChangedHandler.handle(propertiesChanged);
     }
 
-    private void handlePropertiesChangedForDeviceWhenScanning(@NotNull BluezDevice bluezDevice, Properties.PropertiesChanged propertiesChanged) {
-        // Since we are scanning any property change is an indication that we are seeing a device
-        final String deviceAddress;
-        final String deviceName;
-        final String[] serviceUUIDs;
-        final int rssi;
-        final Map<Integer, byte[]> manufacturerData;
-        final Map<String, byte[]> serviceData;
-        try {
-            deviceAddress = bluezDevice.getAddress();
-            deviceName = bluezDevice.getName();
-            serviceUUIDs = bluezDevice.getUuids();
-            rssi = bluezDevice.getRssi();
-            manufacturerData = bluezDevice.getManufacturerData();
-            serviceData = bluezDevice.getServiceData();
-        } catch (Exception e) {
-            return;
+    private void handlePropertiesChangedForDeviceWhenScanning(@NotNull BluezDevice bluezDevice, Map<String, Variant<?>> propertiesChanged) {
+        final String deviceAddress = bluezDevice.getAddress();
+        ScanResult scanResult = getScanResult(deviceAddress);
+        if (scanResult == null) {
+            // Create initial scanResult
+            final String deviceName;
+            final String[] serviceUUIDs;
+            final int rssi;
+            final Map<Integer, byte[]> manufacturerData;
+            final Map<String, byte[]> serviceData;
+            try {
+                deviceName = bluezDevice.getName();
+                serviceUUIDs = bluezDevice.getUuids();
+                rssi = bluezDevice.getRssi();
+                manufacturerData = bluezDevice.getManufacturerData();
+                serviceData = bluezDevice.getServiceData();
+            } catch (Exception e) {
+                return;
+            }
+            scanResult = new ScanResult(deviceName, deviceAddress, serviceUUIDs, rssi, manufacturerData, serviceData);
+            scanResultCache.put(deviceAddress, scanResult);
+        } else {
+            logger.info("using cached scanResult");
         }
 
-        final ScanResult scanResult = new ScanResult(deviceName, deviceAddress, serviceUUIDs, rssi, manufacturerData, serviceData);
+        // Update the scanResult
+        Set<String> keys = propertiesChanged.keySet();
+        logger.info(keys.toString());
+        if (keys.contains(PROPERTY_RSSI)) {
+            scanResult.setRssi((Short) propertiesChanged.get(PROPERTY_RSSI).getValue());
+        }
+
         final BluetoothPeripheral peripheral = getPeripheral(deviceAddress);
         onScanResult(peripheral, scanResult);
     }
@@ -574,6 +590,7 @@ public class BluetoothCentral {
 //                    logger.info(TAG, String.format("removing %d cached bluetoothPeripherals", scannedPeripherals.size()));
                     scannedPeripherals.clear();
                     scannedBluezDevices.clear();
+                    scanResultCache.clear();
                 }
                 if (currentCommand.equalsIgnoreCase(PROPERTY_DISCOVERING)) {
                     callBackHandler.postDelayed(this::completedCommand, 200L);
@@ -974,6 +991,10 @@ public class BluetoothCentral {
             scannedPeripherals.put(peripheralAddress, bluetoothPeripheral);
             return bluetoothPeripheral;
         }
+    }
+
+    private ScanResult getScanResult(String peripheralAddress) {
+        return scanResultCache.get(peripheralAddress);
     }
 
     /**

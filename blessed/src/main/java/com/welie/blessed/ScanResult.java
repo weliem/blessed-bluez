@@ -11,7 +11,7 @@ public class ScanResult {
     private final String name;
     private final String address;
     private final String[] uuids;
-    private final int rssi;
+    private int rssi;
     private final Map<Integer, byte[]> manufacturerData;
     private final Map<String, byte[]> serviceData;
 
@@ -42,6 +42,10 @@ public class ScanResult {
     }
     public Map<String, byte[]> getServiceData() {
         return serviceData;
+    }
+
+    public void setRssi(int rssi) {
+        this.rssi = rssi;
     }
 
     @Override
