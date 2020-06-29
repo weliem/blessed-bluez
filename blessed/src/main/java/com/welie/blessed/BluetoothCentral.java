@@ -15,6 +15,7 @@ import org.freedesktop.dbus.handlers.AbstractInterfacesAddedHandler;
 import org.freedesktop.dbus.handlers.AbstractPropertiesChangedHandler;
 import org.freedesktop.dbus.interfaces.ObjectManager;
 import org.freedesktop.dbus.interfaces.Properties;
+import org.freedesktop.dbus.types.UInt16;
 import org.freedesktop.dbus.types.Variant;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -497,8 +498,14 @@ public class BluetoothCentral {
             sdata.forEach((k, v) -> serviceData.put(k, v.getValue()));
         }
 
+        final Map<Integer, byte[]> manufacturerData = new HashMap<>();
+        if ((value.get(PROPERTY_MANUFACTURER_DATA) != null) && (value.get(PROPERTY_MANUFACTURER_DATA).getValue() instanceof Map)){
+            final DBusMap<UInt16, Variant<byte[]>> sdata = (DBusMap) value.get(PROPERTY_SERVICE_DATA).getValue();
+            sdata.forEach((k, v) -> manufacturerData.put(k.intValue(), v.getValue()));
+        }
+
         // Create ScanResult
-        final ScanResult scanResult = new ScanResult(deviceName, deviceAddress, finalServiceUUIDs, rssi, device.getManufacturerData(), serviceData);
+        final ScanResult scanResult = new ScanResult(deviceName, deviceAddress, finalServiceUUIDs, rssi, manufacturerData, serviceData);
         final BluetoothPeripheral peripheral = getPeripheral(deviceAddress);
         onScanResult(peripheral, scanResult);
     }
