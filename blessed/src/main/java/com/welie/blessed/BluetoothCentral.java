@@ -500,7 +500,7 @@ public class BluetoothCentral {
 
         final Map<Integer, byte[]> manufacturerData = new HashMap<>();
         if ((value.get(PROPERTY_MANUFACTURER_DATA) != null) && (value.get(PROPERTY_MANUFACTURER_DATA).getValue() instanceof Map)){
-            final DBusMap<UInt16, Variant<byte[]>> mdata = (DBusMap) value.get(PROPERTY_SERVICE_DATA).getValue();
+            final DBusMap<UInt16, Variant<byte[]>> mdata = (DBusMap) value.get(PROPERTY_MANUFACTURER_DATA).getValue();
             mdata.forEach((k, v) -> manufacturerData.put(k.intValue(), v.getValue()));
         }
 
