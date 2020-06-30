@@ -987,8 +987,14 @@ public class BluetoothPeripheral {
     }
 
     boolean isPaired() {
-        isBonded = device.isPaired();
-        return isBonded;
+        boolean result = isBonded;
+        try {
+            isBonded = device.isPaired();
+            result = isBonded;
+        } catch (Exception e) {
+            logger.severe(e.toString());
+        }
+        return result;
     }
 
     /**
