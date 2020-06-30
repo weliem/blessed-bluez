@@ -12,8 +12,8 @@ public class ScanResult {
     private final String address;
     private final String[] uuids;
     private int rssi;
-    private final Map<Integer, byte[]> manufacturerData;
-    private final Map<String, byte[]> serviceData;
+    private  Map<Integer, byte[]> manufacturerData;
+    private  Map<String, byte[]> serviceData;
 
     public ScanResult(String deviceName, String deviceAddress, String[] uuids, int rssi, Map<Integer, byte[]> manufacturerData, Map<String, byte[]> serviceData ) {
         this.timestampNanos = System.nanoTime();
@@ -28,24 +28,37 @@ public class ScanResult {
     public long getTimestampNanos() {
         return timestampNanos;
     }
+
     public String getName() {
         return name;
     }
+
     public String getAddress() {
         return address;
     }
+
     public String[] getUuids() {
         return uuids;
     }
+
     public Map<Integer, byte[]> getManufacturerData() {
         return manufacturerData;
     }
+
     public Map<String, byte[]> getServiceData() {
         return serviceData;
     }
 
     public void setRssi(int rssi) {
         this.rssi = rssi;
+    }
+
+    public void setManufacturerData(Map<Integer, byte[]> manufacturerData) {
+        this.manufacturerData = manufacturerData;
+    }
+
+    public void setServiceData(Map<String, byte[]> serviceData) {
+        this.serviceData = serviceData;
     }
 
     @Override
