@@ -353,7 +353,7 @@ public class BluetoothPeripheral {
         // Do the connect
         gattCallback.onConnectionStateChanged(STATE_CONNECTING, GATT_SUCCESS);
         try {
-            sleep(200);
+            sleep(300);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
