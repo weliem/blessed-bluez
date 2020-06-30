@@ -12,17 +12,17 @@ public class ScanResult {
     private final String address;
     private final String[] uuids;
     private int rssi;
-    private  Map<Integer, byte[]> manufacturerData;
-    private  Map<String, byte[]> serviceData;
+    private Map<Integer, byte[]> manufacturerData;
+    private Map<String, byte[]> serviceData;
 
-    public ScanResult(String deviceName, String deviceAddress, String[] uuids, int rssi, Map<Integer, byte[]> manufacturerData, Map<String, byte[]> serviceData ) {
+    public ScanResult(String deviceName, String deviceAddress, String[] uuids, int rssi, Map<Integer, byte[]> manufacturerData, Map<String, byte[]> serviceData) {
         this.timestampNanos = System.nanoTime();
         this.name = deviceName;
         this.address = deviceAddress;
         this.uuids = uuids;
         this.rssi = rssi;
-        this.manufacturerData = manufacturerData;
-        this.serviceData = serviceData;
+        setManufacturerData(manufacturerData);
+        setServiceData(serviceData);
     }
 
     public long getTimestampNanos() {
@@ -54,11 +54,11 @@ public class ScanResult {
     }
 
     public void setManufacturerData(Map<Integer, byte[]> manufacturerData) {
-        this.manufacturerData = manufacturerData;
+        this.manufacturerData = (manufacturerData != null && manufacturerData.isEmpty()) ? null : manufacturerData;
     }
 
     public void setServiceData(Map<String, byte[]> serviceData) {
-        this.serviceData = serviceData;
+        this.serviceData = (serviceData != null && serviceData.isEmpty()) ? null : serviceData;
     }
 
     @Override
@@ -75,18 +75,18 @@ public class ScanResult {
     }
 
     private String manufacturerDataToString() {
-        if (manufacturerData == null) return "null";
+        if (manufacturerData == null || manufacturerData.isEmpty()) return "null";
         StringBuilder result = new StringBuilder("[");
-        manufacturerData.forEach((code, bytes) -> result.append(String.format("0x%04x->0x%s,",code , bytes2String(bytes))));
+        manufacturerData.forEach((code, bytes) -> result.append(String.format("0x%04x->0x%s,", code, bytes2String(bytes))));
         result.deleteCharAt(result.length() - 1);
         result.append("]");
         return result.toString();
     }
 
     private String serviceDataToString() {
-        if (serviceData == null) return "null";
+        if (serviceData == null || serviceData.isEmpty()) return "null";
         StringBuilder result = new StringBuilder("[");
-        serviceData.forEach((uuid, bytes) -> result.append(String.format("%s->0x%s,",uuid , bytes2String(bytes))));
+        serviceData.forEach((uuid, bytes) -> result.append(String.format("%s->0x%s,", uuid, bytes2String(bytes))));
         result.deleteCharAt(result.length() - 1);
         result.append("]");
         return result.toString();

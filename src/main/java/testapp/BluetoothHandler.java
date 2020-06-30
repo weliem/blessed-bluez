@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 import java.util.logging.Logger;
 
+import static com.welie.blessed.BluetoothCentral.SCANOPTION_NO_NULL_NAMES;
 import static com.welie.blessed.BluetoothGattCharacteristic.PROPERTY_WRITE;
 import static com.welie.blessed.BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT;
 import static com.welie.blessed.BluetoothPeripheral.GATT_SUCCESS;
@@ -233,16 +234,16 @@ public class BluetoothHandler {
 
     public BluetoothHandler() {
         logger.info("initializing BluetoothCentral");
-        central = new BluetoothCentral(bluetoothCentralCallback);
+        central = new BluetoothCentral(bluetoothCentralCallback, new HashSet<>(Collections.singletonList(SCANOPTION_NO_NULL_NAMES)));
         central.setPinCodeForPeripheral("B0:49:5F:01:20:8F", "635227");
         startScanning();
     }
 
     void startScanning() {
-        central.scanForPeripheralsWithServices(new UUID[]{HTS_SERVICE_UUID, PLX_SERVICE_UUID, BLP_SERVICE_UUID, HRS_SERVICE_UUID});
+//        central.scanForPeripheralsWithServices(new UUID[]{HTS_SERVICE_UUID, PLX_SERVICE_UUID, BLP_SERVICE_UUID, HRS_SERVICE_UUID});
 //        central.scanForPeripheralsWithNames(new String[]{"Nonin"});
 //        central.scanForPeripheralsWithAddresses(new String[]{"C0:26:DF:01:F2:72"});
-//        central.scanForPeripherals();
+        central.scanForPeripherals();
 //
 //        BluetoothPeripheral peripheral = central.getPeripheral("C0:26:DF:01:F2:72");
 //        Map<BluetoothPeripheral, BluetoothPeripheralCallback> map = new HashMap<>();

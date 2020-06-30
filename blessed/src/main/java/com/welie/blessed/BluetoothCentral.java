@@ -63,12 +63,14 @@ public class BluetoothCentral {
     private final Map<String, BluetoothPeripheralCallback> reconnectCallbacks = new ConcurrentHashMap<>();
     private final Map<String, String> pinCodes = new ConcurrentHashMap<>();
     private BluezAgentManager bluetoothAgentManager = null;
+    private Set<String> scanOptions = new HashSet<>();
 
     private static final int ADDRESS_LENGTH = 17;
     private static final short DISCOVERY_RSSI_THRESHOLD = -70;
 
     // Scan in intervals. Make sure it is less than 10seconds to avoid issues with Bluez internal scanning
-    private static final long SCAN_INTERNAL = TimeUnit.SECONDS.toMillis(8);
+    private static final long SCAN_WINDOW = TimeUnit.SECONDS.toMillis(6);
+    private final long SCAN_INTERVAL = TimeUnit.SECONDS.toMillis(8);
 
     // Bluez Adapter property strings
     private static final String PROPERTY_DISCOVERING = "Discovering";
@@ -78,6 +80,9 @@ public class BluetoothCentral {
     private static final String BLUEZ_ADAPTER_INTERFACE = "org.bluez.Adapter1";
 
     private static final String ENQUEUE_ERROR = "ERROR: Could not enqueue stop scanning command";
+
+    // Scan options
+    public static final String SCANOPTION_NO_NULL_NAMES = "ScanOption.NoNullNames";
 
     private final InternalCallback internalCallback = new InternalCallback() {
         @Override
@@ -171,9 +176,10 @@ public class BluetoothCentral {
      *
      * @param bluetoothCentralCallback the callback to call for updates
      */
-    public BluetoothCentral(@NotNull BluetoothCentralCallback bluetoothCentralCallback) {
+    public BluetoothCentral(@NotNull BluetoothCentralCallback bluetoothCentralCallback, @Nullable Set<String> scanOptions) {
         this.bluetoothCentralCallback = bluetoothCentralCallback;
         this.callBackHandler = new Handler("Central-callBackHandler");
+        if (scanOptions != null) this.scanOptions = scanOptions;
 
         try {
             // Connect to the DBus
@@ -421,6 +427,9 @@ public class BluetoothCentral {
         }
 
         if (normalScanActive && isScanning && !isStoppingScan) {
+            // Implement SCANOPTION_NO_NULL_NAMES
+            if (scanOptions.contains(SCANOPTION_NO_NULL_NAMES) && (scanResult.getName() == null)) return;
+
             if (notAllowedByFilter(scanResult)) return;
 
             callBackHandler.post(() -> {
@@ -605,7 +614,7 @@ public class BluetoothCentral {
                     scanResultCache.clear();
                 }
                 if (currentCommand.equalsIgnoreCase(PROPERTY_DISCOVERING)) {
-                    callBackHandler.postDelayed(this::completedCommand, 200L);
+                    callBackHandler.postDelayed(this::completedCommand, 300L);
                 }
                 break;
             case PROPERTY_POWERED:
@@ -745,15 +754,23 @@ public class BluetoothCentral {
         }
     }
 
+
+
     private void startScanTimer() {
         cancelTimeoutTimer();
 
         this.timeoutRunnable = () -> {
-            logger.info("scan timout");
             stopScanning();
+
+            // Introduce gap between continuous scans
+            try {
+                Thread.sleep(SCAN_INTERVAL - SCAN_WINDOW);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             startScanning();
         };
-        timeoutHandler.postDelayed(timeoutRunnable, SCAN_INTERNAL);
+        timeoutHandler.postDelayed(timeoutRunnable, SCAN_WINDOW);
     }
 
     /**
