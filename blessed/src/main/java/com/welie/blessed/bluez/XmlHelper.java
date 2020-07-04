@@ -1,6 +1,5 @@
 package com.welie.blessed.bluez;
 
-import org.apache.commons.lang3.StringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -46,7 +45,11 @@ public final class XmlHelper {
         } catch (IOException _ex) {
             throw _ex;
         } catch (Exception _ex) {
-            throw new IOException("Failed to parse " + StringUtils.abbreviate(_xmlStr, 250), _ex);
+            String logString = _xmlStr;
+            if (_xmlStr.length() > 250) {
+                logString = _xmlStr.substring(0, 249);
+            }
+            throw new IOException("Failed to parse " + logString, _ex);
         }
 
     }

@@ -1,6 +1,5 @@
 package com.welie.blessed.bluez;
 
-import org.apache.commons.lang3.StringUtils;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
@@ -35,7 +34,7 @@ public final class DbusHelper {
      */
     public static Set<String> findNodes(DBusConnection _connection, String _path) {
         Set<String> foundNodes = new LinkedHashSet<>();
-        if (_connection == null || StringUtils.isBlank(_path)) {
+        if (_connection == null || _path.length() == 0) {
             return foundNodes;
         }
         try {

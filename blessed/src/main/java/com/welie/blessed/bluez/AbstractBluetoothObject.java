@@ -1,6 +1,5 @@
 package com.welie.blessed.bluez;
 
-import org.apache.commons.lang3.ClassUtils;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
