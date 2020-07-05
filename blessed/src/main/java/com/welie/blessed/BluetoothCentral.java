@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import static com.welie.blessed.BluetoothPeripheral.*;
+import static java.lang.System.exit;
 
 /**
  * Represents a Bluetooth Central object
@@ -185,7 +186,7 @@ public class BluetoothCentral {
         try {
             // Connect to the DBus
             dbusConnection = DBusConnection.newConnection(DBusConnection.DBusBusType.SYSTEM);
-            chooseAdapter();
+            if (!chooseAdapter()) exit(0);
             setupPairingAgent();
             BluezSignalHandler.createInstance(dbusConnection).addCentral(this);
             registerInterfaceAddedHandler(interfacesAddedHandler);
@@ -210,10 +211,10 @@ public class BluetoothCentral {
                 logger.info("adapter not on, so turning it on now");
                 adapterOn();
             }
-        } else {
-            logger.severe("no bluetooth adaptors found");
             return true;
         }
+
+        logger.severe("no bluetooth adaptors found");
         return false;
     }
 
@@ -551,6 +552,7 @@ public class BluetoothCentral {
         propertiesChangedHandler.handle(propertiesChanged);
     }
 
+    @SuppressWarnings("unchecked")
     private void handlePropertiesChangedForDeviceWhenScanning(@NotNull BluezDevice bluezDevice, Map<String, Variant<?>> propertiesChanged) {
         final String deviceAddress = bluezDevice.getAddress();
         ScanResult scanResult = getScanResult(deviceAddress);
@@ -570,14 +572,14 @@ public class BluetoothCentral {
 
         if (keys.contains(PROPERTY_MANUFACTURER_DATA)) {
             final Map<Integer, byte[]> manufacturerData = new HashMap<>();
-            final DBusMap<UInt16, Variant<byte[]>> mdata = (DBusMap) propertiesChanged.get(PROPERTY_MANUFACTURER_DATA).getValue();
+            final DBusMap<UInt16, Variant<byte[]>> mdata = (DBusMap<UInt16, Variant<byte[]>>) propertiesChanged.get(PROPERTY_MANUFACTURER_DATA).getValue();
             mdata.forEach((k, v) -> manufacturerData.put(k.intValue(), v.getValue()));
             scanResult.setManufacturerData(manufacturerData);
         }
 
         if (keys.contains(PROPERTY_SERVICE_DATA)) {
             final Map<String, byte[]> serviceData = new HashMap<>();
-            final DBusMap<String, Variant<byte[]>> sdata = (DBusMap) propertiesChanged.get(PROPERTY_SERVICE_DATA).getValue();
+            final DBusMap<String, Variant<byte[]>> sdata = (DBusMap<String, Variant<byte[]>>) propertiesChanged.get(PROPERTY_SERVICE_DATA).getValue();
             sdata.forEach((k, v) -> serviceData.put(k, v.getValue()));
             scanResult.setServiceData(serviceData);
         }
@@ -983,6 +985,7 @@ public class BluetoothCentral {
      *
      * @param peripheralAddress the address of the peripheral
      */
+    @SuppressWarnings("unused")
     public boolean removeBond(String peripheralAddress) {
         BluezDevice bluezDevice = getDeviceByAddress(adapter, peripheralAddress);
         if (bluezDevice == null) return false;
