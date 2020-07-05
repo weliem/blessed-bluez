@@ -555,50 +555,54 @@ public class BluetoothCentral {
         final String deviceAddress = bluezDevice.getAddress();
         ScanResult scanResult = getScanResult(deviceAddress);
 
-        // See if we have a cached scanResult
+        // See if we have a cached scanResult, if not create a new one
         if (scanResult == null) {
-            // Create initial scanResult
-            final String deviceName;
-            final String[] serviceUUIDs;
-            final int rssi;
-            final Map<Integer, byte[]> manufacturerData;
-            final Map<String, byte[]> serviceData;
-            try {
-                deviceName = bluezDevice.getName();
-                serviceUUIDs = bluezDevice.getUuids();
-                rssi = bluezDevice.getRssi();
-                manufacturerData = bluezDevice.getManufacturerData();
-                serviceData = bluezDevice.getServiceData();
-            } catch (Exception e) {
-                return;
-            }
-
-            scanResult = new ScanResult(deviceName, deviceAddress, serviceUUIDs, rssi, manufacturerData, serviceData);
+            scanResult = getScanResultFromDevice(bluezDevice);
+            if (scanResult == null) return;
             scanResultCache.put(deviceAddress, scanResult);
-        } else {
-            // Update the scanResult
-            Set<String> keys = propertiesChanged.keySet();
-            if (keys.contains(PROPERTY_RSSI)) {
-                scanResult.setRssi((Short) propertiesChanged.get(PROPERTY_RSSI).getValue());
-            }
+        }
 
-            if (keys.contains(PROPERTY_MANUFACTURER_DATA)) {
-                final Map<Integer, byte[]> manufacturerData = new HashMap<>();
-                final DBusMap<UInt16, Variant<byte[]>> mdata = (DBusMap) propertiesChanged.get(PROPERTY_MANUFACTURER_DATA).getValue();
-                mdata.forEach((k, v) -> manufacturerData.put(k.intValue(), v.getValue()));
-                scanResult.setManufacturerData(manufacturerData);
-            }
+        // Update the scanResult
+        Set<String> keys = propertiesChanged.keySet();
+        if (keys.contains(PROPERTY_RSSI)) {
+            scanResult.setRssi((Short) propertiesChanged.get(PROPERTY_RSSI).getValue());
+        }
 
-            if (keys.contains(PROPERTY_SERVICE_DATA)) {
-                final Map<String, byte[]> serviceData = new HashMap<>();
-                final DBusMap<String, Variant<byte[]>> sdata = (DBusMap) propertiesChanged.get(PROPERTY_SERVICE_DATA).getValue();
-                sdata.forEach((k, v) -> serviceData.put(k, v.getValue()));
-                scanResult.setServiceData(serviceData);
-            }
+        if (keys.contains(PROPERTY_MANUFACTURER_DATA)) {
+            final Map<Integer, byte[]> manufacturerData = new HashMap<>();
+            final DBusMap<UInt16, Variant<byte[]>> mdata = (DBusMap) propertiesChanged.get(PROPERTY_MANUFACTURER_DATA).getValue();
+            mdata.forEach((k, v) -> manufacturerData.put(k.intValue(), v.getValue()));
+            scanResult.setManufacturerData(manufacturerData);
+        }
+
+        if (keys.contains(PROPERTY_SERVICE_DATA)) {
+            final Map<String, byte[]> serviceData = new HashMap<>();
+            final DBusMap<String, Variant<byte[]>> sdata = (DBusMap) propertiesChanged.get(PROPERTY_SERVICE_DATA).getValue();
+            sdata.forEach((k, v) -> serviceData.put(k, v.getValue()));
+            scanResult.setServiceData(serviceData);
         }
 
         final BluetoothPeripheral peripheral = getPeripheral(deviceAddress);
         onScanResult(peripheral, scanResult);
+    }
+
+    @Nullable
+    private ScanResult getScanResultFromDevice(@NotNull BluezDevice bluezDevice) {
+        final String deviceName;
+        final String[] serviceUUIDs;
+        final int rssi;
+        final Map<Integer, byte[]> manufacturerData;
+        final Map<String, byte[]> serviceData;
+        try {
+            deviceName = bluezDevice.getName();
+            serviceUUIDs = bluezDevice.getUuids();
+            rssi = bluezDevice.getRssi();
+            manufacturerData = bluezDevice.getManufacturerData();
+            serviceData = bluezDevice.getServiceData();
+        } catch (Exception e) {
+            return null;
+        }
+        return new ScanResult(deviceName, bluezDevice.getAddress(), serviceUUIDs, rssi, manufacturerData, serviceData);
     }
 
     private void handlePropertiesChangedForAdapter(String propertyName, Variant<?> value) {
