@@ -77,6 +77,7 @@ public class BluetoothCentral {
     private static final String PROPERTY_POWERED = "Powered";
 
     // Bluez interface names
+    private static final String BLUEZ_PATH = "/org/bluez";
     private static final String BLUEZ_ADAPTER_INTERFACE = "org.bluez.Adapter1";
 
     private static final String ENQUEUE_ERROR = "ERROR: Could not enqueue stop scanning command";
@@ -195,7 +196,7 @@ public class BluetoothCentral {
 
     private boolean chooseAdapter() {
         // Find all adapters and pick one if there are more than one
-        List<BluezAdapter> adapters = scanForBluetoothAdapters();
+        List<BluezAdapter> adapters = findBluetoothAdapters();
         if (!adapters.isEmpty()) {
             logger.info(String.format("found %d bluetooth adapter(s)", adapters.size()));
 
@@ -755,7 +756,6 @@ public class BluetoothCentral {
     }
 
 
-
     private void startScanTimer() {
         cancelTimeoutTimer();
 
@@ -1129,14 +1129,14 @@ public class BluetoothCentral {
         }
     }
 
-    private @NotNull List<BluezAdapter> scanForBluetoothAdapters() {
+    private @NotNull List<BluezAdapter> findBluetoothAdapters() {
         final Map<String, BluezAdapter> bluetoothAdaptersByAdapterName = new LinkedHashMap<>();
 
-        Set<String> scanObjectManager = DbusHelper.findNodes(dbusConnection, "/org/bluez");
-        for (String hci : scanObjectManager) {
-            Adapter1 adapter1 = DbusHelper.getRemoteObject(dbusConnection, "/org/bluez/" + hci, Adapter1.class);
+        Set<String> nodes = DbusHelper.findNodes(dbusConnection, BLUEZ_PATH);
+        for (String hci : nodes) {
+            Adapter1 adapter1 = DbusHelper.getRemoteObject(dbusConnection, BLUEZ_PATH + "/" + hci, Adapter1.class);
             if (adapter1 != null) {
-                BluezAdapter bluetoothAdapter = new BluezAdapter(adapter1, "/org/bluez/" + hci, dbusConnection);
+                BluezAdapter bluetoothAdapter = new BluezAdapter(adapter1, BLUEZ_PATH + "/" + hci, dbusConnection);
                 bluetoothAdaptersByAdapterName.put(hci, bluetoothAdapter);
             }
         }
