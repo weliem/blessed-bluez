@@ -67,7 +67,7 @@ public class BluetoothCentral {
     private Set<String> scanOptions = new HashSet<>();
 
     private static final int ADDRESS_LENGTH = 17;
-    private static final short DISCOVERY_RSSI_THRESHOLD = -70;
+    private static final short DISCOVERY_RSSI_THRESHOLD = -80;
 
     // Scan in intervals. Make sure it is less than 10seconds to avoid issues with Bluez internal scanning
     private static final long SCAN_WINDOW = TimeUnit.SECONDS.toMillis(6);
