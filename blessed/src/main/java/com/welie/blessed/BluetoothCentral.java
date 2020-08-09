@@ -24,7 +24,9 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.welie.blessed.BluetoothPeripheral.*;
 import static java.lang.System.exit;
@@ -34,7 +36,7 @@ import static java.lang.System.exit;
  */
 public class BluetoothCentral {
     private static final String TAG = BluetoothCentral.class.getSimpleName();
-    private final Logger logger = Logger.getLogger(TAG);
+    private final Logger logger = LoggerFactory.getLogger(TAG);
     private DBusConnection dbusConnection;
     private BluezAdapter adapter;
     private final BluetoothCentralCallback bluetoothCentralCallback;
@@ -214,7 +216,7 @@ public class BluetoothCentral {
             return true;
         }
 
-        logger.severe("no bluetooth adaptors found");
+        logger.error("no bluetooth adaptors found");
         return false;
     }
 
@@ -438,7 +440,7 @@ public class BluetoothCentral {
                 if (bluetoothCentralCallback != null) {
                     bluetoothCentralCallback.onDiscoveredPeripheral(peripheral, scanResult);
                 } else {
-                    logger.severe("bluetoothCentralCallback is null");
+                    logger.error("bluetoothCentralCallback is null");
                 }
             });
         }
@@ -676,8 +678,8 @@ public class BluetoothCentral {
             try {
                 setScanFilter(scanFilters);
             } catch (BluezInvalidArgumentsException | BluezNotReadyException | BluezFailedException | BluezNotSupportedException e) {
-                logger.severe("Error setting scan filer");
-                logger.severe(e.toString());
+                logger.error("Error setting scan filer");
+                logger.error(e.toString());
             }
 
             // Start the discovery
@@ -687,15 +689,15 @@ public class BluetoothCentral {
                 adapter.startDiscovery();
                 startScanTimer();
             } catch (BluezFailedException e) {
-                logger.severe("Could not start discovery (failed)");
+                logger.error("Could not start discovery (failed)");
                 completedCommand();
             } catch (BluezNotReadyException e) {
-                logger.severe("Could not start discovery (not ready)");
+                logger.error("Could not start discovery (not ready)");
                 completedCommand();
             } catch (DBusExecutionException e) {
                 // Still need to see what this could be
-                logger.severe("Error starting scanner");
-                logger.severe(e.getMessage());
+                logger.error("Error starting scanner");
+                logger.error(e.getMessage());
                 completedCommand();
             }
         });
@@ -703,7 +705,7 @@ public class BluetoothCentral {
         if (result) {
             nextCommand();
         } else {
-            logger.severe(ENQUEUE_ERROR);
+            logger.error(ENQUEUE_ERROR);
         }
 
     }
@@ -732,23 +734,23 @@ public class BluetoothCentral {
                 cancelTimeoutTimer();
                 adapter.stopDiscovery();
             } catch (BluezNotReadyException e) {
-                logger.severe("Could not stop discovery (not ready)");
+                logger.error("Could not stop discovery (not ready)");
                 completedCommand();
             } catch (BluezFailedException e) {
-                logger.severe("Could not stop discovery (failed)");
+                logger.error("Could not stop discovery (failed)");
                 completedCommand();
             } catch (BluezNotAuthorizedException e) {
-                logger.severe("Could not stop discovery (not authorized)");
+                logger.error("Could not stop discovery (not authorized)");
                 completedCommand();
             } catch (DBusExecutionException e) {
                 // Usually this is the exception "No discovery started"
-                logger.severe(e.getMessage());
+                logger.error(e.getMessage());
                 if (e.getMessage().equalsIgnoreCase("No discovery started")) {
-                    logger.severe("Could not stop scan, because we are not scanning!");
+                    logger.error("Could not stop scan, because we are not scanning!");
                     isStoppingScan = false;
                     isScanning = false;   // This shouldn't be needed but seems it is...
                 } else if (e.getMessage().equalsIgnoreCase("Operation already in progress")) {
-                    logger.severe("a stopDiscovery is in progress");
+                    logger.error("a stopDiscovery is in progress");
                 }
                 completedCommand();
             }
@@ -757,7 +759,7 @@ public class BluetoothCentral {
         if (result) {
             nextCommand();
         } else {
-            logger.severe(ENQUEUE_ERROR);
+            logger.error(ENQUEUE_ERROR);
         }
     }
 
@@ -810,7 +812,7 @@ public class BluetoothCentral {
         if (result) {
             nextCommand();
         } else {
-            logger.severe(ENQUEUE_ERROR);
+            logger.error(ENQUEUE_ERROR);
         }
     }
 
@@ -835,7 +837,7 @@ public class BluetoothCentral {
         if (result) {
             nextCommand();
         } else {
-            logger.severe(ENQUEUE_ERROR);
+            logger.error(ENQUEUE_ERROR);
         }
     }
 
@@ -856,19 +858,19 @@ public class BluetoothCentral {
 
         // Check if we are already connected
         if (connectedPeripherals.containsKey(peripheral.getAddress())) {
-            logger.warning(String.format("WARNING: Already connected to %s'", peripheral.getAddress()));
+            logger.warn(String.format("WARNING: Already connected to %s'", peripheral.getAddress()));
             return;
         }
 
         // Check if we already have an outstanding connection request for this peripheral
         if (unconnectedPeripherals.containsKey(peripheral.getAddress())) {
-            logger.warning(String.format("WARNING: Already connecting to %s'", peripheral.getAddress()));
+            logger.warn(String.format("WARNING: Already connecting to %s'", peripheral.getAddress()));
             return;
         }
 
         // Make sure we have BluezDevice
         if (peripheral.device == null) {
-            logger.warning(String.format("WARNING: Peripheral '%s' doesn't have Bluez device", peripheral.getAddress()));
+            logger.warn(String.format("WARNING: Peripheral '%s' doesn't have Bluez device", peripheral.getAddress()));
             return;
         }
 
@@ -885,7 +887,7 @@ public class BluetoothCentral {
         if (result) {
             nextCommand();
         } else {
-            logger.severe(ENQUEUE_ERROR);
+            logger.error(ENQUEUE_ERROR);
         }
     }
 
@@ -961,7 +963,7 @@ public class BluetoothCentral {
             if (result) {
                 nextCommand();
             } else {
-                logger.severe(ENQUEUE_ERROR);
+                logger.error(ENQUEUE_ERROR);
             }
             return;
         }
@@ -1011,7 +1013,7 @@ public class BluetoothCentral {
     @SuppressWarnings("unused")
     public BluetoothPeripheral getPeripheral(String peripheralAddress) {
         if (!checkBluetoothAddress(peripheralAddress)) {
-            logger.severe(String.format("%s is not a valid address. Make sure all alphabetic characters are uppercase.", peripheralAddress));
+            logger.error(String.format("%s is not a valid address. Make sure all alphabetic characters are uppercase.", peripheralAddress));
             return null;
         }
 
@@ -1046,17 +1048,17 @@ public class BluetoothCentral {
     @SuppressWarnings("unused")
     public boolean setPinCodeForPeripheral(String peripheralAddress, String pin) {
         if (!checkBluetoothAddress(peripheralAddress)) {
-            logger.severe(String.format("%s is not a valid address. Make sure all alphabetic characters are uppercase.", peripheralAddress));
+            logger.error(String.format("%s is not a valid address. Make sure all alphabetic characters are uppercase.", peripheralAddress));
             return false;
         }
 
         if (pin == null) {
-            logger.severe("pin code is null");
+            logger.error("pin code is null");
             return false;
         }
 
         if (pin.length() != 6) {
-            logger.severe(String.format("%s is not 6 digits long", pin));
+            logger.error(String.format("%s is not 6 digits long", pin));
             return false;
         }
 
@@ -1127,8 +1129,8 @@ public class BluetoothCentral {
                     try {
                         bluetoothCommand.run();
                     } catch (Exception ex) {
-                        logger.warning("ERROR: Command exception for central");
-                        logger.warning(ex.getMessage());
+                        logger.warn("ERROR: Command exception for central");
+                        logger.warn(ex.getMessage());
                         completedCommand();
                     }
                 });
@@ -1197,7 +1199,7 @@ public class BluetoothCentral {
             }
             return false;
         } catch (BluezFailedException | BluezInvalidArgumentsException e) {
-            logger.severe("Error removing device");
+            logger.error("Error removing device");
             return false;
         }
     }

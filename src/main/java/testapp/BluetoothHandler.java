@@ -5,7 +5,8 @@ import com.welie.blessed.internal.Handler;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.welie.blessed.BluetoothCentral.SCANOPTION_NO_NULL_NAMES;
 import static com.welie.blessed.BluetoothGattCharacteristic.PROPERTY_WRITE;
@@ -14,7 +15,7 @@ import static com.welie.blessed.BluetoothPeripheral.GATT_SUCCESS;
 
 public class BluetoothHandler {
     private static final String TAG = BluetoothHandler.class.getSimpleName();
-    private final Logger logger = Logger.getLogger(TAG);
+    private final Logger logger = LoggerFactory.getLogger(TAG);
     private final BluetoothCentral central;
     private final Handler handler = new Handler("testapp.BluetoothHandler");
     private Runnable timeoutRunnable;
@@ -110,7 +111,7 @@ public class BluetoothHandler {
                     logger.info(String.format("SUCCESS: Notify set to 'off' for %s", characteristic.getUuid()));
                 }
             } else {
-                logger.severe(String.format("ERROR: Changing notification state failed for %s", characteristic.getUuid()));
+                logger.error(String.format("ERROR: Changing notification state failed for %s", characteristic.getUuid()));
             }
         }
 
