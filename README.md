@@ -148,10 +148,10 @@ public void onCharacteristicUpdate(BluetoothPeripheral peripheral, byte[] value,
 BLESSED handles bonding for you and will make sure all bonding variants work smoothly. During the process of bonding, you will be informed of the process via a number of callbacks:
 
 ```java
-    public void onBondingStarted(final BluetoothPeripheral peripheral)
-    public void onBondingSucceeded(final BluetoothPeripheral peripheral)
-    public void onBondingFailed(final BluetoothPeripheral peripheral) 
-    public void onBondLost(final BluetoothPeripheral peripheral) 
+public void onBondingStarted(final BluetoothPeripheral peripheral)
+public void onBondingSucceeded(final BluetoothPeripheral peripheral)
+public void onBondingFailed(final BluetoothPeripheral peripheral) 
+public void onBondLost(final BluetoothPeripheral peripheral) 
 ```
 In most cases, the peripheral will initiate bonding either at the time of connection, or when trying to read/write protected characteristics. However, if you want you can also initiate bonding yourself by calling `createBond` on a peripheral. There are two ways to do this:
 * Calling `createBond` when not yet connected to a peripheral. In this case, a connection is made and bonding is requested.
