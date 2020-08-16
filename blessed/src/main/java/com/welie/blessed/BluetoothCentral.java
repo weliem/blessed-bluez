@@ -583,7 +583,6 @@ public class BluetoothCentral {
         // See if we have a cached scanResult, if not create a new one
         if (scanResult == null) {
             scanResult = getScanResultFromDevice(bluezDevice);
-            if (scanResult == null) return;
             scanResultCache.put(deviceAddress, scanResult);
         }
 
@@ -611,23 +610,9 @@ public class BluetoothCentral {
         onScanResult(peripheral, scanResult);
     }
 
-    @Nullable
+    @NotNull
     private ScanResult getScanResultFromDevice(@NotNull BluezDevice bluezDevice) {
-        final String deviceName;
-        final String[] serviceUUIDs;
-        final int rssi;
-        final Map<Integer, byte[]> manufacturerData;
-        final Map<String, byte[]> serviceData;
-        try {
-            deviceName = bluezDevice.getName();
-            serviceUUIDs = bluezDevice.getUuids();
-            rssi = bluezDevice.getRssi();
-            manufacturerData = bluezDevice.getManufacturerData();
-            serviceData = bluezDevice.getServiceData();
-        } catch (Exception e) {
-            return null;
-        }
-        return new ScanResult(deviceName, bluezDevice.getAddress(), serviceUUIDs, rssi, manufacturerData, serviceData);
+        return new ScanResult(bluezDevice.getName(), bluezDevice.getAddress(), bluezDevice.getUuids(), bluezDevice.getRssi(), bluezDevice.getManufacturerData(), bluezDevice.getServiceData());
     }
 
     private void handlePropertiesChangedForAdapter(String propertyName, Variant<?> value) {
@@ -644,7 +629,7 @@ public class BluetoothCentral {
                     scanResultCache.clear();
                 }
                 if (currentCommand.equalsIgnoreCase(PROPERTY_DISCOVERING)) {
-                    callBackHandler.postDelayed(this::completedCommand, 300L);
+                    callBackHandler.postDelayed(this::completedCommand, 100L);
                 }
                 break;
             case PROPERTY_POWERED:
@@ -652,7 +637,7 @@ public class BluetoothCentral {
                 logger.info(String.format("powered %s", isPowered ? "on" : "off"));
 
                 if (currentCommand.equalsIgnoreCase(PROPERTY_POWERED)) {
-                    callBackHandler.postDelayed(this::completedCommand, 200L);
+                    callBackHandler.postDelayed(this::completedCommand, 100L);
                 }
                 break;
             default:

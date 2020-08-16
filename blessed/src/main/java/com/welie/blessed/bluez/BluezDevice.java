@@ -182,11 +182,15 @@ public class BluezDevice extends AbstractBluetoothObject {
      * @return string array of UUIDs, maybe null
      */
     public String[] getUuids() {
-        List<?> typed = getTyped("UUIDs", ArrayList.class);
-        if (typed != null) {
-            return typed.toArray(new String[0]);
+        try {
+            List<?> typed = getTyped("UUIDs", ArrayList.class);
+            if (typed != null) {
+                return typed.toArray(new String[0]);
+            }
+            return null;
+        } catch (Exception ignored) {
+            return null;
         }
-        return null;
     }
 
     /**
@@ -287,7 +291,12 @@ public class BluezDevice extends AbstractBluetoothObject {
      * @return short, maybe null
      */
     public Short getRssi() {
-        return getTyped("RSSI", Short.class);
+        Short rssi = null;
+        try {
+            rssi = getTyped("RSSI", Short.class);
+        } catch (DBusExecutionException ignored) {
+        }
+        return rssi;
     }
 
     /**
@@ -307,7 +316,12 @@ public class BluezDevice extends AbstractBluetoothObject {
      * @return mac address, maybe null
      */
     public String getAddress() {
-        return getTyped("Address", String.class);
+        String address = null;
+        try {
+            address = getTyped("Address", String.class);
+        } catch (DBusExecutionException ignored) {
+        }
+        return address;
     }
 
     /**
@@ -355,12 +369,8 @@ public class BluezDevice extends AbstractBluetoothObject {
         String name = null;
         try {
             name = getTyped("Name", String.class);
-        } catch (DBusExecutionException _ex) {
+        } catch (DBusExecutionException ignored) {
         }
-//        if (name == null) {
-//            name = getAlias();
-//        }
-
         return name;
     }
 
