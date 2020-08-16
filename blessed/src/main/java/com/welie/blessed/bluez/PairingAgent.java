@@ -9,13 +9,13 @@ import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
 import org.freedesktop.dbus.types.UInt16;
 import org.freedesktop.dbus.types.UInt32;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.logging.Logger;
 
 public class PairingAgent extends AbstractBluetoothObject implements Agent1 {
-
     private static final String TAG = PairingAgent.class.getSimpleName();
-    private final Logger logger = Logger.getLogger(TAG);
+    private final Logger logger = LoggerFactory.getLogger(TAG);
 
     private final PairingDelegate pairingDelegate;
 

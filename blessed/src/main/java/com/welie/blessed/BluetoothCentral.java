@@ -1208,7 +1208,7 @@ public class BluetoothCentral {
                 return true;
             }
             return false;
-        } catch (BluezFailedException | BluezInvalidArgumentsException e) {
+        } catch (Exception e) {
             logger.error("Error removing device");
             return false;
         }
