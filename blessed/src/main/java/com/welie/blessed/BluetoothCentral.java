@@ -854,12 +854,9 @@ public class BluetoothCentral {
      * @param peripheral         BLE peripheral to connect with
      * @param peripheralCallback the peripheral callback to use
      */
-    public void connectPeripheral(final BluetoothPeripheral peripheral, final BluetoothPeripheralCallback peripheralCallback) {
-        // Make sure peripheral is valid
-        if (peripheral == null) {
-            logger.info("no valid peripheral specified, aborting connection");
-            return;
-        }
+    public void connectPeripheral(@NotNull final BluetoothPeripheral peripheral, @NotNull final BluetoothPeripheralCallback peripheralCallback) {
+        Objects.requireNonNull(peripheral, "no valid peripheral specified");
+        Objects.requireNonNull(peripheralCallback, "no valid peripheral callback specified");
         peripheral.setPeripheralCallback(peripheralCallback);
 
         // Check if we are already connected
@@ -906,6 +903,9 @@ public class BluetoothCentral {
      */
     @SuppressWarnings("UnusedReturnValue,unused")
     public boolean autoConnectPeripheral(@NotNull BluetoothPeripheral peripheral, @NotNull BluetoothPeripheralCallback peripheralCallback) {
+        Objects.requireNonNull(peripheral, "no valid peripheral specified");
+        Objects.requireNonNull(peripheralCallback, "no valid peripheral callback specified");
+
         final String peripheralAddress = peripheral.getAddress();
         if (reconnectPeripheralAddresses.contains(peripheralAddress)) return false;
 
@@ -925,7 +925,9 @@ public class BluetoothCentral {
      * @param batch the map of peripherals and their callbacks to autoconnect to
      */
     @SuppressWarnings("unused")
-    public void autoConnectPeripheralsBatch(Map<BluetoothPeripheral, BluetoothPeripheralCallback> batch) {
+    public void autoConnectPeripheralsBatch(@NotNull Map<BluetoothPeripheral, BluetoothPeripheralCallback> batch) {
+        Objects.requireNonNull(batch, "no valid batch provided");
+
         for (Map.Entry<BluetoothPeripheral, BluetoothPeripheralCallback> entry : batch.entrySet()) {
             String peripheralAddress = entry.getKey().getAddress();
             reconnectPeripheralAddresses.add(peripheralAddress);
@@ -952,8 +954,8 @@ public class BluetoothCentral {
      * @param peripheral the peripheral
      */
     @SuppressWarnings("unused")
-    public void cancelConnection(final BluetoothPeripheral peripheral) {
-        if (peripheral == null) return;
+    public void cancelConnection(@NotNull final BluetoothPeripheral peripheral) {
+        Objects.requireNonNull(peripheral, "no valid peripheral specified");
 
         if (peripheral.getState() == STATE_CONNECTED) {
             // Some adapters have issues with (dis)connecting while scanning, so stop scan first
@@ -994,7 +996,9 @@ public class BluetoothCentral {
      * @param peripheralAddress the address of the peripheral
      */
     @SuppressWarnings("unused")
-    public boolean removeBond(String peripheralAddress) {
+    public boolean removeBond(@NotNull String peripheralAddress) {
+        Objects.requireNonNull(peripheralAddress, "no peripheral address provided");
+
         BluezDevice bluezDevice = getDeviceByAddress(adapter, peripheralAddress);
         if (bluezDevice == null) return false;
         return removeDevice(bluezDevice);
@@ -1006,7 +1010,7 @@ public class BluetoothCentral {
      * @return list of connected peripherals
      */
     @SuppressWarnings("unused")
-    public List<BluetoothPeripheral> getConnectedPeripherals() {
+    public @NotNull List<BluetoothPeripheral> getConnectedPeripherals() {
         return new ArrayList<>(connectedPeripherals.values());
     }
 
@@ -1017,7 +1021,9 @@ public class BluetoothCentral {
      * @return a BluetoothPeripheral object matching the specified mac address or null if it was not found
      */
     @SuppressWarnings("unused")
-    public BluetoothPeripheral getPeripheral(String peripheralAddress) {
+    public @NotNull BluetoothPeripheral getPeripheral(@NotNull String peripheralAddress) {
+        Objects.requireNonNull(peripheralAddress, "no valid peripheral address provided");
+
         if (!checkBluetoothAddress(peripheralAddress)) {
             logger.error(String.format("%s is not a valid address. Make sure all alphabetic characters are uppercase.", peripheralAddress));
             return null;
@@ -1052,14 +1058,12 @@ public class BluetoothCentral {
      * @return true if the pin code and peripheral address are valid and stored internally
      */
     @SuppressWarnings("unused")
-    public boolean setPinCodeForPeripheral(String peripheralAddress, String pin) {
+    public boolean setPinCodeForPeripheral(@NotNull String peripheralAddress, @NotNull String pin) {
+        Objects.requireNonNull(peripheralAddress, "no peripheral address provided");
+        Objects.requireNonNull(pin, "no pin provided");
+
         if (!checkBluetoothAddress(peripheralAddress)) {
             logger.error(String.format("%s is not a valid address. Make sure all alphabetic characters are uppercase.", peripheralAddress));
-            return false;
-        }
-
-        if (pin == null) {
-            logger.error("pin code is null");
             return false;
         }
 
