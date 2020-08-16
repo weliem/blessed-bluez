@@ -291,7 +291,14 @@ public class BluetoothCentral {
      * @param serviceUUIDs an array of service UUIDs
      */
     @SuppressWarnings("unused")
-    public void scanForPeripheralsWithServices(final UUID[] serviceUUIDs) {
+    public void scanForPeripheralsWithServices(@NotNull final UUID[] serviceUUIDs) {
+        Objects.requireNonNull(serviceUUIDs, "no service UUIDs supplied");
+
+        // Make sure there is at least 1 service UUID in the list
+        if (serviceUUIDs.length == 0) {
+            throw new IllegalArgumentException("at least one service UUID  must be supplied");
+        }
+
         initScanFilters();
         scanUUIDs = convertUUIDArrayToStringArray(serviceUUIDs);
         normalScanActive = true;
@@ -306,7 +313,14 @@ public class BluetoothCentral {
      * @param peripheralNames array of partial peripheral names
      */
     @SuppressWarnings("unused")
-    public void scanForPeripheralsWithNames(final String[] peripheralNames) {
+    public void scanForPeripheralsWithNames(@NotNull final String[] peripheralNames) {
+        Objects.requireNonNull(peripheralNames, "no peripheral names supplied");
+
+        // Make sure there is at least 1 peripheral name in the list
+        if (peripheralNames.length == 0) {
+            throw new IllegalArgumentException("at least one peripheral name must be supplied");
+        }
+
         initScanFilters();
         scanPeripheralNames = peripheralNames;
         normalScanActive = true;
@@ -319,7 +333,14 @@ public class BluetoothCentral {
      * @param peripheralAddresses array of peripheral mac addresses to scan for
      */
     @SuppressWarnings("unused")
-    public void scanForPeripheralsWithAddresses(final String[] peripheralAddresses) {
+    public void scanForPeripheralsWithAddresses(@NotNull final String[] peripheralAddresses) {
+        Objects.requireNonNull(peripheralAddresses, "no peripheral addresses supplied");
+
+        // Make sure there is at least 1 filter in the list
+        if (peripheralAddresses.length == 0) {
+            throw new IllegalArgumentException("at least one peripheral address must be supplied");
+        }
+
         initScanFilters();
         scanPeripheralAddresses = peripheralAddresses;
         normalScanActive = true;
