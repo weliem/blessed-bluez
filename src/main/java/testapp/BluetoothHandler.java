@@ -5,6 +5,7 @@ import com.welie.blessed.internal.Handler;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,42 +58,65 @@ public class BluetoothHandler {
         public void onServicesDiscovered(@NotNull BluetoothPeripheral peripheral) {
             // Read manufacturer and model number from the Device Information Service
             if (peripheral.getService(DIS_SERVICE_UUID) != null) {
-                peripheral.readCharacteristic(peripheral.getCharacteristic(DIS_SERVICE_UUID, MANUFACTURER_NAME_CHARACTERISTIC_UUID));
-                peripheral.readCharacteristic(peripheral.getCharacteristic(DIS_SERVICE_UUID, MODEL_NUMBER_CHARACTERISTIC_UUID));
+                BluetoothGattCharacteristic manufacturerCharacteristic = peripheral.getCharacteristic(DIS_SERVICE_UUID, MANUFACTURER_NAME_CHARACTERISTIC_UUID);
+                if (manufacturerCharacteristic != null) {
+                    peripheral.readCharacteristic(manufacturerCharacteristic);
+                }
+                BluetoothGattCharacteristic modelCharacteristic = peripheral.getCharacteristic(DIS_SERVICE_UUID, MODEL_NUMBER_CHARACTERISTIC_UUID);
+                if (modelCharacteristic != null) {
+                    peripheral.readCharacteristic(modelCharacteristic);
+                }
             }
 
             // Turn on notifications for Current Time Service
             if (peripheral.getService(CTS_SERVICE_UUID) != null) {
                 BluetoothGattCharacteristic currentTimeCharacteristic = peripheral.getCharacteristic(CTS_SERVICE_UUID, CURRENT_TIME_CHARACTERISTIC_UUID);
-                peripheral.setNotify(currentTimeCharacteristic, true);
+                if (currentTimeCharacteristic != null) {
+                    peripheral.setNotify(currentTimeCharacteristic, true);
 
-                // If it has the write property we write the current time
-                if ((currentTimeCharacteristic.getProperties() & PROPERTY_WRITE) > 0) {
-                    BluetoothBytesParser parser = new BluetoothBytesParser();
-                    parser.setCurrentTime(Calendar.getInstance());
-                    peripheral.writeCharacteristic(currentTimeCharacteristic, parser.getValue(), WRITE_TYPE_DEFAULT);
+                    // If it has the write property we write the current time
+                    if ((currentTimeCharacteristic.getProperties() & PROPERTY_WRITE) > 0) {
+                        BluetoothBytesParser parser = new BluetoothBytesParser();
+                        parser.setCurrentTime(Calendar.getInstance());
+                        peripheral.writeCharacteristic(currentTimeCharacteristic, parser.getValue(), WRITE_TYPE_DEFAULT);
+                    }
                 }
             }
 
             // Turn on notifications for Blood Pressure Service
             if (peripheral.getService(BLP_SERVICE_UUID) != null) {
-                peripheral.setNotify(peripheral.getCharacteristic(BLP_SERVICE_UUID, BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID), true);
+                BluetoothGattCharacteristic bloodpressureCharacteristic = peripheral.getCharacteristic(BLP_SERVICE_UUID, BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID);
+                if (bloodpressureCharacteristic != null) {
+                    peripheral.setNotify(bloodpressureCharacteristic, true);
+                }
             }
 
             // Turn on notification for Health Thermometer Service
             if (peripheral.getService(HTS_SERVICE_UUID) != null) {
-                peripheral.setNotify(peripheral.getCharacteristic(HTS_SERVICE_UUID, TEMPERATURE_MEASUREMENT_CHARACTERISTIC_UUID), true);
+                BluetoothGattCharacteristic temperatureCharacteristic = peripheral.getCharacteristic(HTS_SERVICE_UUID, TEMPERATURE_MEASUREMENT_CHARACTERISTIC_UUID);
+                if (temperatureCharacteristic != null) {
+                    peripheral.setNotify(temperatureCharacteristic, true);
+                }
             }
 
             // Turn on notification for Pulse Oximeter Service
             if (peripheral.getService(PLX_SERVICE_UUID) != null) {
-                peripheral.setNotify(peripheral.getCharacteristic(PLX_SERVICE_UUID, PLX_CONTINUOUS_MEASUREMENT_CHAR_UUID), true);
-                peripheral.setNotify(peripheral.getCharacteristic(PLX_SERVICE_UUID, PLX_SPOT_MEASUREMENT_CHAR_UUID), true);
+                BluetoothGattCharacteristic continuousMeasurement = peripheral.getCharacteristic(PLX_SERVICE_UUID, PLX_CONTINUOUS_MEASUREMENT_CHAR_UUID);
+                if (continuousMeasurement != null) {
+                    peripheral.setNotify(continuousMeasurement, true);
+                }
+                BluetoothGattCharacteristic spotMeasurement = peripheral.getCharacteristic(PLX_SERVICE_UUID, PLX_SPOT_MEASUREMENT_CHAR_UUID);
+                if (spotMeasurement != null) {
+                    peripheral.setNotify(spotMeasurement, true);
+                }
             }
 
             // Turn on notification for Heart Rate  Service
             if (peripheral.getService(HRS_SERVICE_UUID) != null) {
-                peripheral.setNotify(peripheral.getCharacteristic(HRS_SERVICE_UUID, HEARTRATE_MEASUREMENT_CHARACTERISTIC_UUID), true);
+                BluetoothGattCharacteristic heartrateCharacteristic = peripheral.getCharacteristic(HRS_SERVICE_UUID, HEARTRATE_MEASUREMENT_CHARACTERISTIC_UUID);
+                if (heartrateCharacteristic != null) {
+                    peripheral.setNotify(heartrateCharacteristic, true);
+                }
             }
         }
 
@@ -235,7 +259,8 @@ public class BluetoothHandler {
 
     public BluetoothHandler() {
         logger.info("initializing BluetoothCentral");
-        central = new BluetoothCentral(bluetoothCentralCallback, new HashSet<>(Collections.singletonList(SCANOPTION_NO_NULL_NAMES)));
+        central = new BluetoothCentral(bluetoothCentralCallback, new HashSet<>(Arrays.asList(SCANOPTION_NO_NULL_NAMES)));
+//        central = new BluetoothCentral(bluetoothCentralCallback, null);
         central.setPinCodeForPeripheral("B0:49:5F:01:20:8F", "635227");
         startScanning();
     }

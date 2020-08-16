@@ -55,7 +55,7 @@ public class BluetoothPeripheral {
     private final Map<String, BluezGattDescriptor> descriptorMap = new ConcurrentHashMap<>();
 
     // Keep track of all translated services
-    private List<BluetoothGattService> mServices;
+    private @NotNull List<BluetoothGattService> mServices = new ArrayList<>();
 
     // Variables for service discovery timer
     private Handler timeoutHandler;
@@ -334,10 +334,10 @@ public class BluetoothPeripheral {
     /*
      * PUBLIC HBDeviceAdapter Interface Methods
      */
-    public BluetoothPeripheral(@NotNull BluetoothCentral central, @Nullable BluezDevice bluezDevice, String deviceName, String deviceAddress, InternalCallback listener, BluetoothPeripheralCallback peripheralCallback, Handler callBackHandler) {
-        this.central = central;
+    public BluetoothPeripheral(@NotNull BluetoothCentral central, @Nullable BluezDevice bluezDevice, String deviceName, @NotNull String deviceAddress, InternalCallback listener, BluetoothPeripheralCallback peripheralCallback, Handler callBackHandler) {
+        this.central = Objects.requireNonNull(central, "no valid central provided");
         this.device = bluezDevice;
-        this.deviceAddress = deviceAddress;
+        this.deviceAddress = Objects.requireNonNull(deviceAddress, "no valid address provided");
         this.deviceName = deviceName;
         this.listener = listener;
         this.callBackHandler = callBackHandler;
@@ -346,8 +346,8 @@ public class BluetoothPeripheral {
         this.commandQueueBusy = false;
     }
 
-    void setPeripheralCallback(final BluetoothPeripheralCallback peripheralCallback) {
-        this.peripheralCallback = peripheralCallback;
+    void setPeripheralCallback(@NotNull final BluetoothPeripheralCallback peripheralCallback) {
+        this.peripheralCallback = Objects.requireNonNull(peripheralCallback, "no valid peripheral callback provided");
     }
 
     public void connect() {
@@ -446,22 +446,18 @@ public class BluetoothPeripheral {
      * @return true if the operation was enqueued, false if the characteristic does not support reading or the characteristic was invalid
      */
     @SuppressWarnings("UnusedReturnValue")
-    public boolean readCharacteristic(final BluetoothGattCharacteristic characteristic) {
+    public boolean readCharacteristic(@NotNull final BluetoothGattCharacteristic characteristic) {
+        Objects.requireNonNull(characteristic, "characteristic is 'null', ignoring read request");
+
         // Make sure we are still connected
         if (state != STATE_CONNECTED) {
             gattCallback.onCharacteristicRead(characteristic, GATT_ERROR);
             return false;
         }
 
-        // Check if characteristic is valid
-        if (characteristic == null) {
-            logger.error("characteristic is 'null', ignoring read request");
-            return false;
-        }
-
         // Check if this characteristic actually has READ property
         if ((characteristic.getProperties() & PROPERTY_READ) == 0) {
-            logger.info("ERROR: Characteristic cannot be read");
+            logger.error("characteristic does not have read property");
             return false;
         }
 
@@ -523,22 +519,13 @@ public class BluetoothPeripheral {
      * @return true if a write operation was succesfully enqueued, otherwise false
      */
     @SuppressWarnings({"UnusedReturnValue", "unused"})
-    public boolean writeCharacteristic(BluetoothGattCharacteristic characteristic, final byte[] value, final int writeType) {
+    public boolean writeCharacteristic(@NotNull final BluetoothGattCharacteristic characteristic, @NotNull final byte[] value, final int writeType) {
+        Objects.requireNonNull(characteristic, "no valid characteristic provided");
+        Objects.requireNonNull(value, "no valid value provided");
+
         // Make sure we are still connected
         if (state != STATE_CONNECTED) {
             gattCallback.onCharacteristicWrite(characteristic, GATT_ERROR);
-            return false;
-        }
-
-        // Check if characteristic is valid
-        if (characteristic == null) {
-            logger.error("characteristic is 'null', ignoring write request");
-            return false;
-        }
-
-        // Check if byte array is valid
-        if (value == null) {
-            logger.error("value to write is 'null', ignoring write request");
             return false;
         }
 
@@ -569,7 +556,7 @@ public class BluetoothPeripheral {
                 break;
         }
         if ((characteristic.getProperties() & writeProperty) == 0) {
-            logger.info(String.format(Locale.ENGLISH, "ERROR: Characteristic cannot be written with this writeType : %d", writeType));
+            logger.error(String.format(Locale.ENGLISH, "ERROR: Characteristic cannot be written with this writeType : %d", writeType));
             return false;
         }
 
@@ -617,16 +604,12 @@ public class BluetoothPeripheral {
      * @return true if the operation was enqueued, false if the characteristic doesn't support notification or indications or
      */
     @SuppressWarnings("UnusedReturnValue")
-    public boolean setNotify(BluetoothGattCharacteristic characteristic, boolean enable) {
+    public boolean setNotify(@NotNull final BluetoothGattCharacteristic characteristic, boolean enable) {
+        Objects.requireNonNull(characteristic, "no valid characteristic provided");
+
         // Make sure we are still connected
         if (state != STATE_CONNECTED) {
             gattCallback.onNotifySet(characteristic, false);
-            return false;
-        }
-
-        // Check if characteristic is valid
-        if (characteristic == null) {
-            logger.error("characteristic is 'null', ignoring setNotify request");
             return false;
         }
 
@@ -919,7 +902,7 @@ public class BluetoothPeripheral {
      *
      * @return Supported services.
      */
-    public List<BluetoothGattService> getServices() {
+    public @NotNull List<BluetoothGattService> getServices() {
         return mServices;
     }
 
@@ -945,7 +928,10 @@ public class BluetoothPeripheral {
      * @param characteristicUUID the characteristic UUID
      * @return the BluetoothGattCharacteristic matching the serviceUUID and characteristicUUID
      */
-    public BluetoothGattCharacteristic getCharacteristic(UUID serviceUUID, UUID characteristicUUID) {
+    public @Nullable BluetoothGattCharacteristic getCharacteristic(@NotNull UUID serviceUUID, @NotNull UUID characteristicUUID) {
+        Objects.requireNonNull(serviceUUID, "no valid service UUID provided");
+        Objects.requireNonNull(characteristicUUID, "no valid characteristic provided");
+
         BluetoothGattService service = getService(serviceUUID);
         if (service != null) {
             return service.getCharacteristic(characteristicUUID);
@@ -959,7 +945,7 @@ public class BluetoothPeripheral {
      *
      * @return name of the bluetooth peripheral
      */
-    public String getName() {
+    public @Nullable String getName() {
         return deviceName;
     }
 
@@ -1022,7 +1008,9 @@ public class BluetoothPeripheral {
      * @param characteristic the characteristic to check
      * @return true if the characteristic is notifying or indicating, false if it is not
      */
-    public boolean isNotifying(BluetoothGattCharacteristic characteristic) {
+    public boolean isNotifying(@NotNull BluetoothGattCharacteristic characteristic) {
+        Objects.requireNonNull(characteristic, "no valid characteristic provided");
+
         final BluezGattCharacteristic nativeCharacteristic = getBluezGattCharacteristic(characteristic.getUuid());
         if (nativeCharacteristic == null) {
             logger.error("ERROR: Native characteristic is null");
