@@ -181,7 +181,7 @@ public class BluetoothCentral {
      * @param bluetoothCentralCallback the callback to call for updates
      */
     public BluetoothCentral(@NotNull BluetoothCentralCallback bluetoothCentralCallback, @Nullable Set<String> scanOptions) {
-        this.bluetoothCentralCallback = bluetoothCentralCallback;
+        this.bluetoothCentralCallback = Objects.requireNonNull(bluetoothCentralCallback, "no valid bluetoothCallback provided");
         this.callBackHandler = new Handler("Central-callBackHandler");
         if (scanOptions != null) this.scanOptions = scanOptions;
 
