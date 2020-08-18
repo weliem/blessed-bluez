@@ -616,7 +616,14 @@ public class BluetoothCentral {
     @NotNull
     private ScanResult getScanResultFromDevice(@NotNull BluezDevice bluezDevice) {
         Objects.requireNonNull(bluezDevice, "no valid bluezDevice supplied");
-        return new ScanResult(bluezDevice.getName(), bluezDevice.getAddress(), bluezDevice.getUuids(), bluezDevice.getRssi(), bluezDevice.getManufacturerData(), bluezDevice.getServiceData());
+
+        final String deviceName = bluezDevice.getName();
+        final String deviceAddress = bluezDevice.getAddress();
+        final String[] uuids = bluezDevice.getUuids();
+        final Short rssi = bluezDevice.getRssi();
+        final Map<Integer, byte[]> manufacturerData = bluezDevice.getManufacturerData();
+        final Map<String, byte[]> serviceData = bluezDevice.getServiceData();
+        return new ScanResult(deviceName, deviceAddress, uuids, rssi, manufacturerData, serviceData);
     }
 
     private void handlePropertiesChangedForAdapter(String propertyName, Variant<?> value) {
