@@ -576,7 +576,9 @@ public class BluetoothCentral {
     }
 
     @SuppressWarnings("unchecked")
-    private void handlePropertiesChangedForDeviceWhenScanning(@NotNull BluezDevice bluezDevice, Map<String, Variant<?>> propertiesChanged) {
+    private void handlePropertiesChangedForDeviceWhenScanning(@NotNull BluezDevice bluezDevice, @NotNull Map<String, Variant<?>> propertiesChanged) {
+        Objects.requireNonNull(bluezDevice, "no valid bluezDevice supplied");
+        Objects.requireNonNull(propertiesChanged, "no valid propertieschanged supplied");
         final String deviceAddress = bluezDevice.getAddress();
         ScanResult scanResult = getScanResult(deviceAddress);
 
@@ -612,6 +614,7 @@ public class BluetoothCentral {
 
     @NotNull
     private ScanResult getScanResultFromDevice(@NotNull BluezDevice bluezDevice) {
+        Objects.requireNonNull(bluezDevice, "no valid bluezDevice supplied");
         return new ScanResult(bluezDevice.getName(), bluezDevice.getAddress(), bluezDevice.getUuids(), bluezDevice.getRssi(), bluezDevice.getManufacturerData(), bluezDevice.getServiceData());
     }
 

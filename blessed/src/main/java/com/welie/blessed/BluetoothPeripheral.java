@@ -873,7 +873,7 @@ public class BluetoothPeripheral {
         }
     }
 
-    private BluezGattCharacteristic getBluezGattCharacteristic(UUID characteristicUUID) {
+    private @Nullable BluezGattCharacteristic getBluezGattCharacteristic(UUID characteristicUUID) {
         BluezGattCharacteristic characteristic = null;
 
         for (BluezGattCharacteristic gattCharacteristic : characteristicMap.values()) {
@@ -884,7 +884,7 @@ public class BluetoothPeripheral {
         return characteristic;
     }
 
-    private BluetoothGattCharacteristic getBluetoothGattCharacteristic(BluezGattCharacteristic bluezGattCharacteristic) {
+    private @Nullable BluetoothGattCharacteristic getBluetoothGattCharacteristic(BluezGattCharacteristic bluezGattCharacteristic) {
         UUID characteristicUUID = UUID.fromString(bluezGattCharacteristic.getUuid());
         for (BluetoothGattService service : mServices) {
             for (BluetoothGattCharacteristic characteristic : service.getCharacteristics())
