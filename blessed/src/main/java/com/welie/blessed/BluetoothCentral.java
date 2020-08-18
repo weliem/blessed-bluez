@@ -580,9 +580,10 @@ public class BluetoothCentral {
         Objects.requireNonNull(bluezDevice, "no valid bluezDevice supplied");
         Objects.requireNonNull(propertiesChanged, "no valid propertieschanged supplied");
         final String deviceAddress = bluezDevice.getAddress();
-        ScanResult scanResult = getScanResult(deviceAddress);
+        if (deviceAddress == null) return;
 
         // See if we have a cached scanResult, if not create a new one
+        ScanResult scanResult = getScanResult(deviceAddress);
         if (scanResult == null) {
             scanResult = getScanResultFromDevice(bluezDevice);
             scanResultCache.put(deviceAddress, scanResult);
