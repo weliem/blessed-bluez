@@ -912,7 +912,9 @@ public class BluetoothPeripheral {
      * @param serviceUUID the UUID of the service
      * @return the BluetoothGattService object for the service UUID or null if the peripheral does not have a service with the specified UUID
      */
-    public BluetoothGattService getService(UUID serviceUUID) {
+    public @Nullable BluetoothGattService getService(UUID serviceUUID) {
+        Objects.requireNonNull(serviceUUID, "no valid service UUID provided");
+
         for (BluetoothGattService service : mServices) {
             if (service.getUuid().equals(serviceUUID)) {
                 return service;
