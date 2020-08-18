@@ -621,9 +621,10 @@ public class BluetoothCentral {
         final String deviceAddress = bluezDevice.getAddress();
         final String[] uuids = bluezDevice.getUuids();
         final Short rssi = bluezDevice.getRssi();
+        final int rssiInt = rssi == null ? DISCOVERY_RSSI_THRESHOLD : rssi;
         final Map<Integer, byte[]> manufacturerData = bluezDevice.getManufacturerData();
         final Map<String, byte[]> serviceData = bluezDevice.getServiceData();
-        return new ScanResult(deviceName, deviceAddress, uuids, rssi, manufacturerData, serviceData);
+        return new ScanResult(deviceName, deviceAddress, uuids, rssiInt, manufacturerData, serviceData);
     }
 
     private void handlePropertiesChangedForAdapter(String propertyName, Variant<?> value) {
