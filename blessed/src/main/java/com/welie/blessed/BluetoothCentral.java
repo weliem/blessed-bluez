@@ -518,7 +518,7 @@ public class BluetoothCentral {
         if ((value.get(PROPERTY_RSSI) != null) && (value.get(PROPERTY_RSSI).getValue() instanceof Short)) {
             rssi = (Short) value.get(PROPERTY_RSSI).getValue();
         } else {
-            rssi = -100;
+            rssi = DISCOVERY_RSSI_THRESHOLD;
         }
 
         // Convert the service UUIDs
