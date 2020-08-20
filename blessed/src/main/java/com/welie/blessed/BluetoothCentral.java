@@ -431,7 +431,9 @@ public class BluetoothCentral {
         // Make sure we have a valid BluezDevice object and refresh the name
         if (peripheral.device == null) {
             peripheral.device = getDeviceByAddress(adapter, peripheralAddress);
-            peripheral.deviceName = peripheral.device.getName();
+            if (peripheral.device != null) {
+                peripheral.deviceName = peripheral.device.getName();
+            }
         }
 
         connectPeripheral(peripheral, peripheralCallback);
@@ -1032,13 +1034,12 @@ public class BluetoothCentral {
      * @param peripheralAddress mac address
      * @return a BluetoothPeripheral object matching the specified mac address or null if it was not found
      */
-    @SuppressWarnings("unused")
     public @NotNull BluetoothPeripheral getPeripheral(@NotNull String peripheralAddress) {
         Objects.requireNonNull(peripheralAddress, "no valid peripheral address provided");
 
         if (!checkBluetoothAddress(peripheralAddress)) {
-            logger.error(String.format("%s is not a valid address. Make sure all alphabetic characters are uppercase.", peripheralAddress));
-            return null;
+            String message = String.format("%s is not a valid address. Make sure all alphabetic characters are uppercase.", peripheralAddress);
+            throw new IllegalArgumentException(message);
         }
 
         if (scannedPeripherals.containsKey(peripheralAddress)) {
@@ -1055,7 +1056,7 @@ public class BluetoothCentral {
         }
     }
 
-    private ScanResult getScanResult(String peripheralAddress) {
+    private @Nullable ScanResult getScanResult(@NotNull String peripheralAddress) {
         return scanResultCache.get(peripheralAddress);
     }
 

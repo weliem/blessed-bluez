@@ -1,5 +1,7 @@
 package com.welie.blessed;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Arrays;
 import java.util.Map;
 
@@ -15,7 +17,7 @@ public class ScanResult {
     private Map<Integer, byte[]> manufacturerData;
     private Map<String, byte[]> serviceData;
 
-    public ScanResult(String deviceName, String deviceAddress, String[] uuids, int rssi, Map<Integer, byte[]> manufacturerData, Map<String, byte[]> serviceData) {
+    public ScanResult(String deviceName, @NotNull String deviceAddress, String[] uuids, int rssi, Map<Integer, byte[]> manufacturerData, Map<String, byte[]> serviceData) {
         this.timestampNanos = System.nanoTime();
         this.name = deviceName;
         this.address = deviceAddress;
@@ -33,7 +35,7 @@ public class ScanResult {
         return name;
     }
 
-    public String getAddress() {
+    public @NotNull String getAddress() {
         return address;
     }
 
