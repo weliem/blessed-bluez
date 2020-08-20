@@ -9,7 +9,7 @@ import static com.welie.blessed.BluetoothBytesParser.bytes2String;
 
 @SuppressWarnings("unused")
 public class ScanResult {
-    private final long timestampNanos;
+    private long timestampNanos;
     private final String name;
     private final String address;
     private final String[] uuids;
@@ -18,13 +18,13 @@ public class ScanResult {
     private Map<String, byte[]> serviceData;
 
     public ScanResult(String deviceName, @NotNull String deviceAddress, String[] uuids, int rssi, Map<Integer, byte[]> manufacturerData, Map<String, byte[]> serviceData) {
-        this.timestampNanos = System.nanoTime();
         this.name = deviceName;
         this.address = deviceAddress;
         this.uuids = uuids;
         this.rssi = rssi;
         setManufacturerData(manufacturerData);
         setServiceData(serviceData);
+        stamp();
     }
 
     public long getTimestampNanos() {
@@ -92,5 +92,9 @@ public class ScanResult {
         result.deleteCharAt(result.length() - 1);
         result.append("]");
         return result.toString();
+    }
+
+    public void stamp() {
+        this.timestampNanos = System.nanoTime();
     }
 }

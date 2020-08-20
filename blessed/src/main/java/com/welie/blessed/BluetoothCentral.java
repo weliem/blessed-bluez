@@ -461,6 +461,7 @@ public class BluetoothCentral {
 
             callBackHandler.post(() -> {
                 if (bluetoothCentralCallback != null) {
+                    scanResult.stamp();
                     bluetoothCentralCallback.onDiscoveredPeripheral(peripheral, scanResult);
                 } else {
                     logger.error("bluetoothCentralCallback is null");
