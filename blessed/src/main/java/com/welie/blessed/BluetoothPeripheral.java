@@ -334,13 +334,13 @@ public class BluetoothPeripheral {
     /*
      * PUBLIC HBDeviceAdapter Interface Methods
      */
-    public BluetoothPeripheral(@NotNull BluetoothCentral central, @Nullable BluezDevice bluezDevice, String deviceName, @NotNull String deviceAddress, InternalCallback listener, BluetoothPeripheralCallback peripheralCallback, Handler callBackHandler) {
+    public BluetoothPeripheral(@NotNull BluetoothCentral central, @Nullable BluezDevice bluezDevice, @Nullable String deviceName, @NotNull String deviceAddress, @NotNull InternalCallback listener, @Nullable BluetoothPeripheralCallback peripheralCallback, @NotNull Handler callBackHandler) {
         this.central = Objects.requireNonNull(central, "no valid central provided");
         this.device = bluezDevice;
         this.deviceAddress = Objects.requireNonNull(deviceAddress, "no valid address provided");
         this.deviceName = deviceName;
-        this.listener = listener;
-        this.callBackHandler = callBackHandler;
+        this.listener = Objects.requireNonNull(listener, "no valid listener provided");
+        this.callBackHandler = Objects.requireNonNull(callBackHandler, "no callbackhandler provided");
         this.peripheralCallback = peripheralCallback;
         this.state = STATE_DISCONNECTED;
         this.commandQueueBusy = false;
@@ -430,7 +430,7 @@ public class BluetoothPeripheral {
         commandQueue.clear();
         commandQueueBusy = false;
 
-        if (listener != null && notify) {
+        if (notify) {
             listener.disconnected(BluetoothPeripheral.this);
         }
     }
@@ -664,7 +664,7 @@ public class BluetoothPeripheral {
 
     /**
      * Read the RSSI for a connected peripheral
-     * {@BluetoothPeripheralCallback#onReadRemoteRssi(BluetoothPeripheral, int, int)} will be triggered as a result of this call.
+     * onReadRemoteRssi(BluetoothPeripheral, int, int) will be triggered as a result of this call.
      */
     @SuppressWarnings("unused")
     public void readRemoteRssi() {
