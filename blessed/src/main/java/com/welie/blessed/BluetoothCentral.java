@@ -43,6 +43,7 @@ public class BluetoothCentral {
     private final Handler callBackHandler;
     private final Handler timeoutHandler = new Handler(this.getClass().getSimpleName());
     private final Handler queueHandler = new Handler("CentralQueue");
+    private final Handler signalHandler = new Handler("CentralQueue-signal");
     private Runnable timeoutRunnable;
     private volatile boolean isScanning = false;
     private volatile boolean isPowered = false;
@@ -416,7 +417,7 @@ public class BluetoothCentral {
         return false;
     }
 
-    private void onFoundReconnectionPeripheral(BluetoothPeripheral peripheral) {
+    private void onFoundReconnectionPeripheral(final BluetoothPeripheral peripheral) {
         final String peripheralAddress = peripheral.getAddress();
         final BluetoothPeripheralCallback peripheralCallback = reconnectCallbacks.get(peripheralAddress);
 
@@ -446,7 +447,7 @@ public class BluetoothCentral {
         }
     }
 
-    private void onScanResult(BluetoothPeripheral peripheral, ScanResult scanResult) {
+    private void onScanResult(final BluetoothPeripheral peripheral, final ScanResult scanResult) {
         // Check first if we are autoconnecting to this peripheral
         if (reconnectPeripheralAddresses.contains(scanResult.getAddress())) {
             onFoundReconnectionPeripheral(peripheral);
@@ -472,17 +473,17 @@ public class BluetoothCentral {
 
     private final AbstractInterfacesAddedHandler interfacesAddedHandler = new AbstractInterfacesAddedHandler() {
         @Override
-        public void handle(ObjectManager.InterfacesAdded interfacesAdded) {
+        public void handle(final ObjectManager.InterfacesAdded interfacesAdded) {
             final String path = interfacesAdded.getPath();
             interfacesAdded.getInterfaces().forEach((key, value) -> {
                 if (key.equalsIgnoreCase(BLUEZ_DEVICE_INTERFACE)) {
-                    handleInterfaceAddedForDevice(path, value);
+                    signalHandler.post(() -> handleInterfaceAddedForDevice(path, value));
                 }
             });
         }
     };
 
-    private void handleInterfaceAddedForDevice(String path, Map<String, Variant<?>> value) {
+    private void handleInterfaceAddedForDevice(@NotNull final String path, @NotNull Map<String, Variant<?>> value) {
         final String deviceAddress;
         final String deviceName;
         final int rssi;
@@ -553,7 +554,7 @@ public class BluetoothCentral {
 
     private final AbstractPropertiesChangedHandler propertiesChangedHandler = new AbstractPropertiesChangedHandler() {
         @Override
-        public void handle(Properties.PropertiesChanged propertiesChanged) {
+        public void handle(final Properties.PropertiesChanged propertiesChanged) {
             switch (propertiesChanged.getInterfaceName()) {
                 case BLUEZ_DEVICE_INTERFACE:
                     // If we are not scanning, we ignore device propertiesChanged
@@ -574,8 +575,8 @@ public class BluetoothCentral {
         }
     };
 
-    void handleSignal(Properties.PropertiesChanged propertiesChanged) {
-        propertiesChangedHandler.handle(propertiesChanged);
+    void handleSignal(@NotNull final Properties.PropertiesChanged propertiesChanged) {
+        signalHandler.post(() -> propertiesChangedHandler.handle(propertiesChanged));
     }
 
     @SuppressWarnings("unchecked")
@@ -928,6 +929,7 @@ public class BluetoothCentral {
         reconnectCallbacks.put(peripheralAddress, peripheralCallback);
         unconnectedPeripherals.put(peripheralAddress, peripheral);
 
+        logger.info(String.format("autoconnect to %s", peripheralAddress));
         startAutoConnectScan();
         return true;
     }
