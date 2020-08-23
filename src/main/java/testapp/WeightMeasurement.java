@@ -4,6 +4,7 @@ import com.welie.blessed.BluetoothBytesParser;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 
 import static com.welie.blessed.BluetoothBytesParser.FORMAT_UINT16;
@@ -34,6 +35,8 @@ public class WeightMeasurement {
         // Get timestamp if present
         if (timestampPresent) {
             timestamp = parser.getDateTime();
+        } else {
+            timestamp = Calendar.getInstance().getTime();
         }
 
         // Get user ID if present
@@ -51,7 +54,7 @@ public class WeightMeasurement {
     @Override
     public String toString() {
         DateFormat df = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
-        String formattedTimestamp = df.format(timestamp);
+        String formattedTimestamp = timestamp != null ? df.format(timestamp) : "null";
         return String.format("%.1f %s, user %d, BMI %d, height %d at (%s)", weight, unit == WeightUnit.Kilograms ? "kg" : "lb", userID, BMI, height, formattedTimestamp);
     }
 }
