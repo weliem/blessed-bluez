@@ -361,7 +361,7 @@ public class BluetoothPeripheral {
 
         try {
             logger.info(String.format("connecting to '%s' (%s)", deviceName, deviceAddress));
-            BluezSignalHandler.getInstance().addDevice(deviceAddress, this);
+            BluezSignalHandler.getInstance().addPeripheral(deviceAddress, this);
             queueHandler = new Handler("BLE-" + deviceAddress);
             timeoutHandler = new Handler(TAG + " serviceDiscovery " + deviceAddress);
             connectTimestamp = System.currentTimeMillis();
@@ -374,7 +374,7 @@ public class BluetoothPeripheral {
                 bluezConnectionstate = false;
             }
 
-            logger.error(String.format("connect exception, dbusexecutionexception (%s %s)", state == STATE_CONNECTED ? "connected" : "not connected", bluezConnectionstate ? "connected" : "not connected"));
+ //           logger.error(String.format("connect exception, dbusexecutionexception (%s %s)", state == STATE_CONNECTED ? "connected" : "not connected", bluezConnectionstate ? "connected" : "not connected"));
             logger.error(e.getMessage());
 
             // Unregister handler only if we are not connected. A connected event may have already been received!
@@ -400,7 +400,7 @@ public class BluetoothPeripheral {
     }
 
     private void cleanupAfterFailedConnect() {
-        BluezSignalHandler.getInstance().removeDevice(deviceAddress);
+        BluezSignalHandler.getInstance().removePeripheral(deviceAddress);
         if (timeoutHandler != null) timeoutHandler.stop();
         timeoutHandler = null;
         gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, GATT_ERROR);
@@ -784,7 +784,7 @@ public class BluetoothPeripheral {
 
                     // Clean up
                     cancelServiceDiscoveryTimer();
-                    BluezSignalHandler.getInstance().removeDevice(deviceAddress);
+                    BluezSignalHandler.getInstance().removePeripheral(deviceAddress);
                     gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, GATT_SUCCESS);
                     if (timeoutHandler != null) timeoutHandler.stop();
                     timeoutHandler = null;
