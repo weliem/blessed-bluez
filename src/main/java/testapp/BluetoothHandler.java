@@ -10,8 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.welie.blessed.BluetoothCentral.SCANOPTION_NO_NULL_NAMES;
-import static com.welie.blessed.BluetoothGattCharacteristic.PROPERTY_WRITE;
-import static com.welie.blessed.BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT;
+import static com.welie.blessed.BluetoothGattCharacteristic.*;
 import static com.welie.blessed.BluetoothPeripheral.GATT_SUCCESS;
 
 public class BluetoothHandler {
@@ -87,6 +86,18 @@ public class BluetoothHandler {
                 }
             }
 
+            // Turn on notify for battery level or read it
+            if (peripheral.getService(BTS_SERVICE_UUID) != null) {
+                BluetoothGattCharacteristic batteryCharacteristic = peripheral.getCharacteristic(BTS_SERVICE_UUID, BATTERY_LEVEL_CHARACTERISTIC_UUID);
+                if (batteryCharacteristic != null) {
+                    if ((batteryCharacteristic.getProperties() & PROPERTY_NOTIFY) > 0) {
+                        peripheral.setNotify(batteryCharacteristic, true);
+                    } else {
+                        peripheral.readCharacteristic(batteryCharacteristic);
+                    }
+                }
+            }
+
             // Turn on notifications for Blood Pressure Service
             if (peripheral.getService(BLP_SERVICE_UUID) != null) {
                 BluetoothGattCharacteristic bloodpressureCharacteristic = peripheral.getCharacteristic(BLP_SERVICE_UUID, BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID);
@@ -158,10 +169,10 @@ public class BluetoothHandler {
 
             if (characteristicUUID.equals(MANUFACTURER_NAME_CHARACTERISTIC_UUID)) {
                 String manufacturer = parser.getStringValue(0);
-                logger.info(String.format("Received manufacturer: %s", manufacturer));
+                logger.info(String.format("Received manufacturer: '%s'", manufacturer));
             } else if (characteristicUUID.equals(MODEL_NUMBER_CHARACTERISTIC_UUID)) {
                 String modelNumber = parser.getStringValue(0);
-                logger.info(String.format("Received modelnumber: %s", modelNumber));
+                logger.info(String.format("Received modelnumber: '%s'", modelNumber));
             } else if (characteristicUUID.equals(TEMPERATURE_MEASUREMENT_CHARACTERISTIC_UUID)) {
                 TemperatureMeasurement measurement = new TemperatureMeasurement(value);
                 logger.info(measurement.toString());
@@ -186,6 +197,9 @@ public class BluetoothHandler {
             } else if (characteristicUUID.equals(CURRENT_TIME_CHARACTERISTIC_UUID)) {
                 Date currentTime = parser.getDateTime();
                 logger.info(String.format("Received device time: %s", currentTime));
+            } else if (characteristicUUID.equals(BATTERY_LEVEL_CHARACTERISTIC_UUID)) {
+                int batteryLevel = parser.getIntValue(FORMAT_UINT8);
+                logger.info(String.format("battery level %d", batteryLevel));
             }
         }
 
@@ -243,13 +257,16 @@ public class BluetoothHandler {
     private final BluetoothCentralCallback bluetoothCentralCallback = new BluetoothCentralCallback() {
         @Override
         public void onConnectedPeripheral(@NotNull BluetoothPeripheral peripheral) {
+            logger.info("connected peripheral");
         }
 
         @Override
         public void onConnectionFailed(@NotNull BluetoothPeripheral peripheral, int status) {
-            super.onConnectionFailed(peripheral, status);
+            logger.info("connection failed");
             final String peripheralAddress = peripheral.getAddress();
             handler.postDelayed(() -> blackList.remove(peripheralAddress), 2000L);
+            handler.postDelayed(() -> central.autoConnectPeripheral(peripheral, peripheralCallback), 40000);
+
         }
 
         @Override
@@ -257,6 +274,8 @@ public class BluetoothHandler {
             logger.info("disconnected peripheral");
             final String peripheralAddress = peripheral.getAddress();
             handler.postDelayed(() -> blackList.remove(peripheralAddress), 32000L);
+            handler.postDelayed(() -> central.autoConnectPeripheral(peripheral, peripheralCallback), 40000);
+
         }
 
         @Override
@@ -275,18 +294,18 @@ public class BluetoothHandler {
     public BluetoothHandler() {
         logger.info("initializing BluetoothCentral");
         central = new BluetoothCentral(bluetoothCentralCallback, new HashSet<>(Arrays.asList(SCANOPTION_NO_NULL_NAMES)));
-//        central = new BluetoothCentral(bluetoothCentralCallback, null);
         central.setPinCodeForPeripheral("B0:49:5F:01:20:8F", "635227");
         startScanning();
     }
 
     void startScanning() {
-        central.scanForPeripheralsWithServices(new UUID[]{HTS_SERVICE_UUID, PLX_SERVICE_UUID, BLP_SERVICE_UUID, HRS_SERVICE_UUID});
+        central.scanForPeripheralsWithServices(new UUID[]{WSS_SERVICE_UUID, HTS_SERVICE_UUID, PLX_SERVICE_UUID, BLP_SERVICE_UUID, HRS_SERVICE_UUID});
 //        central.scanForPeripheralsWithNames(new String[]{"Nonin"});
 //        central.scanForPeripheralsWithAddresses(new String[]{"C0:26:DF:01:F2:72"});
 //        central.scanForPeripherals();
 //
 //        BluetoothPeripheral peripheral = central.getPeripheral("C0:26:DF:01:F2:72");
+//        central.autoConnectPeripheral(peripheral, peripheralCallback);
 //        Map<BluetoothPeripheral, BluetoothPeripheralCallback> map = new HashMap<>();
 //        map.put(peripheral, peripheralCallback);
 //        central.autoConnectPeripheral(peripheral, peripheralCallback);

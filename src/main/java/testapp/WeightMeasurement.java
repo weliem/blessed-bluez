@@ -10,13 +10,12 @@ import static com.welie.blessed.BluetoothBytesParser.FORMAT_UINT16;
 import static com.welie.blessed.BluetoothBytesParser.FORMAT_UINT8;
 
 public class WeightMeasurement {
-    private double weight;
-    private WeightUnit unit;
+    private final double weight;
+    private final WeightUnit unit;
     private Date timestamp;
-    private int userID;
-    private int BMI;
-    private int height;
-    private boolean isIntermediate = false;
+    private Integer userID;
+    private Integer BMI;
+    private Integer height;
 
     public WeightMeasurement(byte[] byteArray) {
         BluetoothBytesParser parser = new BluetoothBytesParser(byteArray);
@@ -53,6 +52,6 @@ public class WeightMeasurement {
     public String toString() {
         DateFormat df = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
         String formattedTimestamp = df.format(timestamp);
-        return String.format("%.1f %s (%s) isIntermediate: %s", weight, unit == WeightUnit.Kilograms ? "kg" : "lb", formattedTimestamp, isIntermediate ? "Yes" : "No");
+        return String.format("%.1f %s, user %d, BMI %d, height %d at (%s)", weight, unit == WeightUnit.Kilograms ? "kg" : "lb", userID, BMI, height, formattedTimestamp);
     }
 }
