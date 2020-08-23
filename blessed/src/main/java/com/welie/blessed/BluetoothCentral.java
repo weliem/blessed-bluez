@@ -403,7 +403,7 @@ public class BluetoothCentral {
         }
 
         // Check if peripheral uuid filter is set
-        if (scanUUIDs.length > 0) {
+        if (scanUUIDs.length > 0 && scanResult.getUuids() != null) {
             Set<String> scanResultUUIDs = new HashSet<>(Arrays.asList(scanResult.getUuids()));
             for (String uuid : scanUUIDs) {
                 if (scanResultUUIDs.contains(uuid)) {
