@@ -586,6 +586,10 @@ public class BluetoothCentral {
         final String deviceAddress = bluezDevice.getAddress();
         if (deviceAddress == null) return;
 
+        // If if the properties are belonging to a scan
+        Set<String> keys = propertiesChanged.keySet();
+        if (!(keys.contains(PROPERTY_RSSI) || keys.contains(PROPERTY_MANUFACTURER_DATA) || keys.contains(PROPERTY_SERVICE_DATA))) return;
+
         // See if we have a cached scanResult, if not create a new one
         ScanResult scanResult = getScanResult(deviceAddress);
         if (scanResult == null) {
@@ -594,7 +598,6 @@ public class BluetoothCentral {
         }
 
         // Update the scanResult
-        Set<String> keys = propertiesChanged.keySet();
         if (keys.contains(PROPERTY_RSSI)) {
             scanResult.setRssi((Short) propertiesChanged.get(PROPERTY_RSSI).getValue());
         }
