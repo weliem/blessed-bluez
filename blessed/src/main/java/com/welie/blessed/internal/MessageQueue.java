@@ -1,6 +1,5 @@
 package com.welie.blessed.internal;
 
-import com.welie.blessed.internal.Message;
 
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
@@ -10,8 +9,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 class MessageQueue {
 
     private static final Object BLOCK = new Object();
-    private BlockingQueue<Message> messageBlockingQueue = new LinkedBlockingQueue<>();
-    private Map<Runnable, List<Thread>> runnableListMap = new ConcurrentHashMap<>();
+    private final BlockingQueue<Message> messageBlockingQueue = new LinkedBlockingQueue<>();
+    private final Map<Runnable, List<Thread>> runnableListMap = new ConcurrentHashMap<>();
 
     boolean enqueueMessage(Message msgToQueue) {
         cleanUpThreads();
@@ -26,7 +25,7 @@ class MessageQueue {
                 messageBlockingQueue.put(msgToQueue);
 
 
-            } catch (InterruptedException exception) {
+            } catch (InterruptedException ignored) {
 
             }
         }, this.getClass().getSimpleName() + "-" + "enqueueMessage");
@@ -43,8 +42,7 @@ class MessageQueue {
     }
 
     Message getNext() throws InterruptedException {
-        Message lcMessage = messageBlockingQueue.take();
-        return lcMessage;
+        return messageBlockingQueue.take();
     }
 
     private void cleanUpThreads() {

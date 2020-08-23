@@ -1,5 +1,7 @@
 package com.welie.blessed;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Arrays;
 import java.util.Map;
 
@@ -7,7 +9,7 @@ import static com.welie.blessed.BluetoothBytesParser.bytes2String;
 
 @SuppressWarnings("unused")
 public class ScanResult {
-    private final long timestampNanos;
+    private long timestampNanos;
     private final String name;
     private final String address;
     private final String[] uuids;
@@ -15,14 +17,14 @@ public class ScanResult {
     private Map<Integer, byte[]> manufacturerData;
     private Map<String, byte[]> serviceData;
 
-    public ScanResult(String deviceName, String deviceAddress, String[] uuids, int rssi, Map<Integer, byte[]> manufacturerData, Map<String, byte[]> serviceData) {
-        this.timestampNanos = System.nanoTime();
+    public ScanResult(String deviceName, @NotNull String deviceAddress, String[] uuids, int rssi, Map<Integer, byte[]> manufacturerData, Map<String, byte[]> serviceData) {
         this.name = deviceName;
         this.address = deviceAddress;
         this.uuids = uuids;
         this.rssi = rssi;
         setManufacturerData(manufacturerData);
         setServiceData(serviceData);
+        stamp();
     }
 
     public long getTimestampNanos() {
@@ -33,7 +35,7 @@ public class ScanResult {
         return name;
     }
 
-    public String getAddress() {
+    public @NotNull String getAddress() {
         return address;
     }
 
@@ -90,5 +92,9 @@ public class ScanResult {
         result.deleteCharAt(result.length() - 1);
         result.append("]");
         return result.toString();
+    }
+
+    public void stamp() {
+        this.timestampNanos = System.nanoTime();
     }
 }

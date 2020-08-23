@@ -5,11 +5,9 @@ import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.handlers.AbstractPropertiesChangedHandler;
 import org.freedesktop.dbus.interfaces.Properties;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
@@ -21,7 +19,7 @@ public class BluezSignalHandler {
     private DBusConnection dbusConnection;
     private final Handler handler = new Handler("BluezSignalHandler");
 
-    private final Map<String, BluetoothPeripheral> devicesMap = new ConcurrentHashMap<>();
+    private final Map<String, BluetoothPeripheral> peripheralsMap = new ConcurrentHashMap<>();
     private final List<BluetoothCentral> centralList = new ArrayList<>();
 
     static synchronized BluezSignalHandler createInstance(DBusConnection dbusConnection) {
@@ -44,18 +42,18 @@ public class BluezSignalHandler {
             // Make sure the propertiesChanged is not empty. Note that we also get called because of propertiesRemoved.
             if (propertiesChanged.getPropertiesChanged().isEmpty()) return;
 
-            handler.post(() -> {
-                // Send the signal to all centrals
-                for (BluetoothCentral central : centralList) {
-                    central.handleSignal(propertiesChanged);
-                }
+            // Send the signal to all centrals
+            for (BluetoothCentral central : centralList) {
+                central.handleSignal(propertiesChanged);
+            }
 
+            handler.post(() -> {
                 // If it came from a device, send it to the right peripheral
-                String path = propertiesChanged.getPath();
-                Set<String> devices = devicesMap.keySet();
-                for (String deviceAddress : devices) {
-                    if (path.contains(deviceAddress)) {
-                        devicesMap.get(deviceAddress).handleSignal(propertiesChanged);
+                final String path = propertiesChanged.getPath();
+                final Set<String> peripherals = peripheralsMap.keySet();
+                for (String peripheralAddress : peripherals) {
+                    if (path.contains(peripheralAddress)) {
+                        peripheralsMap.get(peripheralAddress).handleSignal(propertiesChanged);
                     }
                 }
             });
@@ -76,17 +74,23 @@ public class BluezSignalHandler {
         dbusConnection.addSigHandler(handler.getImplementationClass(), handler);
     }
 
-    void addDevice(String deviceAddress, BluetoothPeripheral peripheral) {
-        String deviceAddressString = deviceAddress.replace(":", "_");
-        devicesMap.put(deviceAddressString, peripheral);
+    void addPeripheral(@NotNull String peripheralAddress, @NotNull BluetoothPeripheral peripheral) {
+        Objects.requireNonNull(peripheralAddress, "no valid address provided");
+        Objects.requireNonNull(peripheral, "no valid peripheral provided");
+
+        String deviceAddressString = peripheralAddress.replace(":", "_");
+        peripheralsMap.put(deviceAddressString, peripheral);
     }
 
-    void removeDevice(String deviceAddress) {
-        String deviceAddressString = deviceAddress.replace(":", "_");
-        devicesMap.remove(deviceAddressString);
+    void removePeripheral(@NotNull String peripheralAddress) {
+        Objects.requireNonNull(peripheralAddress, "no valid address provided");
+
+        String deviceAddressString = peripheralAddress.replace(":", "_");
+        peripheralsMap.remove(deviceAddressString);
     }
 
-    void addCentral(BluetoothCentral central) {
+    void addCentral(@NotNull BluetoothCentral central) {
+        Objects.requireNonNull(central,"no valid central provided");
         centralList.add(central);
     }
 }

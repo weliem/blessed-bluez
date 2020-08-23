@@ -24,22 +24,26 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.welie.blessed.BluetoothPeripheral.*;
+import static java.lang.System.exit;
 
 /**
  * Represents a Bluetooth Central object
  */
 public class BluetoothCentral {
     private static final String TAG = BluetoothCentral.class.getSimpleName();
-    private final Logger logger = Logger.getLogger(TAG);
+    private final Logger logger = LoggerFactory.getLogger(TAG);
     private DBusConnection dbusConnection;
     private BluezAdapter adapter;
     private final BluetoothCentralCallback bluetoothCentralCallback;
     private final Handler callBackHandler;
     private final Handler timeoutHandler = new Handler(this.getClass().getSimpleName());
     private final Handler queueHandler = new Handler("CentralQueue");
+    private final Handler signalHandler = new Handler("CentralQueue-signal");
     private Runnable timeoutRunnable;
     private volatile boolean isScanning = false;
     private volatile boolean isPowered = false;
@@ -66,7 +70,7 @@ public class BluetoothCentral {
     private Set<String> scanOptions = new HashSet<>();
 
     private static final int ADDRESS_LENGTH = 17;
-    private static final short DISCOVERY_RSSI_THRESHOLD = -70;
+    private static final short DISCOVERY_RSSI_THRESHOLD = -80;
 
     // Scan in intervals. Make sure it is less than 10seconds to avoid issues with Bluez internal scanning
     private static final long SCAN_WINDOW = TimeUnit.SECONDS.toMillis(6);
@@ -77,6 +81,7 @@ public class BluetoothCentral {
     private static final String PROPERTY_POWERED = "Powered";
 
     // Bluez interface names
+    private static final String BLUEZ_PATH = "/org/bluez";
     private static final String BLUEZ_ADAPTER_INTERFACE = "org.bluez.Adapter1";
 
     private static final String ENQUEUE_ERROR = "ERROR: Could not enqueue stop scanning command";
@@ -177,14 +182,14 @@ public class BluetoothCentral {
      * @param bluetoothCentralCallback the callback to call for updates
      */
     public BluetoothCentral(@NotNull BluetoothCentralCallback bluetoothCentralCallback, @Nullable Set<String> scanOptions) {
-        this.bluetoothCentralCallback = bluetoothCentralCallback;
+        this.bluetoothCentralCallback = Objects.requireNonNull(bluetoothCentralCallback, "no valid bluetoothCallback provided");
         this.callBackHandler = new Handler("Central-callBackHandler");
         if (scanOptions != null) this.scanOptions = scanOptions;
 
         try {
             // Connect to the DBus
             dbusConnection = DBusConnection.newConnection(DBusConnection.DBusBusType.SYSTEM);
-            chooseAdapter();
+            if (!chooseAdapter()) exit(0);
             setupPairingAgent();
             BluezSignalHandler.createInstance(dbusConnection).addCentral(this);
             registerInterfaceAddedHandler(interfacesAddedHandler);
@@ -195,7 +200,7 @@ public class BluetoothCentral {
 
     private boolean chooseAdapter() {
         // Find all adapters and pick one if there are more than one
-        List<BluezAdapter> adapters = scanForBluetoothAdapters();
+        List<BluezAdapter> adapters = findBluetoothAdapters();
         if (!adapters.isEmpty()) {
             logger.info(String.format("found %d bluetooth adapter(s)", adapters.size()));
 
@@ -209,10 +214,10 @@ public class BluetoothCentral {
                 logger.info("adapter not on, so turning it on now");
                 adapterOn();
             }
-        } else {
-            logger.severe("no bluetooth adaptors found");
             return true;
         }
+
+        logger.error("no bluetooth adaptors found");
         return false;
     }
 
@@ -287,7 +292,14 @@ public class BluetoothCentral {
      * @param serviceUUIDs an array of service UUIDs
      */
     @SuppressWarnings("unused")
-    public void scanForPeripheralsWithServices(final UUID[] serviceUUIDs) {
+    public void scanForPeripheralsWithServices(@NotNull final UUID[] serviceUUIDs) {
+        Objects.requireNonNull(serviceUUIDs, "no service UUIDs supplied");
+
+        // Make sure there is at least 1 service UUID in the list
+        if (serviceUUIDs.length == 0) {
+            throw new IllegalArgumentException("at least one service UUID  must be supplied");
+        }
+
         initScanFilters();
         scanUUIDs = convertUUIDArrayToStringArray(serviceUUIDs);
         normalScanActive = true;
@@ -302,7 +314,14 @@ public class BluetoothCentral {
      * @param peripheralNames array of partial peripheral names
      */
     @SuppressWarnings("unused")
-    public void scanForPeripheralsWithNames(final String[] peripheralNames) {
+    public void scanForPeripheralsWithNames(@NotNull final String[] peripheralNames) {
+        Objects.requireNonNull(peripheralNames, "no peripheral names supplied");
+
+        // Make sure there is at least 1 peripheral name in the list
+        if (peripheralNames.length == 0) {
+            throw new IllegalArgumentException("at least one peripheral name must be supplied");
+        }
+
         initScanFilters();
         scanPeripheralNames = peripheralNames;
         normalScanActive = true;
@@ -315,7 +334,14 @@ public class BluetoothCentral {
      * @param peripheralAddresses array of peripheral mac addresses to scan for
      */
     @SuppressWarnings("unused")
-    public void scanForPeripheralsWithAddresses(final String[] peripheralAddresses) {
+    public void scanForPeripheralsWithAddresses(@NotNull final String[] peripheralAddresses) {
+        Objects.requireNonNull(peripheralAddresses, "no peripheral addresses supplied");
+
+        // Make sure there is at least 1 filter in the list
+        if (peripheralAddresses.length == 0) {
+            throw new IllegalArgumentException("at least one peripheral address must be supplied");
+        }
+
         initScanFilters();
         scanPeripheralAddresses = peripheralAddresses;
         normalScanActive = true;
@@ -391,7 +417,7 @@ public class BluetoothCentral {
         return false;
     }
 
-    private void onFoundReconnectionPeripheral(BluetoothPeripheral peripheral) {
+    private void onFoundReconnectionPeripheral(final BluetoothPeripheral peripheral) {
         final String peripheralAddress = peripheral.getAddress();
         final BluetoothPeripheralCallback peripheralCallback = reconnectCallbacks.get(peripheralAddress);
 
@@ -406,7 +432,9 @@ public class BluetoothCentral {
         // Make sure we have a valid BluezDevice object and refresh the name
         if (peripheral.device == null) {
             peripheral.device = getDeviceByAddress(adapter, peripheralAddress);
-            peripheral.deviceName = peripheral.device.getName();
+            if (peripheral.device != null) {
+                peripheral.deviceName = peripheral.device.getName();
+            }
         }
 
         connectPeripheral(peripheral, peripheralCallback);
@@ -419,7 +447,7 @@ public class BluetoothCentral {
         }
     }
 
-    private void onScanResult(BluetoothPeripheral peripheral, ScanResult scanResult) {
+    private void onScanResult(final BluetoothPeripheral peripheral, final ScanResult scanResult) {
         // Check first if we are autoconnecting to this peripheral
         if (reconnectPeripheralAddresses.contains(scanResult.getAddress())) {
             onFoundReconnectionPeripheral(peripheral);
@@ -434,9 +462,10 @@ public class BluetoothCentral {
 
             callBackHandler.post(() -> {
                 if (bluetoothCentralCallback != null) {
+                    scanResult.stamp();
                     bluetoothCentralCallback.onDiscoveredPeripheral(peripheral, scanResult);
                 } else {
-                    logger.severe("bluetoothCentralCallback is null");
+                    logger.error("bluetoothCentralCallback is null");
                 }
             });
         }
@@ -444,17 +473,17 @@ public class BluetoothCentral {
 
     private final AbstractInterfacesAddedHandler interfacesAddedHandler = new AbstractInterfacesAddedHandler() {
         @Override
-        public void handle(ObjectManager.InterfacesAdded interfacesAdded) {
+        public void handle(final ObjectManager.InterfacesAdded interfacesAdded) {
             final String path = interfacesAdded.getPath();
             interfacesAdded.getInterfaces().forEach((key, value) -> {
                 if (key.equalsIgnoreCase(BLUEZ_DEVICE_INTERFACE)) {
-                    handleInterfaceAddedForDevice(path, value);
+                    signalHandler.post(() -> handleInterfaceAddedForDevice(path, value));
                 }
             });
         }
     };
 
-    private void handleInterfaceAddedForDevice(String path, Map<String, Variant<?>> value) {
+    private void handleInterfaceAddedForDevice(@NotNull final String path, @NotNull Map<String, Variant<?>> value) {
         final String deviceAddress;
         final String deviceName;
         final int rssi;
@@ -491,7 +520,7 @@ public class BluetoothCentral {
         if ((value.get(PROPERTY_RSSI) != null) && (value.get(PROPERTY_RSSI).getValue() instanceof Short)) {
             rssi = (Short) value.get(PROPERTY_RSSI).getValue();
         } else {
-            rssi = -100;
+            rssi = DISCOVERY_RSSI_THRESHOLD;
         }
 
         // Convert the service UUIDs
@@ -525,7 +554,7 @@ public class BluetoothCentral {
 
     private final AbstractPropertiesChangedHandler propertiesChangedHandler = new AbstractPropertiesChangedHandler() {
         @Override
-        public void handle(Properties.PropertiesChanged propertiesChanged) {
+        public void handle(final Properties.PropertiesChanged propertiesChanged) {
             switch (propertiesChanged.getInterfaceName()) {
                 case BLUEZ_DEVICE_INTERFACE:
                     // If we are not scanning, we ignore device propertiesChanged
@@ -546,58 +575,60 @@ public class BluetoothCentral {
         }
     };
 
-    void handleSignal(Properties.PropertiesChanged propertiesChanged) {
-        propertiesChangedHandler.handle(propertiesChanged);
+    void handleSignal(@NotNull final Properties.PropertiesChanged propertiesChanged) {
+        signalHandler.post(() -> propertiesChangedHandler.handle(propertiesChanged));
     }
 
-    private void handlePropertiesChangedForDeviceWhenScanning(@NotNull BluezDevice bluezDevice, Map<String, Variant<?>> propertiesChanged) {
+    @SuppressWarnings("unchecked")
+    private void handlePropertiesChangedForDeviceWhenScanning(@NotNull BluezDevice bluezDevice, @NotNull Map<String, Variant<?>> propertiesChanged) {
+        Objects.requireNonNull(bluezDevice, "no valid bluezDevice supplied");
+        Objects.requireNonNull(propertiesChanged, "no valid propertieschanged supplied");
         final String deviceAddress = bluezDevice.getAddress();
+        if (deviceAddress == null) return;
+
+        // See if we have a cached scanResult, if not create a new one
         ScanResult scanResult = getScanResult(deviceAddress);
-
-        // See if we have a cached scanResult
         if (scanResult == null) {
-            // Create initial scanResult
-            final String deviceName;
-            final String[] serviceUUIDs;
-            final int rssi;
-            final Map<Integer, byte[]> manufacturerData;
-            final Map<String, byte[]> serviceData;
-            try {
-                deviceName = bluezDevice.getName();
-                serviceUUIDs = bluezDevice.getUuids();
-                rssi = bluezDevice.getRssi();
-                manufacturerData = bluezDevice.getManufacturerData();
-                serviceData = bluezDevice.getServiceData();
-            } catch (Exception e) {
-                return;
-            }
-
-            scanResult = new ScanResult(deviceName, deviceAddress, serviceUUIDs, rssi, manufacturerData, serviceData);
+            scanResult = getScanResultFromDevice(bluezDevice);
             scanResultCache.put(deviceAddress, scanResult);
-        } else {
-            // Update the scanResult
-            Set<String> keys = propertiesChanged.keySet();
-            if (keys.contains(PROPERTY_RSSI)) {
-                scanResult.setRssi((Short) propertiesChanged.get(PROPERTY_RSSI).getValue());
-            }
+        }
 
-            if (keys.contains(PROPERTY_MANUFACTURER_DATA)) {
-                final Map<Integer, byte[]> manufacturerData = new HashMap<>();
-                final DBusMap<UInt16, Variant<byte[]>> mdata = (DBusMap) propertiesChanged.get(PROPERTY_MANUFACTURER_DATA).getValue();
-                mdata.forEach((k, v) -> manufacturerData.put(k.intValue(), v.getValue()));
-                scanResult.setManufacturerData(manufacturerData);
-            }
+        // Update the scanResult
+        Set<String> keys = propertiesChanged.keySet();
+        if (keys.contains(PROPERTY_RSSI)) {
+            scanResult.setRssi((Short) propertiesChanged.get(PROPERTY_RSSI).getValue());
+        }
 
-            if (keys.contains(PROPERTY_SERVICE_DATA)) {
-                final Map<String, byte[]> serviceData = new HashMap<>();
-                final DBusMap<String, Variant<byte[]>> sdata = (DBusMap) propertiesChanged.get(PROPERTY_SERVICE_DATA).getValue();
-                sdata.forEach((k, v) -> serviceData.put(k, v.getValue()));
-                scanResult.setServiceData(serviceData);
-            }
+        if (keys.contains(PROPERTY_MANUFACTURER_DATA)) {
+            final Map<Integer, byte[]> manufacturerData = new HashMap<>();
+            final DBusMap<UInt16, Variant<byte[]>> mdata = (DBusMap<UInt16, Variant<byte[]>>) propertiesChanged.get(PROPERTY_MANUFACTURER_DATA).getValue();
+            mdata.forEach((k, v) -> manufacturerData.put(k.intValue(), v.getValue()));
+            scanResult.setManufacturerData(manufacturerData);
+        }
+
+        if (keys.contains(PROPERTY_SERVICE_DATA)) {
+            final Map<String, byte[]> serviceData = new HashMap<>();
+            final DBusMap<String, Variant<byte[]>> sdata = (DBusMap<String, Variant<byte[]>>) propertiesChanged.get(PROPERTY_SERVICE_DATA).getValue();
+            sdata.forEach((k, v) -> serviceData.put(k, v.getValue()));
+            scanResult.setServiceData(serviceData);
         }
 
         final BluetoothPeripheral peripheral = getPeripheral(deviceAddress);
         onScanResult(peripheral, scanResult);
+    }
+
+    @NotNull
+    private ScanResult getScanResultFromDevice(@NotNull BluezDevice bluezDevice) {
+        Objects.requireNonNull(bluezDevice, "no valid bluezDevice supplied");
+
+        final String deviceName = bluezDevice.getName();
+        final String deviceAddress = bluezDevice.getAddress();
+        final String[] uuids = bluezDevice.getUuids();
+        final Short rssi = bluezDevice.getRssi();
+        final int rssiInt = rssi == null ? DISCOVERY_RSSI_THRESHOLD : rssi;
+        final Map<Integer, byte[]> manufacturerData = bluezDevice.getManufacturerData();
+        final Map<String, byte[]> serviceData = bluezDevice.getServiceData();
+        return new ScanResult(deviceName, deviceAddress, uuids, rssiInt, manufacturerData, serviceData);
     }
 
     private void handlePropertiesChangedForAdapter(String propertyName, Variant<?> value) {
@@ -614,7 +645,7 @@ public class BluetoothCentral {
                     scanResultCache.clear();
                 }
                 if (currentCommand.equalsIgnoreCase(PROPERTY_DISCOVERING)) {
-                    callBackHandler.postDelayed(this::completedCommand, 300L);
+                    callBackHandler.postDelayed(this::completedCommand, 100L);
                 }
                 break;
             case PROPERTY_POWERED:
@@ -622,7 +653,7 @@ public class BluetoothCentral {
                 logger.info(String.format("powered %s", isPowered ? "on" : "off"));
 
                 if (currentCommand.equalsIgnoreCase(PROPERTY_POWERED)) {
-                    callBackHandler.postDelayed(this::completedCommand, 200L);
+                    callBackHandler.postDelayed(this::completedCommand, 100L);
                 }
                 break;
             default:
@@ -669,8 +700,8 @@ public class BluetoothCentral {
             try {
                 setScanFilter(scanFilters);
             } catch (BluezInvalidArgumentsException | BluezNotReadyException | BluezFailedException | BluezNotSupportedException e) {
-                logger.severe("Error setting scan filer");
-                logger.severe(e.toString());
+                logger.error("Error setting scan filer");
+                logger.error(e.toString());
             }
 
             // Start the discovery
@@ -680,15 +711,15 @@ public class BluetoothCentral {
                 adapter.startDiscovery();
                 startScanTimer();
             } catch (BluezFailedException e) {
-                logger.severe("Could not start discovery (failed)");
+                logger.error("Could not start discovery (failed)");
                 completedCommand();
             } catch (BluezNotReadyException e) {
-                logger.severe("Could not start discovery (not ready)");
+                logger.error("Could not start discovery (not ready)");
                 completedCommand();
             } catch (DBusExecutionException e) {
                 // Still need to see what this could be
-                logger.severe("Error starting scanner");
-                logger.severe(e.getMessage());
+                logger.error("Error starting scanner");
+                logger.error(e.getMessage());
                 completedCommand();
             }
         });
@@ -696,7 +727,7 @@ public class BluetoothCentral {
         if (result) {
             nextCommand();
         } else {
-            logger.severe(ENQUEUE_ERROR);
+            logger.error(ENQUEUE_ERROR);
         }
 
     }
@@ -725,23 +756,23 @@ public class BluetoothCentral {
                 cancelTimeoutTimer();
                 adapter.stopDiscovery();
             } catch (BluezNotReadyException e) {
-                logger.severe("Could not stop discovery (not ready)");
+                logger.error("Could not stop discovery (not ready)");
                 completedCommand();
             } catch (BluezFailedException e) {
-                logger.severe("Could not stop discovery (failed)");
+                logger.error("Could not stop discovery (failed)");
                 completedCommand();
             } catch (BluezNotAuthorizedException e) {
-                logger.severe("Could not stop discovery (not authorized)");
+                logger.error("Could not stop discovery (not authorized)");
                 completedCommand();
             } catch (DBusExecutionException e) {
                 // Usually this is the exception "No discovery started"
-                logger.severe(e.getMessage());
+                logger.error(e.getMessage());
                 if (e.getMessage().equalsIgnoreCase("No discovery started")) {
-                    logger.severe("Could not stop scan, because we are not scanning!");
+                    logger.error("Could not stop scan, because we are not scanning!");
                     isStoppingScan = false;
                     isScanning = false;   // This shouldn't be needed but seems it is...
                 } else if (e.getMessage().equalsIgnoreCase("Operation already in progress")) {
-                    logger.severe("a stopDiscovery is in progress");
+                    logger.error("a stopDiscovery is in progress");
                 }
                 completedCommand();
             }
@@ -750,10 +781,9 @@ public class BluetoothCentral {
         if (result) {
             nextCommand();
         } else {
-            logger.severe(ENQUEUE_ERROR);
+            logger.error(ENQUEUE_ERROR);
         }
     }
-
 
 
     private void startScanTimer() {
@@ -804,7 +834,7 @@ public class BluetoothCentral {
         if (result) {
             nextCommand();
         } else {
-            logger.severe(ENQUEUE_ERROR);
+            logger.error(ENQUEUE_ERROR);
         }
     }
 
@@ -829,7 +859,7 @@ public class BluetoothCentral {
         if (result) {
             nextCommand();
         } else {
-            logger.severe(ENQUEUE_ERROR);
+            logger.error(ENQUEUE_ERROR);
         }
     }
 
@@ -840,29 +870,26 @@ public class BluetoothCentral {
      * @param peripheral         BLE peripheral to connect with
      * @param peripheralCallback the peripheral callback to use
      */
-    public void connectPeripheral(final BluetoothPeripheral peripheral, final BluetoothPeripheralCallback peripheralCallback) {
-        // Make sure peripheral is valid
-        if (peripheral == null) {
-            logger.info("no valid peripheral specified, aborting connection");
-            return;
-        }
+    public void connectPeripheral(@NotNull final BluetoothPeripheral peripheral, @NotNull final BluetoothPeripheralCallback peripheralCallback) {
+        Objects.requireNonNull(peripheral, "no valid peripheral specified");
+        Objects.requireNonNull(peripheralCallback, "no valid peripheral callback specified");
         peripheral.setPeripheralCallback(peripheralCallback);
 
         // Check if we are already connected
         if (connectedPeripherals.containsKey(peripheral.getAddress())) {
-            logger.warning(String.format("WARNING: Already connected to %s'", peripheral.getAddress()));
+            logger.warn(String.format("WARNING: Already connected to %s'", peripheral.getAddress()));
             return;
         }
 
         // Check if we already have an outstanding connection request for this peripheral
         if (unconnectedPeripherals.containsKey(peripheral.getAddress())) {
-            logger.warning(String.format("WARNING: Already connecting to %s'", peripheral.getAddress()));
+            logger.warn(String.format("WARNING: Already connecting to %s'", peripheral.getAddress()));
             return;
         }
 
         // Make sure we have BluezDevice
         if (peripheral.device == null) {
-            logger.warning(String.format("WARNING: Peripheral '%s' doesn't have Bluez device", peripheral.getAddress()));
+            logger.warn(String.format("WARNING: Peripheral '%s' doesn't have Bluez device", peripheral.getAddress()));
             return;
         }
 
@@ -879,7 +906,7 @@ public class BluetoothCentral {
         if (result) {
             nextCommand();
         } else {
-            logger.severe(ENQUEUE_ERROR);
+            logger.error(ENQUEUE_ERROR);
         }
     }
 
@@ -892,6 +919,9 @@ public class BluetoothCentral {
      */
     @SuppressWarnings("UnusedReturnValue,unused")
     public boolean autoConnectPeripheral(@NotNull BluetoothPeripheral peripheral, @NotNull BluetoothPeripheralCallback peripheralCallback) {
+        Objects.requireNonNull(peripheral, "no valid peripheral specified");
+        Objects.requireNonNull(peripheralCallback, "no valid peripheral callback specified");
+
         final String peripheralAddress = peripheral.getAddress();
         if (reconnectPeripheralAddresses.contains(peripheralAddress)) return false;
 
@@ -899,6 +929,7 @@ public class BluetoothCentral {
         reconnectCallbacks.put(peripheralAddress, peripheralCallback);
         unconnectedPeripherals.put(peripheralAddress, peripheral);
 
+        logger.info(String.format("autoconnect to %s", peripheralAddress));
         startAutoConnectScan();
         return true;
     }
@@ -911,7 +942,9 @@ public class BluetoothCentral {
      * @param batch the map of peripherals and their callbacks to autoconnect to
      */
     @SuppressWarnings("unused")
-    public void autoConnectPeripheralsBatch(Map<BluetoothPeripheral, BluetoothPeripheralCallback> batch) {
+    public void autoConnectPeripheralsBatch(@NotNull Map<BluetoothPeripheral, BluetoothPeripheralCallback> batch) {
+        Objects.requireNonNull(batch, "no valid batch provided");
+
         for (Map.Entry<BluetoothPeripheral, BluetoothPeripheralCallback> entry : batch.entrySet()) {
             String peripheralAddress = entry.getKey().getAddress();
             reconnectPeripheralAddresses.add(peripheralAddress);
@@ -938,8 +971,8 @@ public class BluetoothCentral {
      * @param peripheral the peripheral
      */
     @SuppressWarnings("unused")
-    public void cancelConnection(final BluetoothPeripheral peripheral) {
-        if (peripheral == null) return;
+    public void cancelConnection(@NotNull final BluetoothPeripheral peripheral) {
+        Objects.requireNonNull(peripheral, "no valid peripheral specified");
 
         if (peripheral.getState() == STATE_CONNECTED) {
             // Some adapters have issues with (dis)connecting while scanning, so stop scan first
@@ -955,7 +988,7 @@ public class BluetoothCentral {
             if (result) {
                 nextCommand();
             } else {
-                logger.severe(ENQUEUE_ERROR);
+                logger.error(ENQUEUE_ERROR);
             }
             return;
         }
@@ -979,7 +1012,10 @@ public class BluetoothCentral {
      *
      * @param peripheralAddress the address of the peripheral
      */
-    public boolean removeBond(String peripheralAddress) {
+    @SuppressWarnings("unused")
+    public boolean removeBond(@NotNull String peripheralAddress) {
+        Objects.requireNonNull(peripheralAddress, "no peripheral address provided");
+
         BluezDevice bluezDevice = getDeviceByAddress(adapter, peripheralAddress);
         if (bluezDevice == null) return false;
         return removeDevice(bluezDevice);
@@ -991,7 +1027,7 @@ public class BluetoothCentral {
      * @return list of connected peripherals
      */
     @SuppressWarnings("unused")
-    public List<BluetoothPeripheral> getConnectedPeripherals() {
+    public @NotNull List<BluetoothPeripheral> getConnectedPeripherals() {
         return new ArrayList<>(connectedPeripherals.values());
     }
 
@@ -1001,11 +1037,12 @@ public class BluetoothCentral {
      * @param peripheralAddress mac address
      * @return a BluetoothPeripheral object matching the specified mac address or null if it was not found
      */
-    @SuppressWarnings("unused")
-    public BluetoothPeripheral getPeripheral(String peripheralAddress) {
+    public @NotNull BluetoothPeripheral getPeripheral(@NotNull String peripheralAddress) {
+        Objects.requireNonNull(peripheralAddress, "no valid peripheral address provided");
+
         if (!checkBluetoothAddress(peripheralAddress)) {
-            logger.severe(String.format("%s is not a valid address. Make sure all alphabetic characters are uppercase.", peripheralAddress));
-            return null;
+            String message = String.format("%s is not a valid address. Make sure all alphabetic characters are uppercase.", peripheralAddress);
+            throw new IllegalArgumentException(message);
         }
 
         if (scannedPeripherals.containsKey(peripheralAddress)) {
@@ -1022,7 +1059,7 @@ public class BluetoothCentral {
         }
     }
 
-    private ScanResult getScanResult(String peripheralAddress) {
+    private @Nullable ScanResult getScanResult(@NotNull String peripheralAddress) {
         return scanResultCache.get(peripheralAddress);
     }
 
@@ -1037,19 +1074,17 @@ public class BluetoothCentral {
      * @return true if the pin code and peripheral address are valid and stored internally
      */
     @SuppressWarnings("unused")
-    public boolean setPinCodeForPeripheral(String peripheralAddress, String pin) {
-        if (!checkBluetoothAddress(peripheralAddress)) {
-            logger.severe(String.format("%s is not a valid address. Make sure all alphabetic characters are uppercase.", peripheralAddress));
-            return false;
-        }
+    public boolean setPinCodeForPeripheral(@NotNull String peripheralAddress, @NotNull String pin) {
+        Objects.requireNonNull(peripheralAddress, "no peripheral address provided");
+        Objects.requireNonNull(pin, "no pin provided");
 
-        if (pin == null) {
-            logger.severe("pin code is null");
+        if (!checkBluetoothAddress(peripheralAddress)) {
+            logger.error(String.format("%s is not a valid address. Make sure all alphabetic characters are uppercase.", peripheralAddress));
             return false;
         }
 
         if (pin.length() != 6) {
-            logger.severe(String.format("%s is not 6 digits long", pin));
+            logger.error(String.format("%s is not 6 digits long", pin));
             return false;
         }
 
@@ -1120,8 +1155,8 @@ public class BluetoothCentral {
                     try {
                         bluetoothCommand.run();
                     } catch (Exception ex) {
-                        logger.warning("ERROR: Command exception for central");
-                        logger.warning(ex.getMessage());
+                        logger.warn("ERROR: Command exception for central");
+                        logger.warn(ex.getMessage());
                         completedCommand();
                     }
                 });
@@ -1129,14 +1164,14 @@ public class BluetoothCentral {
         }
     }
 
-    private @NotNull List<BluezAdapter> scanForBluetoothAdapters() {
+    private @NotNull List<BluezAdapter> findBluetoothAdapters() {
         final Map<String, BluezAdapter> bluetoothAdaptersByAdapterName = new LinkedHashMap<>();
 
-        Set<String> scanObjectManager = DbusHelper.findNodes(dbusConnection, "/org/bluez");
-        for (String hci : scanObjectManager) {
-            Adapter1 adapter1 = DbusHelper.getRemoteObject(dbusConnection, "/org/bluez/" + hci, Adapter1.class);
+        Set<String> nodes = DbusHelper.findNodes(dbusConnection, BLUEZ_PATH);
+        for (String hci : nodes) {
+            Adapter1 adapter1 = DbusHelper.getRemoteObject(dbusConnection, BLUEZ_PATH + "/" + hci, Adapter1.class);
             if (adapter1 != null) {
-                BluezAdapter bluetoothAdapter = new BluezAdapter(adapter1, "/org/bluez/" + hci, dbusConnection);
+                BluezAdapter bluetoothAdapter = new BluezAdapter(adapter1, BLUEZ_PATH + "/" + hci, dbusConnection);
                 bluetoothAdaptersByAdapterName.put(hci, bluetoothAdapter);
             }
         }
@@ -1189,8 +1224,8 @@ public class BluetoothCentral {
                 return true;
             }
             return false;
-        } catch (BluezFailedException | BluezInvalidArgumentsException e) {
-            logger.severe("Error removing device");
+        } catch (Exception e) {
+            logger.error("Error removing device");
             return false;
         }
     }
