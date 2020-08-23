@@ -53,6 +53,10 @@ public class BluetoothHandler {
     private static final UUID PLX_SPOT_MEASUREMENT_CHAR_UUID = UUID.fromString("00002a5e-0000-1000-8000-00805f9b34fb");
     private static final UUID PLX_CONTINUOUS_MEASUREMENT_CHAR_UUID = UUID.fromString("00002a5f-0000-1000-8000-00805f9b34fb");
 
+    // UUIDs for the Weight Scale Service (WSS)
+    public static final UUID WSS_SERVICE_UUID = UUID.fromString("0000181D-0000-1000-8000-00805f9b34fb");
+    private static final UUID WSS_MEASUREMENT_CHAR_UUID = UUID.fromString("00002A9D-0000-1000-8000-00805f9b34fb");
+
     private final BluetoothPeripheralCallback peripheralCallback = new BluetoothPeripheralCallback() {
         @Override
         public void onServicesDiscovered(@NotNull BluetoothPeripheral peripheral) {
@@ -118,6 +122,14 @@ public class BluetoothHandler {
                     peripheral.setNotify(heartrateCharacteristic, true);
                 }
             }
+
+            // Turn on notification for Weight Scale Service
+            if (peripheral.getService(WSS_SERVICE_UUID) != null) {
+                BluetoothGattCharacteristic weightCharacteristic = peripheral.getCharacteristic(WSS_SERVICE_UUID, WSS_MEASUREMENT_CHAR_UUID);
+                if (weightCharacteristic != null) {
+                    peripheral.setNotify(weightCharacteristic, true);
+                }
+            }
         }
 
         @Override
@@ -167,6 +179,9 @@ public class BluetoothHandler {
                 startDisconnectTimer(peripheral);
             } else if (characteristicUUID.equals(HEARTRATE_MEASUREMENT_CHARACTERISTIC_UUID)) {
                 HeartRateMeasurement measurement = new HeartRateMeasurement(value);
+                logger.info(measurement.toString());
+            } else if (characteristicUUID.equals(WSS_MEASUREMENT_CHAR_UUID)) {
+                WeightMeasurement measurement = new WeightMeasurement(value);
                 logger.info(measurement.toString());
             } else if (characteristicUUID.equals(CURRENT_TIME_CHARACTERISTIC_UUID)) {
                 Date currentTime = parser.getDateTime();
