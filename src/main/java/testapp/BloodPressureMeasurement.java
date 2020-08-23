@@ -11,7 +11,6 @@ import static com.welie.blessed.BluetoothBytesParser.FORMAT_SFLOAT;
 import static com.welie.blessed.BluetoothBytesParser.FORMAT_UINT8;
 
 public class BloodPressureMeasurement implements Serializable {
-
     public Integer userID;
     public Float systolic;
     public Float diastolic;

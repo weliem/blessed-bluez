@@ -2,6 +2,7 @@ package testapp;
 
 
 import com.welie.blessed.BluetoothBytesParser;
+
 import static com.welie.blessed.BluetoothBytesParser.*;
 
 public class PulseOximeterContinuousMeasurement {
@@ -27,38 +28,38 @@ public class PulseOximeterContinuousMeasurement {
     public PulseOximeterContinuousMeasurement(byte[] value) {
         BluetoothBytesParser parser = new BluetoothBytesParser(value);
 
-         int flags = parser.getIntValue(FORMAT_UINT8);
-            boolean spo2FastPresent = (flags & 0x01) > 0;
-            boolean spo2SlowPresent = (flags & 0x02) > 0;
-            boolean measurementStatusPresent = (flags & 0x04) > 0;
-            boolean sensorStatusPresent = (flags & 0x08) > 0;
-            boolean pulseAmplitudeIndexPresent = (flags & 0x10) > 0;
+        int flags = parser.getIntValue(FORMAT_UINT8);
+        boolean spo2FastPresent = (flags & 0x01) > 0;
+        boolean spo2SlowPresent = (flags & 0x02) > 0;
+        boolean measurementStatusPresent = (flags & 0x04) > 0;
+        boolean sensorStatusPresent = (flags & 0x08) > 0;
+        boolean pulseAmplitudeIndexPresent = (flags & 0x10) > 0;
 
-            SpO2 = parser.getFloatValue(FORMAT_SFLOAT).intValue();
-            pulseRate = parser.getFloatValue(FORMAT_SFLOAT).intValue();
+        SpO2 = parser.getFloatValue(FORMAT_SFLOAT).intValue();
+        pulseRate = parser.getFloatValue(FORMAT_SFLOAT).intValue();
 
-            if (spo2FastPresent) {
-                SpO2Fast = parser.getFloatValue(FORMAT_SFLOAT).intValue();
-                pulseRateFast = parser.getFloatValue(FORMAT_SFLOAT).intValue();
-            }
+        if (spo2FastPresent) {
+            SpO2Fast = parser.getFloatValue(FORMAT_SFLOAT).intValue();
+            pulseRateFast = parser.getFloatValue(FORMAT_SFLOAT).intValue();
+        }
 
-            if (spo2SlowPresent) {
-                SpO2Slow = parser.getFloatValue(FORMAT_SFLOAT).intValue();
-                pulseRateSlow = parser.getFloatValue(FORMAT_SFLOAT).intValue();
-            }
+        if (spo2SlowPresent) {
+            SpO2Slow = parser.getFloatValue(FORMAT_SFLOAT).intValue();
+            pulseRateSlow = parser.getFloatValue(FORMAT_SFLOAT).intValue();
+        }
 
-            if (measurementStatusPresent) {
-                measurementStatus = parser.getIntValue(FORMAT_UINT16);
-            }
+        if (measurementStatusPresent) {
+            measurementStatus = parser.getIntValue(FORMAT_UINT16);
+        }
 
-            if (sensorStatusPresent) {
-                sensorStatus = parser.getIntValue(FORMAT_UINT16);
-                int reservedByte = parser.getIntValue(FORMAT_UINT8);
-            }
+        if (sensorStatusPresent) {
+            sensorStatus = parser.getIntValue(FORMAT_UINT16);
+            int reservedByte = parser.getIntValue(FORMAT_UINT8);
+        }
 
-            if (pulseAmplitudeIndexPresent) {
-                pulseAmplitudeIndex = parser.getFloatValue(FORMAT_SFLOAT);
-            }
+        if (pulseAmplitudeIndexPresent) {
+            pulseAmplitudeIndex = parser.getFloatValue(FORMAT_SFLOAT);
+        }
     }
 
     public int getSpO2() {

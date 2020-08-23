@@ -11,59 +11,49 @@ import java.util.Date;
 import static com.welie.blessed.BluetoothBytesParser.*;
 
 public class PulseOximeterSpotMeasurement {
-
-    private float spO2;
-
-    private float pulseRate;
-
+    private final float spO2;
+    private final float pulseRate;
     private float pulseAmplitudeIndex;
-
-    private boolean deviceClockSet;
-
+    private final boolean deviceClockSet;
     private Date timestamp;
-
     private int measurementStatus;
-
     private int sensorStatus;
 
     public PulseOximeterSpotMeasurement(byte[] value) {
         BluetoothBytesParser parser = new BluetoothBytesParser(value);
 
+        int flags = parser.getIntValue(FORMAT_UINT8);
+        boolean timestampPresent = (flags & 0x01) > 0;
+        boolean measurementStatusPresent = (flags & 0x02) > 0;
+        boolean sensorStatusPresent = (flags & 0x04) > 0;
+        boolean pulseAmplitudeIndexPresent = (flags & 0x08) > 0;
+        deviceClockSet = (flags & 0x10) == 0;
 
-            int flags = parser.getIntValue(FORMAT_UINT8);
-            boolean timestampPresent = (flags & 0x01) > 0;
-            boolean measurementStatusPresent = (flags & 0x02) > 0;
-            boolean sensorStatusPresent = (flags & 0x04) > 0;
-            boolean pulseAmplitudeIndexPresent = (flags & 0x08) > 0;
-            deviceClockSet = (flags & 0x10) == 0;
+        // Get SpO2 value
+        spO2 = parser.getFloatValue(FORMAT_SFLOAT);
 
-            // Get SpO2 value
-            spO2 = parser.getFloatValue(FORMAT_SFLOAT);
+        // Get pulse value
+        pulseRate = parser.getFloatValue(FORMAT_SFLOAT);
 
+        if (timestampPresent) {
+            Date timestamp = parser.getDateTime();
+            setTimestamp(timestamp);
+        } else {
+            setTimestamp(Calendar.getInstance().getTime());
+        }
 
-            // Get pulse value
-            pulseRate = parser.getFloatValue(FORMAT_SFLOAT);
+        if (measurementStatusPresent) {
+            measurementStatus = parser.getIntValue(FORMAT_UINT16);
+        }
 
+        if (sensorStatusPresent) {
+            sensorStatus = parser.getIntValue(FORMAT_UINT16);
+            int reservedByte = parser.getIntValue(FORMAT_UINT8);
+        }
 
-            if (timestampPresent) {
-                Date timestamp = parser.getDateTime();
-                setTimestamp(timestamp);
-            } else {
-                setTimestamp(Calendar.getInstance().getTime());
-            }
-
-            if (measurementStatusPresent) {
-                measurementStatus = parser.getIntValue(FORMAT_UINT16);
-            }
-
-            if (sensorStatusPresent) {
-                sensorStatus = parser.getIntValue(FORMAT_UINT16);
-                int reservedByte = parser.getIntValue(FORMAT_UINT8);
-            }
-
-            if (pulseAmplitudeIndexPresent) {
-                pulseAmplitudeIndex = parser.getFloatValue(FORMAT_SFLOAT);
-            }
+        if (pulseAmplitudeIndexPresent) {
+            pulseAmplitudeIndex = parser.getFloatValue(FORMAT_SFLOAT);
+        }
     }
 
     public float getSpO2() {
