@@ -302,4 +302,20 @@ public class BluetoothGattCharacteristic {
         }
         return null;
     }
+
+    public boolean supportsReading() {
+        return (properties & PROPERTY_READ) > 0;
+    }
+
+    public boolean supportsWritingWithResponse() {
+        return (properties & PROPERTY_WRITE) > 0;
+    }
+
+    public boolean supportsWritingWithoutResponse() {
+        return (properties & PROPERTY_WRITE_NO_RESPONSE) > 0;
+    }
+
+    public boolean supportsNotifying() {
+        return (((properties & PROPERTY_NOTIFY) > 0) || ((properties & PROPERTY_INDICATE) > 0));
+    }
 }
