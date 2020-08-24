@@ -1,7 +1,11 @@
 package com.welie.blessed;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -14,19 +18,19 @@ public class BluetoothGattService {
      * This applies to client applications only.
      *
      */
-    protected BluetoothPeripheral mDevice;
+    protected BluetoothPeripheral peripheral;
 
     /**
      * The UUID of this service.
      *
      */
-    protected UUID mUuid;
+    protected UUID uuid;
 
 
     /**
      * List of characteristics included in this service.
      */
-    protected List<BluetoothGattCharacteristic> mCharacteristics;
+    protected List<BluetoothGattCharacteristic> characteristics;
 
 
     /**
@@ -34,26 +38,28 @@ public class BluetoothGattService {
      *
      * @param uuid The UUID for this service
      */
-    public BluetoothGattService(UUID uuid) {
-        mDevice = null;
-        mUuid = uuid;
-        mCharacteristics = new ArrayList<BluetoothGattCharacteristic>();
+    public BluetoothGattService(@NotNull UUID uuid) {
+        Objects.requireNonNull(uuid, "no valid UUID supplied");
+        peripheral = null;
+        this.uuid = uuid;
+        characteristics = new ArrayList<>();
     }
 
     /**
      * Returns the device associated with this service.
      *
      */
-    BluetoothPeripheral getDevice() {
-        return mDevice;
+    @Nullable BluetoothPeripheral getPeripheral() {
+        return peripheral;
     }
 
     /**
      * Returns the device associated with this service.
      *
      */
-    void setDevice(BluetoothPeripheral device) {
-        mDevice = device;
+    void setPeripheral(@NotNull BluetoothPeripheral device) {
+        Objects.requireNonNull(device, "no valid peripheral specified");
+        peripheral = device;
     }
 
     /**
@@ -62,10 +68,10 @@ public class BluetoothGattService {
      * @param characteristic The characteristics to be added
      * @return true, if the characteristic was added to the service
      */
-    public boolean addCharacteristic(BluetoothGattCharacteristic characteristic) {
-        mCharacteristics.add(characteristic);
+    public boolean addCharacteristic(@NotNull BluetoothGattCharacteristic characteristic) {
+        Objects.requireNonNull(characteristic, "no valid characteristic supplied");
         characteristic.setService(this);
-        return true;
+        return characteristics.add(characteristic);
     }
 
     /**
@@ -73,8 +79,8 @@ public class BluetoothGattService {
      *
      * @return UUID of this service
      */
-    public UUID getUuid() {
-        return mUuid;
+    public @NotNull UUID getUuid() {
+        return uuid;
     }
 
     /**
@@ -82,8 +88,8 @@ public class BluetoothGattService {
      *
      * @return Characteristics included in this service
      */
-    public List<BluetoothGattCharacteristic> getCharacteristics() {
-        return mCharacteristics;
+    public @NotNull List<BluetoothGattCharacteristic> getCharacteristics() {
+        return characteristics;
     }
 
     /**
@@ -102,8 +108,10 @@ public class BluetoothGattService {
      * @return GATT characteristic object or null if no characteristic with the given UUID was
      * found.
      */
-    public BluetoothGattCharacteristic getCharacteristic(UUID uuid) {
-        for (BluetoothGattCharacteristic characteristic : mCharacteristics) {
+    public @Nullable BluetoothGattCharacteristic getCharacteristic(@NotNull UUID uuid) {
+        Objects.requireNonNull(uuid, "no valid uuid supplied");
+
+        for (BluetoothGattCharacteristic characteristic : characteristics) {
             if (uuid.equals(characteristic.getUuid())) {
                 return characteristic;
             }

@@ -1,5 +1,9 @@
 package com.welie.blessed;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -67,19 +71,19 @@ public class BluetoothGattDescriptor {
      * The UUID of this descriptor.
      *
      */
-    protected UUID mUuid;
+    protected UUID uuid;
 
     /**
      * Permissions for this descriptor
      *
      */
-    protected int mPermissions;
+    protected int permissions;
 
     /**
      * Back-reference to the characteristic this descriptor belongs to.
      *
      */
-    protected BluetoothGattCharacteristic mCharacteristic;
+    protected BluetoothGattCharacteristic characteristic;
 
     /**
      * Create a new BluetoothGattDescriptor.
@@ -87,14 +91,16 @@ public class BluetoothGattDescriptor {
      * @param uuid The UUID for this descriptor
      * @param permissions Permissions for this descriptor
      */
-    public BluetoothGattDescriptor(UUID uuid, int permissions) {
+    public BluetoothGattDescriptor(@NotNull UUID uuid, int permissions) {
+        Objects.requireNonNull(uuid, "no valid UUID supplied");
         initDescriptor(null, uuid, permissions);
     }
 
-    private void initDescriptor(BluetoothGattCharacteristic characteristic, UUID uuid, int permissions) {
-        mCharacteristic = characteristic;
-        mUuid = uuid;
-        mPermissions = permissions;
+    private void initDescriptor(BluetoothGattCharacteristic characteristic, @NotNull UUID uuid, int permissions) {
+        Objects.requireNonNull(uuid, "no valid UUID supplied");
+        this.characteristic = characteristic;
+        this.uuid = uuid;
+        this.permissions = permissions;
     }
 
 
@@ -103,16 +109,17 @@ public class BluetoothGattDescriptor {
      *
      * @return The characteristic.
      */
-    public BluetoothGattCharacteristic getCharacteristic() {
-        return mCharacteristic;
+    public @Nullable BluetoothGattCharacteristic getCharacteristic() {
+        return characteristic;
     }
 
     /**
      * Set the back-reference to the associated characteristic
      *
      */
-    void setCharacteristic(BluetoothGattCharacteristic characteristic) {
-        mCharacteristic = characteristic;
+    void setCharacteristic(@NotNull BluetoothGattCharacteristic characteristic) {
+        Objects.requireNonNull(characteristic, "no valid characteristic supplied");
+        this.characteristic = characteristic;
     }
 
     /**
@@ -120,8 +127,8 @@ public class BluetoothGattDescriptor {
      *
      * @return UUID of this descriptor
      */
-    public UUID getUuid() {
-        return mUuid;
+    public @NotNull UUID getUuid() {
+        return uuid;
     }
 
     /**
@@ -130,7 +137,7 @@ public class BluetoothGattDescriptor {
      * @return Permissions of this descriptor
      */
     public int getPermissions() {
-        return mPermissions;
+        return permissions;
     }
 
 }

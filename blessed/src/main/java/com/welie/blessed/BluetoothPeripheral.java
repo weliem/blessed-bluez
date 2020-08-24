@@ -1181,7 +1181,7 @@ public class BluetoothPeripheral {
 
         // Create HBService object
         BluetoothGattService hbService = new BluetoothGattService(UUID.fromString(service.getUuid()));
-        hbService.setDevice(this);
+        hbService.setPeripheral(this);
 
         // Get all characteristics for this service
         List<BluezGattCharacteristic> characteristics = service.getGattCharacteristics();
