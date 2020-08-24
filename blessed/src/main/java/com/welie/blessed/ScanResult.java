@@ -1,6 +1,7 @@
 package com.welie.blessed;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -17,7 +18,7 @@ public class ScanResult {
     private Map<Integer, byte[]> manufacturerData;
     private Map<String, byte[]> serviceData;
 
-    public ScanResult(String deviceName, @NotNull String deviceAddress, String[] uuids, int rssi, Map<Integer, byte[]> manufacturerData, Map<String, byte[]> serviceData) {
+    public ScanResult(@Nullable String deviceName, @NotNull String deviceAddress, @Nullable String[] uuids, int rssi, @Nullable Map<Integer, byte[]> manufacturerData, @Nullable Map<String, byte[]> serviceData) {
         this.name = deviceName;
         this.address = deviceAddress;
         this.uuids = uuids;
@@ -31,7 +32,7 @@ public class ScanResult {
         return timestampNanos;
     }
 
-    public String getName() {
+    public @Nullable String getName() {
         return name;
     }
 
@@ -39,15 +40,15 @@ public class ScanResult {
         return address;
     }
 
-    public String[] getUuids() {
+    public @Nullable String[] getUuids() {
         return uuids;
     }
 
-    public Map<Integer, byte[]> getManufacturerData() {
+    public @Nullable Map<Integer, byte[]> getManufacturerData() {
         return manufacturerData;
     }
 
-    public Map<String, byte[]> getServiceData() {
+    public @Nullable Map<String, byte[]> getServiceData() {
         return serviceData;
     }
 
