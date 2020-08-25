@@ -20,7 +20,7 @@ public class BluetoothHandler {
     private final Handler handler = new Handler("testapp.BluetoothHandler");
     private Runnable timeoutRunnable;
     private boolean justBonded = false;
-    private static List<String> blackList = new ArrayList<>();
+    private static final List<String> blackList = new ArrayList<>();
 
     // UUIDs for the Blood Pressure service (BLP)
     private static final UUID BLP_SERVICE_UUID = UUID.fromString("00001810-0000-1000-8000-00805f9b34fb");
@@ -78,7 +78,7 @@ public class BluetoothHandler {
                     peripheral.setNotify(currentTimeCharacteristic, true);
 
                     // If it has the write property we write the current time
-                    if ((currentTimeCharacteristic.getProperties() & PROPERTY_WRITE) > 0) {
+                    if (currentTimeCharacteristic.supportsWritingWithResponse()) {
                         BluetoothBytesParser parser = new BluetoothBytesParser();
                         parser.setCurrentTime(Calendar.getInstance());
                         peripheral.writeCharacteristic(currentTimeCharacteristic, parser.getValue(), WRITE_TYPE_DEFAULT);
@@ -90,7 +90,7 @@ public class BluetoothHandler {
             if (peripheral.getService(BTS_SERVICE_UUID) != null) {
                 BluetoothGattCharacteristic batteryCharacteristic = peripheral.getCharacteristic(BTS_SERVICE_UUID, BATTERY_LEVEL_CHARACTERISTIC_UUID);
                 if (batteryCharacteristic != null) {
-                    if ((batteryCharacteristic.getProperties() & PROPERTY_NOTIFY) > 0) {
+                    if (batteryCharacteristic.supportsNotifying()) {
                         peripheral.setNotify(batteryCharacteristic, true);
                     } else {
                         peripheral.readCharacteristic(batteryCharacteristic);
@@ -265,17 +265,16 @@ public class BluetoothHandler {
             logger.info("connection failed");
             final String peripheralAddress = peripheral.getAddress();
             handler.postDelayed(() -> blackList.remove(peripheralAddress), 2000L);
-            handler.postDelayed(() -> central.autoConnectPeripheral(peripheral, peripheralCallback), 40000);
-
         }
 
         @Override
         public void onDisconnectedPeripheral(@NotNull BluetoothPeripheral peripheral, int status) {
             logger.info("disconnected peripheral");
             final String peripheralAddress = peripheral.getAddress();
-            handler.postDelayed(() -> blackList.remove(peripheralAddress), 32000L);
-            handler.postDelayed(() -> central.autoConnectPeripheral(peripheral, peripheralCallback), 40000);
-
+            handler.postDelayed(() -> {
+                logger.info("removing " + peripheralAddress + " from blacklist");
+                blackList.remove(peripheralAddress);
+            }, 40000L);
         }
 
         @Override
@@ -285,6 +284,7 @@ public class BluetoothHandler {
             boolean blacklisted = blackList.contains(peripheralAddress);
             if (blacklisted) return;
 
+            // Not blacklisted so put it on the blacklist and connect to it
             blackList.add(peripheralAddress);
             logger.info(scanResult.toString());
             central.connectPeripheral(peripheral, peripheralCallback);

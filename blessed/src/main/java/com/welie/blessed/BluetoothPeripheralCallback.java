@@ -6,7 +6,6 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Callbacks for BluetoothPeripheral operations
  */
-@SuppressWarnings("SpellCheckingInspection")
 public abstract class BluetoothPeripheralCallback {
 
     /**
