@@ -92,17 +92,9 @@ public class BluetoothGattDescriptor {
      * @param permissions Permissions for this descriptor
      */
     public BluetoothGattDescriptor(@NotNull UUID uuid, int permissions) {
-        Objects.requireNonNull(uuid, "no valid UUID supplied");
-        initDescriptor(null, uuid, permissions);
-    }
-
-    private void initDescriptor(BluetoothGattCharacteristic characteristic, @NotNull UUID uuid, int permissions) {
-        Objects.requireNonNull(uuid, "no valid UUID supplied");
-        this.characteristic = characteristic;
-        this.uuid = uuid;
+        this.uuid = Objects.requireNonNull(uuid, "no valid UUID supplied");
         this.permissions = permissions;
     }
-
 
     /**
      * Returns the characteristic this descriptor belongs to.
@@ -118,8 +110,7 @@ public class BluetoothGattDescriptor {
      *
      */
     void setCharacteristic(@NotNull BluetoothGattCharacteristic characteristic) {
-        Objects.requireNonNull(characteristic, "no valid characteristic supplied");
-        this.characteristic = characteristic;
+        this.characteristic = Objects.requireNonNull(characteristic, "no valid characteristic supplied");
     }
 
     /**
@@ -139,6 +130,5 @@ public class BluetoothGattDescriptor {
     public int getPermissions() {
         return permissions;
     }
-
 }
 

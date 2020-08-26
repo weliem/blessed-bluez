@@ -199,7 +199,6 @@ public class BluetoothGattCharacteristic {
         this.permissions = permissions;
     }
 
-
     /**
      * Adds a descriptor to this characteristic.
      *
@@ -211,7 +210,6 @@ public class BluetoothGattCharacteristic {
         descriptor.setCharacteristic(this);
         return descriptors.add(descriptor);
     }
-
 
     /**
      * Returns the service this characteristic belongs to.
@@ -227,8 +225,7 @@ public class BluetoothGattCharacteristic {
      *
      */
     void setService(@NotNull BluetoothGattService service) {
-        Objects.requireNonNull(service, "no valid service supplied");
-        this.service = service;
+        this.service = Objects.requireNonNull(service, "no valid service supplied");
     }
 
     /**
@@ -239,7 +236,6 @@ public class BluetoothGattCharacteristic {
     public @NotNull UUID getUuid() {
         return uuid;
     }
-
 
     /**
      * Returns the properties of this characteristic.
