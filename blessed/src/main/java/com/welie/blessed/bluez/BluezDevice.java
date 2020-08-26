@@ -9,6 +9,7 @@ import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
 import org.freedesktop.dbus.types.UInt16;
 import org.freedesktop.dbus.types.UInt32;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -181,16 +182,16 @@ public class BluezDevice extends AbstractBluetoothObject {
      * </p>
      * @return string array of UUIDs, maybe null
      */
-    public String[] getUuids() {
+    public List<@NotNull UUID> getUuids() {
+        List<@NotNull UUID> result = new ArrayList<>();
         try {
-            List<?> typed = getTyped("UUIDs", ArrayList.class);
+            List<String> typed = getTyped("UUIDs", ArrayList.class);
             if (typed != null) {
-                return typed.toArray(new String[0]);
+                typed.stream().map(UUID::fromString).forEach(result::add);
             }
-            return null;
         } catch (Exception ignored) {
-            return null;
         }
+        return result;
     }
 
     /**
@@ -246,11 +247,12 @@ public class BluezDevice extends AbstractBluetoothObject {
      * </p>
      * @return map of string/bytearray, maybe null
      */
-    public Map<String, byte[]> getServiceData() {
+    public @NotNull Map<@NotNull String, byte[]> getServiceData() {
+        Map<@NotNull String, byte[]> result = new HashMap<>();
         try {
             return getTyped("ServiceData", DBusMap.class);
         } catch (Exception e) {
-            return null;
+            return result;
         }
     }
 
@@ -267,10 +269,10 @@ public class BluezDevice extends AbstractBluetoothObject {
      * </p>
      * @return map of uint16/bytearray, maybe null
      */
-    public Map<Integer, byte[]> getManufacturerData() {
-        try {
-            Map<Integer, byte[]> result = new HashMap<>();
+    public @NotNull Map<Integer, byte[]> getManufacturerData() {
+        Map<Integer, byte[]> result = new HashMap<>();
 
+        try {
             // Convert manufacturer data
             final Map<UInt16, byte[]> deviceManufacturerData = getTyped("ManufacturerData", DBusMap.class);
             if(deviceManufacturerData != null) {
@@ -278,7 +280,7 @@ public class BluezDevice extends AbstractBluetoothObject {
             }
             return result;
         } catch (Exception e) {
-            return null;
+            return result;
         }
     }
 

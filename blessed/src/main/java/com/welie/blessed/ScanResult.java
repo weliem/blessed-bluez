@@ -3,25 +3,27 @@ package com.welie.blessed;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 
 import static com.welie.blessed.BluetoothBytesParser.bytes2String;
 
-@SuppressWarnings("unused")
+
 public class ScanResult {
     private long timestampNanos;
     private final String name;
     private final String address;
-    private final String[] uuids;
+    private final @NotNull List<UUID> uuids;
     private int rssi;
-    private Map<Integer, byte[]> manufacturerData;
-    private Map<String, byte[]> serviceData;
+    private Map<@NotNull Integer, byte[]> manufacturerData;
+    private Map<@NotNull String, byte[]> serviceData;
 
-    public ScanResult(@Nullable String deviceName, @NotNull String deviceAddress, @Nullable String[] uuids, int rssi, @Nullable Map<Integer, byte[]> manufacturerData, @Nullable Map<String, byte[]> serviceData) {
+    public ScanResult(@Nullable String deviceName, @NotNull String deviceAddress, @NotNull List<@NotNull UUID> uuids, int rssi, @NotNull Map<@NotNull Integer, byte[]> manufacturerData, @NotNull Map<@NotNull String, byte[]> serviceData) {
         this.name = deviceName;
-        this.address = deviceAddress;
-        this.uuids = uuids;
+        this.address = Objects.requireNonNull(deviceAddress, "no valid address supplied");
+        this.uuids = Objects.requireNonNull(uuids, "no valid uuids supplied");
         this.rssi = rssi;
         setManufacturerData(manufacturerData);
         setServiceData(serviceData);
@@ -40,15 +42,15 @@ public class ScanResult {
         return address;
     }
 
-    public @Nullable String[] getUuids() {
+    public @NotNull List<UUID> getUuids() {
         return uuids;
     }
 
-    public @Nullable Map<Integer, byte[]> getManufacturerData() {
+    public @NotNull Map<Integer, byte[]> getManufacturerData() {
         return manufacturerData;
     }
 
-    public @Nullable Map<String, byte[]> getServiceData() {
+    public @NotNull Map<String, byte[]> getServiceData() {
         return serviceData;
     }
 
@@ -56,12 +58,12 @@ public class ScanResult {
         this.rssi = rssi;
     }
 
-    public void setManufacturerData(Map<Integer, byte[]> manufacturerData) {
-        this.manufacturerData = (manufacturerData != null && manufacturerData.isEmpty()) ? null : manufacturerData;
+    public void setManufacturerData(@NotNull Map<@NotNull Integer, byte[]> manufacturerData) {
+        this.manufacturerData = Objects.requireNonNull(manufacturerData, "no valid manufacturer data supplied");
     }
 
-    public void setServiceData(Map<String, byte[]> serviceData) {
-        this.serviceData = (serviceData != null && serviceData.isEmpty()) ? null : serviceData;
+    public void setServiceData(@NotNull Map<@NotNull String, byte[]> serviceData) {
+        this.serviceData = Objects.requireNonNull(serviceData, "no valid service data supplied");
     }
 
     @Override
@@ -70,7 +72,7 @@ public class ScanResult {
                 "timestampNanos=" + timestampNanos +
                 ", name='" + name + '\'' +
                 ", address='" + address + '\'' +
-                ", uuids=" + Arrays.toString(uuids) +
+                ", uuids=" + uuids +
                 ", rssi=" + rssi +
                 ", manufacturerData=" + manufacturerDataToString() +
                 ", serviceData=" + serviceDataToString() +
@@ -78,7 +80,7 @@ public class ScanResult {
     }
 
     private String manufacturerDataToString() {
-        if (manufacturerData == null || manufacturerData.isEmpty()) return "null";
+        if (manufacturerData == null || manufacturerData.isEmpty()) return "[]";
         StringBuilder result = new StringBuilder("[");
         manufacturerData.forEach((code, bytes) -> result.append(String.format("0x%04x->0x%s,", code, bytes2String(bytes))));
         result.deleteCharAt(result.length() - 1);
@@ -87,7 +89,7 @@ public class ScanResult {
     }
 
     private String serviceDataToString() {
-        if (serviceData == null || serviceData.isEmpty()) return "null";
+        if (serviceData == null || serviceData.isEmpty()) return "[]";
         StringBuilder result = new StringBuilder("[");
         serviceData.forEach((uuid, bytes) -> result.append(String.format("%s->0x%s,", uuid, bytes2String(bytes))));
         result.deleteCharAt(result.length() - 1);

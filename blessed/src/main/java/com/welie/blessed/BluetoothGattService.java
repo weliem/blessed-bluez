@@ -18,7 +18,7 @@ public class BluetoothGattService {
      * This applies to client applications only.
      *
      */
-    protected BluetoothPeripheral peripheral;
+    protected BluetoothPeripheral peripheral = null;
 
     /**
      * The UUID of this service.
@@ -30,7 +30,7 @@ public class BluetoothGattService {
     /**
      * List of characteristics included in this service.
      */
-    protected List<BluetoothGattCharacteristic> characteristics;
+    protected final List<BluetoothGattCharacteristic> characteristics = new ArrayList<>();
 
 
     /**
@@ -40,16 +40,14 @@ public class BluetoothGattService {
      */
     public BluetoothGattService(@NotNull UUID uuid) {
         Objects.requireNonNull(uuid, "no valid UUID supplied");
-        peripheral = null;
         this.uuid = uuid;
-        characteristics = new ArrayList<>();
     }
 
     /**
      * Returns the device associated with this service.
      *
      */
-    @Nullable BluetoothPeripheral getPeripheral() {
+    public @Nullable BluetoothPeripheral getPeripheral() {
         return peripheral;
     }
 

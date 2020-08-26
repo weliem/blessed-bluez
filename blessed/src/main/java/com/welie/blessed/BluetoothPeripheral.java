@@ -351,13 +351,10 @@ public class BluetoothPeripheral {
     }
 
     public void connect() {
+        Objects.requireNonNull(device, "device is null");
+
         // Do the connect
         gattCallback.onConnectionStateChanged(STATE_CONNECTING, GATT_SUCCESS);
-        try {
-            sleep(300);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
 
         try {
             logger.info(String.format("connecting to '%s' (%s)", deviceName, deviceAddress));

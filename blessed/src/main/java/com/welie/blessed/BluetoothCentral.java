@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import static com.welie.blessed.BluetoothPeripheral.*;
 import static java.lang.System.exit;
+import static java.lang.Thread.sleep;
 
 /**
  * Represents a Bluetooth Central object
@@ -62,7 +63,7 @@ public class BluetoothCentral {
     private final Map<String, ScanResult> scanResultCache = new ConcurrentHashMap<>();
     private @NotNull String[] scanPeripheralNames = new String[0];
     private @NotNull String[] scanPeripheralAddresses = new String[0];
-    private @NotNull String[] scanUUIDs = new String[0];
+    private @NotNull UUID[] scanUUIDs = new UUID[0];
     private final List<String> reconnectPeripheralAddresses = new ArrayList<>();
     private final Map<String, BluetoothPeripheralCallback> reconnectCallbacks = new ConcurrentHashMap<>();
     private final Map<String, String> pinCodes = new ConcurrentHashMap<>();
@@ -243,9 +244,7 @@ public class BluetoothCentral {
             @Override
             public void onPairingStarted(String deviceAddress) {
                 BluetoothPeripheral peripheral = getPeripheral(deviceAddress);
-                if (peripheral != null) {
-                    peripheral.gattCallback.onPairingStarted();
-                }
+                peripheral.gattCallback.onPairingStarted();
             }
         });
 
@@ -279,7 +278,6 @@ public class BluetoothCentral {
     /**
      * Scan for any peripheral that is advertising.
      */
-    @SuppressWarnings("unused")
     public void scanForPeripherals() {
         initScanFilters();
         normalScanActive = true;
@@ -291,7 +289,6 @@ public class BluetoothCentral {
      *
      * @param serviceUUIDs an array of service UUIDs
      */
-    @SuppressWarnings("unused")
     public void scanForPeripheralsWithServices(@NotNull final UUID[] serviceUUIDs) {
         Objects.requireNonNull(serviceUUIDs, "no service UUIDs supplied");
 
@@ -301,7 +298,7 @@ public class BluetoothCentral {
         }
 
         initScanFilters();
-        scanUUIDs = convertUUIDArrayToStringArray(serviceUUIDs);
+        scanUUIDs = serviceUUIDs;
         normalScanActive = true;
         startScanning();
     }
@@ -313,7 +310,6 @@ public class BluetoothCentral {
      *
      * @param peripheralNames array of partial peripheral names
      */
-    @SuppressWarnings("unused")
     public void scanForPeripheralsWithNames(@NotNull final String[] peripheralNames) {
         Objects.requireNonNull(peripheralNames, "no peripheral names supplied");
 
@@ -333,7 +329,6 @@ public class BluetoothCentral {
      *
      * @param peripheralAddresses array of peripheral mac addresses to scan for
      */
-    @SuppressWarnings("unused")
     public void scanForPeripheralsWithAddresses(@NotNull final String[] peripheralAddresses) {
         Objects.requireNonNull(peripheralAddresses, "no peripheral addresses supplied");
 
@@ -359,7 +354,7 @@ public class BluetoothCentral {
     private void initScanFilters() {
         scanPeripheralNames = new String[0];
         scanPeripheralAddresses = new String[0];
-        scanUUIDs = new String[0];
+        scanUUIDs = new UUID[0];
         scanFilters.clear();
         setBasicFilters();
     }
@@ -395,7 +390,7 @@ public class BluetoothCentral {
         // Check if peripheral address filter is set
         if (scanPeripheralAddresses.length > 0) {
             for (String name : scanPeripheralAddresses) {
-                if (scanResult.getAddress() != null && scanResult.getAddress().equals(name)) {
+                if (scanResult.getAddress().equals(name)) {
                     return false;
                 }
             }
@@ -403,9 +398,9 @@ public class BluetoothCentral {
         }
 
         // Check if peripheral uuid filter is set
-        if (scanUUIDs.length > 0 && scanResult.getUuids() != null) {
-            Set<String> scanResultUUIDs = new HashSet<>(Arrays.asList(scanResult.getUuids()));
-            for (String uuid : scanUUIDs) {
+        if (scanUUIDs.length > 0) {
+            List<UUID> scanResultUUIDs = scanResult.getUuids();
+            for (UUID uuid : scanUUIDs) {
                 if (scanResultUUIDs.contains(uuid)) {
                     return false;
                 }
@@ -487,7 +482,7 @@ public class BluetoothCentral {
         final String deviceAddress;
         final String deviceName;
         final int rssi;
-        ArrayList<String> serviceUUIDs = null;
+        ArrayList<@NotNull String> serviceUUIDs = null;
 
         // Grab address
         if ((value.get(PROPERTY_ADDRESS) != null) && (value.get(PROPERTY_ADDRESS).getValue() instanceof String)) {
@@ -524,11 +519,9 @@ public class BluetoothCentral {
         }
 
         // Convert the service UUIDs
-        final String[] finalServiceUUIDs;
+        final List<@NotNull UUID> finalServiceUUIDs = new ArrayList<>();
         if (serviceUUIDs != null) {
-            finalServiceUUIDs = serviceUUIDs.toArray(new String[0]);
-        } else {
-            finalServiceUUIDs = null;
+            serviceUUIDs.stream().map(UUID::fromString).forEach(finalServiceUUIDs::add);
         }
 
         // Get manufacturer data
@@ -626,11 +619,11 @@ public class BluetoothCentral {
 
         final String deviceName = bluezDevice.getName();
         final String deviceAddress = bluezDevice.getAddress();
-        final String[] uuids = bluezDevice.getUuids();
+        final List<@NotNull UUID> uuids = bluezDevice.getUuids();
         final Short rssi = bluezDevice.getRssi();
         final int rssiInt = rssi == null ? DISCOVERY_RSSI_THRESHOLD : rssi;
-        final Map<Integer, byte[]> manufacturerData = bluezDevice.getManufacturerData();
-        final Map<String, byte[]> serviceData = bluezDevice.getServiceData();
+        final Map<@NotNull Integer, byte[]> manufacturerData = bluezDevice.getManufacturerData();
+        final Map<@NotNull String, byte[]> serviceData = bluezDevice.getServiceData();
         return new ScanResult(deviceName, deviceAddress, uuids, rssiInt, manufacturerData, serviceData);
     }
 
@@ -901,8 +894,19 @@ public class BluetoothCentral {
 
         unconnectedPeripherals.put(peripheral.getAddress(), peripheral);
         boolean result = commandQueue.add(() -> {
+            try {
+                sleep(300);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            // Refresh BluezDevice because it may be old
+            scannedBluezDevices.remove(getPath(adapter,peripheral.getAddress()));
+            peripheral.device = getDeviceByAddress(adapter, peripheral.getAddress());
+
             currentDeviceAddress = peripheral.getAddress();
             currentCommand = PROPERTY_CONNECTED;
+
             peripheral.connect();
         });
 
