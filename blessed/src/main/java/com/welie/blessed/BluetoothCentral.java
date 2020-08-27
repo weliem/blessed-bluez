@@ -190,6 +190,8 @@ public class BluetoothCentral {
         try {
             // Connect to the DBus
             dbusConnection = DBusConnection.newConnection(DBusConnection.DBusBusType.SYSTEM);
+            dbusConnection.changeThreadCount((byte) 1);
+
             if (!chooseAdapter()) exit(0);
             setupPairingAgent();
             BluezSignalHandler.createInstance(dbusConnection).addCentral(this);
