@@ -52,7 +52,7 @@ public class BluezSignalHandler {
             // If it came from a device, send it to the right peripheral
             final String path = propertiesChanged.getPath();
             final Set<String> peripherals = peripheralsMap.keySet();
-            for (String peripheralAddress : peripherals) {
+            for (final String peripheralAddress : peripherals) {
                 if (path.contains(peripheralAddress)) {
                     try {
                         Thread.sleep(2);
