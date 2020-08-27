@@ -6,14 +6,16 @@ import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.handlers.AbstractPropertiesChangedHandler;
 import org.freedesktop.dbus.interfaces.Properties;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Logger;
+
 
 public class BluezSignalHandler {
     private static final String TAG = BluezSignalHandler.class.getSimpleName();
-    private static final Logger logger = Logger.getLogger(TAG);
+    private static final Logger logger = LoggerFactory.getLogger(TAG);
 
     private static BluezSignalHandler instance = null;
     private DBusConnection dbusConnection;
@@ -31,7 +33,7 @@ public class BluezSignalHandler {
 
     public static synchronized BluezSignalHandler getInstance() {
         if (instance == null) {
-            logger.severe("Using getInstance when no BluezSignalHandler has been created");
+            logger.error("Using getInstance when no BluezSignalHandler has been created");
         }
         return instance;
     }
@@ -41,6 +43,7 @@ public class BluezSignalHandler {
         public void handle(final Properties.PropertiesChanged propertiesChanged) {
             // Make sure the propertiesChanged is not empty. Note that we also get called because of propertiesRemoved.
             if (propertiesChanged.getPropertiesChanged().isEmpty()) return;
+            logger.debug(propertiesChanged.toString());
 
             // Send the signal to all centrals
             for (BluetoothCentral central : centralList) {
@@ -65,8 +68,8 @@ public class BluezSignalHandler {
             this.dbusConnection = dBusConnection;
             registerPropertyHandler(signalHandler);
         } catch (DBusException e) {
-            logger.severe("Error registering scan property handler");
-            logger.severe(e.toString());
+            logger.error("Error registering scan property handler");
+            logger.error(e.toString());
         }
     }
 
