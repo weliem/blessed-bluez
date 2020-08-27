@@ -43,11 +43,16 @@ public class BluezSignalHandler {
         public void handle(final Properties.PropertiesChanged propertiesChanged) {
             // Make sure the propertiesChanged is not empty. Note that we also get called because of propertiesRemoved.
             if (propertiesChanged.getPropertiesChanged().isEmpty()) return;
-            logger.debug(propertiesChanged.toString());
 
             // Send the signal to all centrals
             for (BluetoothCentral central : centralList) {
                 central.handleSignal(propertiesChanged);
+            }
+
+            try {
+                Thread.sleep(3);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
 
             handler.post(() -> {
