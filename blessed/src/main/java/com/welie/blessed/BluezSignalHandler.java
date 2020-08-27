@@ -49,22 +49,22 @@ public class BluezSignalHandler {
                 central.handleSignal(propertiesChanged);
             }
 
-            try {
-                Thread.sleep(3);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            // If it came from a device, send it to the right peripheral
+            final String path = propertiesChanged.getPath();
+            final Set<String> peripherals = peripheralsMap.keySet();
+            for (String peripheralAddress : peripherals) {
+                if (path.contains(peripheralAddress)) {
+                    try {
+                        Thread.sleep(2);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    handler.post(() -> {
+                        peripheralsMap.get(peripheralAddress).handleSignal(propertiesChanged);
+                    });
+                }
             }
 
-            handler.post(() -> {
-                // If it came from a device, send it to the right peripheral
-                final String path = propertiesChanged.getPath();
-                final Set<String> peripherals = peripheralsMap.keySet();
-                for (String peripheralAddress : peripherals) {
-                    if (path.contains(peripheralAddress)) {
-                        peripheralsMap.get(peripheralAddress).handleSignal(propertiesChanged);
-                    }
-                }
-            });
         }
     };
 
@@ -98,7 +98,7 @@ public class BluezSignalHandler {
     }
 
     void addCentral(@NotNull BluetoothCentral central) {
-        Objects.requireNonNull(central,"no valid central provided");
+        Objects.requireNonNull(central, "no valid central provided");
         centralList.add(central);
     }
 }
