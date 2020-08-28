@@ -75,7 +75,7 @@ public class BluetoothCentral {
 
     // Scan in intervals. Make sure it is less than 10seconds to avoid issues with Bluez internal scanning
     private static final long SCAN_WINDOW = TimeUnit.SECONDS.toMillis(6);
-    private final long SCAN_INTERVAL = TimeUnit.SECONDS.toMillis(8);
+    private static final long SCAN_INTERVAL = TimeUnit.SECONDS.toMillis(8);
 
     // Bluez Adapter property strings
     private static final String PROPERTY_DISCOVERING = "Discovering";
@@ -265,7 +265,7 @@ public class BluetoothCentral {
 
     private BluezAgentManager getBluetoothAgentManager() {
         if (bluetoothAgentManager == null) {
-            AgentManager1 agentManager1 = DbusHelper.getRemoteObject(dbusConnection, "/org/bluez", AgentManager1.class);
+            AgentManager1 agentManager1 = DbusHelper.getRemoteObject(dbusConnection, BLUEZ_PATH, AgentManager1.class);
             if (agentManager1 != null) {
                 bluetoothAgentManager = new BluezAgentManager(agentManager1, adapter, agentManager1.getObjectPath(), dbusConnection);
             }
@@ -365,17 +365,6 @@ public class BluetoothCentral {
         scanFilters.put(DiscoveryFilter.Transport, DiscoveryTransport.LE);
         scanFilters.put(DiscoveryFilter.RSSI, DISCOVERY_RSSI_THRESHOLD);
         scanFilters.put(DiscoveryFilter.DuplicateData, true);
-    }
-
-    private String[] convertUUIDArrayToStringArray(final UUID[] uuidArray) {
-        // Convert UUID array to string array
-        ArrayList<String> uuidStrings = new ArrayList<>();
-        if (uuidArray != null) {
-            for (UUID uuid : uuidArray) {
-                uuidStrings.add(uuid.toString());
-            }
-        }
-        return uuidStrings.toArray(new String[0]);
     }
 
     private boolean notAllowedByFilter(ScanResult scanResult) {
@@ -689,7 +678,6 @@ public class BluetoothCentral {
             // If we are already scanning then complete the command immediately
             isScanning = adapter.isDiscovering();
             if (isScanning) {
-                //               logger.info(TAG, "Already scanning so completing command");
                 completedCommand();
                 return;
             }
@@ -704,7 +692,6 @@ public class BluetoothCentral {
 
             // Start the discovery
             try {
-                //               logger.info(TAG, "Trying to start scanning");
                 currentCommand = PROPERTY_DISCOVERING;
                 adapter.startDiscovery();
                 startScanTimer();
