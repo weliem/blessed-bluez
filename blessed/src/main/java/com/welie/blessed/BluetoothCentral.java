@@ -110,7 +110,6 @@ public class BluetoothCentral {
         @Override
         public void servicesDiscovered(final BluetoothPeripheral peripheral) {
             restartScannerIfNeeded();
-            logger.info("service discovery succeeded");
         }
 
         @Override
@@ -896,7 +895,11 @@ public class BluetoothCentral {
             currentDeviceAddress = peripheral.getAddress();
             currentCommand = PROPERTY_CONNECTED;
 
-            peripheral.connect();
+            try {
+                peripheral.connect();
+            } catch (NullPointerException ignored) {
+                completedCommand();
+            }
         });
 
         if (result) {
