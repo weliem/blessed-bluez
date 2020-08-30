@@ -620,6 +620,7 @@ public class BluetoothPeripheral {
                         boolean isNotifying = nativeCharacteristic.isNotifying();
                         if (isNotifying) {
                             // Already notifying, ignoring command
+                            logger.info("already notifying");
                             gattCallback.onNotifySet(characteristic, true);
                         } else {
                             nativeCharacteristic.startNotify();

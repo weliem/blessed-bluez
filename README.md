@@ -164,5 +164,5 @@ Lastly, it is also possible to automatically issue a PIN code when pairing. Use 
 
 ## Example application
 
-An example application is provided in the repo. It shows how to connect to Blood Pressure meters, Heart Rate monitors, Pulse Oximeters and Thermometers, read the data and show it in the log.
+An example application is provided in the repo. It shows how to connect to Blood Pressure meters, Weight scales, Heart Rate monitors, Pulse Oximeters and Thermometers, read the data and show it in the log.
 
