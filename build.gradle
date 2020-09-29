@@ -5,8 +5,10 @@ plugins {
 group 'com.welie'
 version '0.2-App'
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+compileJava {
+    sourceCompatibility = '1.8'
+    targetCompatibility = '1.8'
+}
 
 repositories {
     mavenCentral()

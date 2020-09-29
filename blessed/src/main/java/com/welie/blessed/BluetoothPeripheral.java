@@ -19,7 +19,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -211,25 +210,18 @@ public class BluetoothPeripheral {
                         }
                     } else {
                         if (!serviceDiscoveryCompleted) {
-                            if (isBonded) {
-                                // Assume we lost the bond
-                                if (peripheralCallback != null) {
-                                    callBackHandler.post(() -> peripheralCallback.onBondLost(BluetoothPeripheral.this));
-                                }
-                            }
+//                            if (isBonded) {
+//                                // Assume we lost the bond
+//                                if (peripheralCallback != null) {
+//                                    callBackHandler.post(() -> peripheralCallback.onBondLost(BluetoothPeripheral.this));
+//                                }
+//                            }
                             listener.serviceDiscoveryFailed(BluetoothPeripheral.this);
                         }
                         completeDisconnect(true);
                     }
                     break;
                 case STATE_CONNECTING:
-                    if (status == GATT_ERROR) {
-                        logger.info(String.format("connection failed with status '%s'", statusToString(status)));
-                        completeDisconnect(false);
-                        if (listener != null) {
-                            listener.disconnected(BluetoothPeripheral.this);
-                        }
-                    }
                     break;
                 case STATE_DISCONNECTING:
                     commandQueue.clear();
@@ -318,13 +310,14 @@ public class BluetoothPeripheral {
         }
 
         @Override
-        public void onServicesDiscovered(List<BluetoothGattService> services, int status) {
+        public void onServicesDiscovered(List<BluetoothGattService> services) {
             serviceDiscoveryCompleted = true;
             logger.info(String.format("discovered %d services for '%s' (%s)", services.size(), getName(), getAddress()));
             if (peripheralCallback != null) {
                 callBackHandler.post(() -> peripheralCallback.onServicesDiscovered(BluetoothPeripheral.this));
             }
 
+            // Let Central know as well so it can start scanning again if needed
             if (listener != null) {
                 listener.servicesDiscovered(BluetoothPeripheral.this);
             }
@@ -364,14 +357,6 @@ public class BluetoothPeripheral {
             connectTimestamp = System.currentTimeMillis();
             device.connect();
         } catch (DBusExecutionException e) {
-            boolean bluezConnectionstate;
-            try {
-                bluezConnectionstate = device.isConnected();
-            } catch (Exception e2) {
-                bluezConnectionstate = false;
-            }
-
-            //           logger.error(String.format("connect exception, dbusexecutionexception (%s %s)", state == STATE_CONNECTED ? "connected" : "not connected", bluezConnectionstate ? "connected" : "not connected"));
             logger.error(e.getMessage());
 
             // Unregister handler only if we are not connected. A connected event may have already been received!
@@ -634,6 +619,7 @@ public class BluetoothPeripheral {
                         boolean isNotifying = nativeCharacteristic.isNotifying();
                         if (isNotifying) {
                             // Already notifying, ignoring command
+                            logger.info("already notifying");
                             gattCallback.onNotifySet(characteristic, true);
                         } else {
                             nativeCharacteristic.startNotify();
@@ -703,7 +689,7 @@ public class BluetoothPeripheral {
             mServices = new ArrayList<>();
             gattServices.forEach(service -> mServices.add(mapBluezGattServiceToBluetoothGattService(service)));
 
-            gattCallback.onServicesDiscovered(mServices, GATT_SUCCESS);
+            gattCallback.onServicesDiscovered(mServices);
         }
     }
 
@@ -724,9 +710,9 @@ public class BluetoothPeripheral {
                 BluetoothGattCharacteristic bluetoothGattCharacteristic = getCharacteristicFromPath(propertiesChanged.getPath());
                 if (bluetoothGattCharacteristic == null) return;
 
-                propertiesChanged.getPropertiesChanged().forEach((s, value) -> handlePropertyChangedForCharacteristic(bluetoothGattCharacteristic, s, value));
+                propertiesChanged.getPropertiesChanged().forEach((key, value) -> handlePropertyChangedForCharacteristic(bluetoothGattCharacteristic, key, value));
             } else if (propertiesChanged.getInterfaceName().equals(BLUEZ_DEVICE_INTERFACE)) {
-                propertiesChanged.getPropertiesChanged().forEach((s, variant) -> handlePropertyChangeForDevice(s, variant));
+                propertiesChanged.getPropertiesChanged().forEach((key, value) -> handlePropertyChangeForDevice(key, value));
             }
         }
     };
@@ -899,7 +885,7 @@ public class BluetoothPeripheral {
      *
      * @return Supported services.
      */
-    public @NotNull List<@NotNull BluetoothGattService> getServices() {
+    public @NotNull List<BluetoothGattService> getServices() {
         return mServices;
     }
 

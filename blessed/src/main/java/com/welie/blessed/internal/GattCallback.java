@@ -19,7 +19,7 @@ public abstract class GattCallback {
 
     public abstract void onNotifySet(BluetoothGattCharacteristic characteristic, boolean enabled);
 
-    public abstract void onServicesDiscovered(List<BluetoothGattService> services, int status);
+    public abstract void onServicesDiscovered(List<BluetoothGattService> services);
 
     public abstract void onPairingStarted();
 

@@ -1,6 +1,5 @@
 package com.welie.blessed;
 
-import com.welie.blessed.internal.Handler;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.handlers.AbstractInterfacesAddedHandler;
@@ -23,7 +22,6 @@ public class BluezSignalHandler {
 
     private static BluezSignalHandler instance = null;
     private DBusConnection dbusConnection;
-    private final Handler handler = new Handler("BluezSignalHandler");
 
     private final Map<String, BluetoothPeripheral> peripheralsMap = new ConcurrentHashMap<>();
     private final List<BluetoothCentral> centralList = new ArrayList<>();
@@ -59,16 +57,14 @@ public class BluezSignalHandler {
             for (final String peripheralAddress : peripherals) {
                 if (path.contains(peripheralAddress)) {
                     try {
-                        Thread.sleep(2);
+                        // Make sure there is at least 1 milisecond between every signal
+                        Thread.sleep(1);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                    handler.post(() -> {
-                        peripheralsMap.get(peripheralAddress).handleSignal(propertiesChanged);
-                    });
+                    peripheralsMap.get(peripheralAddress).handleSignal(propertiesChanged);
                 }
             }
-
         }
     };
 
