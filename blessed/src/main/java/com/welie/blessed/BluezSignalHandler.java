@@ -3,7 +3,9 @@ package com.welie.blessed;
 import com.welie.blessed.internal.Handler;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
+import org.freedesktop.dbus.handlers.AbstractInterfacesAddedHandler;
 import org.freedesktop.dbus.handlers.AbstractPropertiesChangedHandler;
+import org.freedesktop.dbus.interfaces.ObjectManager;
 import org.freedesktop.dbus.interfaces.Properties;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -11,6 +13,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.welie.blessed.BluetoothPeripheral.BLUEZ_DEVICE_INTERFACE;
 
 
 public class BluezSignalHandler {
@@ -68,17 +72,36 @@ public class BluezSignalHandler {
         }
     };
 
+    private final AbstractInterfacesAddedHandler interfacesAddedHandler = new AbstractInterfacesAddedHandler() {
+        @Override
+        public void handle(final ObjectManager.InterfacesAdded interfacesAdded) {
+            final String path = interfacesAdded.getPath();
+            interfacesAdded.getInterfaces().forEach((key, value) -> {
+                if (key.equalsIgnoreCase(BLUEZ_DEVICE_INTERFACE)) {
+                    for (BluetoothCentral central : centralList) {
+                        central.handleInterfaceAddedForDevice(path, value);
+                    }
+                }
+            });
+        }
+    };
+
     private BluezSignalHandler(DBusConnection dBusConnection) {
         try {
             this.dbusConnection = dBusConnection;
             registerPropertyHandler(signalHandler);
+            registerInterfaceAddedHandler(interfacesAddedHandler);
         } catch (DBusException e) {
             logger.error("Error registering scan property handler");
             logger.error(e.toString());
         }
     }
 
-    private void registerPropertyHandler(AbstractPropertiesChangedHandler handler) throws DBusException {
+    private void registerPropertyHandler(@NotNull AbstractPropertiesChangedHandler handler) throws DBusException {
+        dbusConnection.addSigHandler(handler.getImplementationClass(), handler);
+    }
+
+    private void registerInterfaceAddedHandler(@NotNull AbstractInterfacesAddedHandler handler) throws DBusException {
         dbusConnection.addSigHandler(handler.getImplementationClass(), handler);
     }
 

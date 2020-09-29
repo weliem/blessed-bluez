@@ -293,7 +293,7 @@ public class BluetoothHandler {
 
     public BluetoothHandler() {
         logger.info("initializing BluetoothCentral");
-        central = new BluetoothCentral(bluetoothCentralCallback, new HashSet<>(Arrays.asList(SCANOPTION_NO_NULL_NAMES)));
+        central = new BluetoothCentral(bluetoothCentralCallback, new HashSet<>(Collections.singletonList(SCANOPTION_NO_NULL_NAMES)));
         central.setPinCodeForPeripheral("B0:49:5F:01:20:8F", "635227");
         startScanning();
     }

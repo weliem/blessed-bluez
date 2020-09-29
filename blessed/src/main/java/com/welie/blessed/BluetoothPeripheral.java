@@ -19,11 +19,11 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.welie.blessed.BluetoothGattCharacteristic.*;
-import static java.lang.Thread.sleep;
 
 /**
  * Represents a Bluetooth BLE peripheral
@@ -40,7 +40,7 @@ public class BluetoothPeripheral {
     private boolean isBonded = false;
     private boolean manualBonding = false;
     private long connectTimestamp;
-    private boolean isPairing;
+    //    private boolean isPairing;
     private boolean isRetrying;
     private byte[] currentWriteBytes;
     private final Handler callBackHandler;
@@ -55,7 +55,7 @@ public class BluetoothPeripheral {
     private final Map<String, BluezGattDescriptor> descriptorMap = new ConcurrentHashMap<>();
 
     // Keep track of all translated services
-    private @NotNull List<BluetoothGattService> mServices = new ArrayList<>();
+    private @NotNull List<@NotNull BluetoothGattService> mServices = new ArrayList<>();
 
     // Variables for service discovery timer
     private Handler timeoutHandler;
@@ -371,7 +371,7 @@ public class BluetoothPeripheral {
                 bluezConnectionstate = false;
             }
 
- //           logger.error(String.format("connect exception, dbusexecutionexception (%s %s)", state == STATE_CONNECTED ? "connected" : "not connected", bluezConnectionstate ? "connected" : "not connected"));
+            //           logger.error(String.format("connect exception, dbusexecutionexception (%s %s)", state == STATE_CONNECTED ? "connected" : "not connected", bluezConnectionstate ? "connected" : "not connected"));
             logger.error(e.getMessage());
 
             // Unregister handler only if we are not connected. A connected event may have already been received!
@@ -899,7 +899,7 @@ public class BluetoothPeripheral {
      *
      * @return Supported services.
      */
-    public @NotNull List<BluetoothGattService> getServices() {
+    public @NotNull List<@NotNull BluetoothGattService> getServices() {
         return mServices;
     }
 
@@ -1226,6 +1226,8 @@ public class BluetoothPeripheral {
                 return "GATT ERROR"; // Device not reachable
             case GATT_AUTH_FAIL:
                 return "GATT AUTH FAIL";  // Device needs to be bonded
+            case GATT_INSUFFICIENT_ENCRYPTION:
+                return "GATT INSUFFICIENT ENCRYPTION";
             default:
                 return "UNKNOWN (" + error + ")";
         }

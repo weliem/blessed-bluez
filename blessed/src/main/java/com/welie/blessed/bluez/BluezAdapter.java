@@ -21,6 +21,8 @@ import org.freedesktop.dbus.interfaces.DBusInterface;
 import org.freedesktop.dbus.types.UInt16;
 import org.freedesktop.dbus.types.UInt32;
 import org.freedesktop.dbus.types.Variant;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Wrapper class which represents an bluetooth adapter.
@@ -337,6 +339,25 @@ public class BluezAdapter extends AbstractBluetoothObject {
         adapter.SetDiscoveryFilter(_filter);
     }
 
+    @Nullable
+    public BluezDevice getBluezDeviceByPath(@NotNull String devicePath) {
+        BluezDevice bluezDevice = null;
+        Device1 device = DbusHelper.getRemoteObject(getDbusConnection(), devicePath, Device1.class);
+        if (device != null) {
+            bluezDevice = new BluezDevice(device, this, devicePath, getDbusConnection());
+        }
+        return bluezDevice;
+    }
+
+    @NotNull
+    public String getPath(String deviceAddress) {
+        return getDbusPath() + "/dev_" + deviceAddress.replace(":", "_");
+    }
+
+    @NotNull
+    public DBusConnection getDBusConnection() {
+        return super.getDbusConnection();
+    }
 
     @Override
     public String toString() {

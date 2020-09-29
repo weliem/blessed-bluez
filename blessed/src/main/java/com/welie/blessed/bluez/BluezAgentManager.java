@@ -11,12 +11,10 @@ import org.freedesktop.dbus.interfaces.DBusInterface;
 public class BluezAgentManager extends AbstractBluetoothObject  {
 
     private final AgentManager1 rawAgentManager;
-    private final BluezAdapter adapter;
 
-    public BluezAgentManager(AgentManager1 _agentManager, BluezAdapter _adapter, String _dbusPath, DBusConnection _dbusConnection) {
+    public BluezAgentManager(AgentManager1 _agentManager, String _dbusPath, DBusConnection _dbusConnection) {
         super(BluezDeviceType.AGENT_MANAGER, _dbusConnection, _dbusPath);
         rawAgentManager = _agentManager;
-        adapter = _adapter;
     }
 
     @Override

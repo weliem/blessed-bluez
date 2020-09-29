@@ -3,17 +3,11 @@ package com.welie.blessed;
 import com.welie.blessed.bluez.*;
 import com.welie.blessed.internal.Handler;
 import com.welie.blessed.internal.InternalCallback;
-import org.bluez.Adapter1;
-import org.bluez.AgentManager1;
 import org.bluez.Device1;
 import org.bluez.exceptions.*;
 import org.freedesktop.dbus.DBusMap;
-import org.freedesktop.dbus.connections.impl.DBusConnection;
-import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
-import org.freedesktop.dbus.handlers.AbstractInterfacesAddedHandler;
 import org.freedesktop.dbus.handlers.AbstractPropertiesChangedHandler;
-import org.freedesktop.dbus.interfaces.ObjectManager;
 import org.freedesktop.dbus.interfaces.Properties;
 import org.freedesktop.dbus.types.UInt16;
 import org.freedesktop.dbus.types.Variant;
@@ -29,7 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.welie.blessed.BluetoothPeripheral.*;
-import static java.lang.System.exit;
 import static java.lang.Thread.sleep;
 
 /**
@@ -38,11 +31,10 @@ import static java.lang.Thread.sleep;
 public class BluetoothCentral {
     private static final String TAG = BluetoothCentral.class.getSimpleName();
     private final Logger logger = LoggerFactory.getLogger(TAG);
-    private DBusConnection dbusConnection;
-    private BluezAdapter adapter;
+    private final BluezAdapter adapter;
     private final BluetoothCentralCallback bluetoothCentralCallback;
-    private final Handler callBackHandler;
-    private final Handler timeoutHandler = new Handler(this.getClass().getSimpleName());
+    private final Handler callBackHandler = new Handler("Central-callBackHandler");
+    private final Handler timeoutHandler = new Handler("Central-timeoutHandler");
     private final Handler queueHandler = new Handler("CentralQueue");
     private final Handler signalHandler = new Handler("CentralQueue-signal");
     private Runnable timeoutRunnable;
@@ -52,7 +44,7 @@ public class BluetoothCentral {
     private volatile boolean autoScanActive = false;
     private volatile boolean normalScanActive = false;
     private volatile boolean commandQueueBusy;
-    private final Map<DiscoveryFilter, Object> scanFilters = new EnumMap<>(DiscoveryFilter.class);
+    final Map<DiscoveryFilter, Object> scanFilters = new EnumMap<>(DiscoveryFilter.class);
     private final Queue<Runnable> commandQueue = new ConcurrentLinkedQueue<>();
     private String currentCommand;
     private String currentDeviceAddress;
@@ -61,17 +53,16 @@ public class BluetoothCentral {
     private final Map<String, BluezDevice> scannedBluezDevices = new ConcurrentHashMap<>();
     private final Map<String, BluetoothPeripheral> scannedPeripherals = new ConcurrentHashMap<>();
     private final Map<String, ScanResult> scanResultCache = new ConcurrentHashMap<>();
-    private @NotNull String[] scanPeripheralNames = new String[0];
-    private @NotNull String[] scanPeripheralAddresses = new String[0];
-    private @NotNull UUID[] scanUUIDs = new UUID[0];
+    @NotNull String[] scanPeripheralNames = new String[0];
+    @NotNull String[] scanPeripheralAddresses = new String[0];
+    @NotNull UUID[] scanUUIDs = new UUID[0];
     private final List<String> reconnectPeripheralAddresses = new ArrayList<>();
     private final Map<String, BluetoothPeripheralCallback> reconnectCallbacks = new ConcurrentHashMap<>();
     private final Map<String, String> pinCodes = new ConcurrentHashMap<>();
-    private BluezAgentManager bluetoothAgentManager = null;
     private Set<String> scanOptions = new HashSet<>();
 
     private static final int ADDRESS_LENGTH = 17;
-    private static final short DISCOVERY_RSSI_THRESHOLD = -80;
+    static final short DISCOVERY_RSSI_THRESHOLD = -80;
 
     // Scan in intervals. Make sure it is less than 10seconds to avoid issues with Bluez internal scanning
     private static final long SCAN_WINDOW = TimeUnit.SECONDS.toMillis(6);
@@ -82,7 +73,6 @@ public class BluetoothCentral {
     private static final String PROPERTY_POWERED = "Powered";
 
     // Bluez interface names
-    private static final String BLUEZ_PATH = "/org/bluez";
     private static final String BLUEZ_ADAPTER_INTERFACE = "org.bluez.Adapter1";
 
     private static final String ENQUEUE_ERROR = "ERROR: Could not enqueue stop scanning command";
@@ -182,51 +172,37 @@ public class BluetoothCentral {
      *
      * @param bluetoothCentralCallback the callback to call for updates
      */
-    public BluetoothCentral(@NotNull BluetoothCentralCallback bluetoothCentralCallback, @Nullable Set<String> scanOptions) {
-        this.bluetoothCentralCallback = Objects.requireNonNull(bluetoothCentralCallback, "no valid bluetoothCallback provided");
-        this.callBackHandler = new Handler("Central-callBackHandler");
-        if (scanOptions != null) this.scanOptions = scanOptions;
-
-        try {
-            // Connect to the DBus
-            dbusConnection = DBusConnection.newConnection(DBusConnection.DBusBusType.SYSTEM);
-            dbusConnection.changeThreadCount((byte) 1);
-
-            if (!chooseAdapter()) exit(0);
-            setupPairingAgent();
-            BluezSignalHandler.createInstance(dbusConnection).addCentral(this);
-            registerInterfaceAddedHandler(interfacesAddedHandler);
-        } catch (DBusException e) {
-            e.printStackTrace();
-        }
+    public BluetoothCentral(@NotNull BluetoothCentralCallback bluetoothCentralCallback) {
+        this(bluetoothCentralCallback, Collections.emptySet());
     }
 
-    private boolean chooseAdapter() {
-        // Find all adapters and pick one if there are more than one
-        List<BluezAdapter> adapters = findBluetoothAdapters();
-        if (!adapters.isEmpty()) {
-            logger.info(String.format("found %d bluetooth adapter(s)", adapters.size()));
+    public BluetoothCentral(@NotNull BluetoothCentralCallback bluetoothCentralCallback, @NotNull Set<String> scanOptions) {
+        this(bluetoothCentralCallback, scanOptions, new BluezAdapterProvider().adapter);
+    }
 
-            // Take the adapter with the highest number
-            adapter = adapters.get(adapters.size() - 1);
-            logger.info("using adapter " + adapter.getDeviceName());
+    BluetoothCentral(@NotNull BluetoothCentralCallback bluetoothCentralCallback, @NotNull Set<String> scanOptions, @NotNull BluezAdapter bluezAdapter) {
+        this.bluetoothCentralCallback = Objects.requireNonNull(bluetoothCentralCallback, "no valid bluetoothCallback provided");
+        this.scanOptions = Objects.requireNonNull(scanOptions, "no scanOptions provided");
+        this.adapter = Objects.requireNonNull(bluezAdapter, "no bluez adapter provided");
 
-            // Make sure the adapter is powered on
-            isPowered = adapter.isPowered();
-            if (!isPowered) {
-                logger.info("adapter not on, so turning it on now");
-                adapterOn();
-            }
-            return true;
+        logger.info(String.format("using adapter %s", adapter.getDeviceName()));
+
+        // Make sure the adapter is powered on
+        isPowered = adapter.isPowered();
+        if (!isPowered) {
+            logger.info("adapter not on, so turning it on now");
+            adapterOn();
         }
 
-        logger.error("no bluetooth adaptors found");
-        return false;
+        try {
+            setupPairingAgent();
+            BluezSignalHandler.getInstance().addCentral(this);
+        } catch (Exception ignore) { }
     }
 
     private void setupPairingAgent() throws BluezInvalidArgumentsException, BluezAlreadyExistsException, BluezDoesNotExistException {
         // Setup pairing agent
-        PairingAgent agent = new PairingAgent("/test/agent", dbusConnection, new PairingDelegate() {
+        PairingAgent agent = new PairingAgent("/test/agent", adapter.getDBusConnection(), new PairingDelegate() {
             @Override
             public String requestPassCode(String deviceAddress) {
                 logger.info(String.format("received passcode request for %s", deviceAddress));
@@ -250,7 +226,7 @@ public class BluetoothCentral {
             }
         });
 
-        BluezAgentManager agentManager = getBluetoothAgentManager();
+        BluezAgentManager agentManager = DbusHelper.getBluezAgentManager(adapter.getDBusConnection());
         if (agentManager != null) {
 //                The capability parameter can have the values
 //                "DisplayOnly", "DisplayYesNo", "KeyboardOnly",
@@ -260,21 +236,6 @@ public class BluetoothCentral {
             agentManager.registerAgent(agent, "KeyboardOnly");
             agentManager.requestDefaultAgent(agent);
         }
-    }
-
-
-    private BluezAgentManager getBluetoothAgentManager() {
-        if (bluetoothAgentManager == null) {
-            AgentManager1 agentManager1 = DbusHelper.getRemoteObject(dbusConnection, BLUEZ_PATH, AgentManager1.class);
-            if (agentManager1 != null) {
-                bluetoothAgentManager = new BluezAgentManager(agentManager1, adapter, agentManager1.getObjectPath(), dbusConnection);
-            }
-        }
-        return bluetoothAgentManager;
-    }
-
-    private void registerInterfaceAddedHandler(@NotNull AbstractInterfacesAddedHandler handler) throws DBusException {
-        dbusConnection.addSigHandler(handler.getImplementationClass(), handler);
     }
 
     /**
@@ -457,19 +418,7 @@ public class BluetoothCentral {
         }
     }
 
-    private final AbstractInterfacesAddedHandler interfacesAddedHandler = new AbstractInterfacesAddedHandler() {
-        @Override
-        public void handle(final ObjectManager.InterfacesAdded interfacesAdded) {
-            final String path = interfacesAdded.getPath();
-            interfacesAdded.getInterfaces().forEach((key, value) -> {
-                if (key.equalsIgnoreCase(BLUEZ_DEVICE_INTERFACE)) {
-                    signalHandler.post(() -> handleInterfaceAddedForDevice(path, value));
-                }
-            });
-        }
-    };
-
-    private void handleInterfaceAddedForDevice(@NotNull final String path, @NotNull Map<String, Variant<?>> value) {
+    void handleInterfaceAddedForDevice(@NotNull final String path, @NotNull Map<String, Variant<?>> value) {
         final String deviceAddress;
         final String deviceName;
         final int rssi;
@@ -890,7 +839,7 @@ public class BluetoothCentral {
             }
 
             // Refresh BluezDevice because it may be old
-            scannedBluezDevices.remove(getPath(adapter,peripheral.getAddress()));
+            scannedBluezDevices.remove(adapter.getPath(peripheral.getAddress()));
             peripheral.device = getDeviceByAddress(adapter, peripheral.getAddress());
 
             currentDeviceAddress = peripheral.getAddress();
@@ -1048,7 +997,7 @@ public class BluetoothCentral {
         } else if (unconnectedPeripherals.containsKey(peripheralAddress)) {
             return unconnectedPeripherals.get(peripheralAddress);
         } else {
-            BluezDevice bluezDevice = scannedBluezDevices.get(getPath(adapter, peripheralAddress));
+            BluezDevice bluezDevice = scannedBluezDevices.get(adapter.getPath(peripheralAddress));
             BluetoothPeripheral bluetoothPeripheral = new BluetoothPeripheral(this, bluezDevice, bluezDevice != null ? bluezDevice.getName() : null, peripheralAddress, internalCallback, null, callBackHandler);
             scannedPeripherals.put(peripheralAddress, bluetoothPeripheral);
             return bluetoothPeripheral;
@@ -1160,27 +1109,11 @@ public class BluetoothCentral {
         }
     }
 
-    private @NotNull List<BluezAdapter> findBluetoothAdapters() {
-        final Map<String, BluezAdapter> bluetoothAdaptersByAdapterName = new LinkedHashMap<>();
-
-        Set<String> nodes = DbusHelper.findNodes(dbusConnection, BLUEZ_PATH);
-        for (String hci : nodes) {
-            Adapter1 adapter1 = DbusHelper.getRemoteObject(dbusConnection, BLUEZ_PATH + "/" + hci, Adapter1.class);
-            if (adapter1 != null) {
-                BluezAdapter bluetoothAdapter = new BluezAdapter(adapter1, BLUEZ_PATH + "/" + hci, dbusConnection);
-                bluetoothAdaptersByAdapterName.put(hci, bluetoothAdapter);
-            }
-        }
-
-        return new ArrayList<>(bluetoothAdaptersByAdapterName.values());
-    }
-
     private @Nullable BluezDevice getDeviceByPath(@NotNull BluezAdapter adapter, @NotNull String devicePath) {
         BluezDevice bluezDevice = scannedBluezDevices.get(devicePath);
         if (bluezDevice == null) {
-            Device1 device = DbusHelper.getRemoteObject(dbusConnection, devicePath, Device1.class);
-            if (device != null) {
-                bluezDevice = new BluezDevice(device, adapter, devicePath, dbusConnection);
+            bluezDevice = adapter.getBluezDeviceByPath(devicePath);
+            if (bluezDevice != null) {
                 scannedBluezDevices.put(devicePath, bluezDevice);
             }
         }
@@ -1188,12 +1121,7 @@ public class BluetoothCentral {
     }
 
     private @Nullable BluezDevice getDeviceByAddress(BluezAdapter adapter, String deviceAddress) {
-        return getDeviceByPath(adapter, getPath(adapter, deviceAddress));
-    }
-
-    @NotNull
-    private String getPath(BluezAdapter adapter, String deviceAddress) {
-        return adapter.getDbusPath() + "/dev_" + deviceAddress.replace(":", "_");
+        return getDeviceByPath(adapter, adapter.getPath(deviceAddress));
     }
 
     /*
