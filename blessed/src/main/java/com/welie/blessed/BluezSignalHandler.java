@@ -68,7 +68,7 @@ public class BluezSignalHandler {
         }
     };
 
-    private final AbstractInterfacesAddedHandler interfacesAddedHandler = new AbstractInterfacesAddedHandler() {
+    final AbstractInterfacesAddedHandler interfacesAddedHandler = new AbstractInterfacesAddedHandler() {
         @Override
         public void handle(final ObjectManager.InterfacesAdded interfacesAdded) {
             final String path = interfacesAdded.getPath();

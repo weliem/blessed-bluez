@@ -38,7 +38,7 @@ public class BluetoothCentral {
     private final Handler queueHandler = new Handler("CentralQueue");
     private final Handler signalHandler = new Handler("CentralQueue-signal");
     private Runnable timeoutRunnable;
-    private volatile boolean isScanning = false;
+    volatile boolean isScanning = false;
     private volatile boolean isPowered = false;
     private volatile boolean isStoppingScan = false;
     private volatile boolean autoScanActive = false;
@@ -69,11 +69,11 @@ public class BluetoothCentral {
     private static final long SCAN_INTERVAL = TimeUnit.SECONDS.toMillis(8);
 
     // Bluez Adapter property strings
-    private static final String PROPERTY_DISCOVERING = "Discovering";
-    private static final String PROPERTY_POWERED = "Powered";
+    static final String PROPERTY_DISCOVERING = "Discovering";
+    static final String PROPERTY_POWERED = "Powered";
 
     // Bluez interface names
-    private static final String BLUEZ_ADAPTER_INTERFACE = "org.bluez.Adapter1";
+    static final String BLUEZ_ADAPTER_INTERFACE = "org.bluez.Adapter1";
 
     private static final String ENQUEUE_ERROR = "ERROR: Could not enqueue stop scanning command";
 
@@ -1133,6 +1133,9 @@ public class BluetoothCentral {
     }
 
     private @Nullable BluezDevice getDeviceByPath(@NotNull BluezAdapter adapter, @NotNull String devicePath) {
+        Objects.requireNonNull(adapter, "adapter is null");
+        Objects.requireNonNull(devicePath, "device path is null");
+
         BluezDevice bluezDevice = scannedBluezDevices.get(devicePath);
         if (bluezDevice == null) {
             bluezDevice = adapter.getBluezDeviceByPath(devicePath);
@@ -1143,7 +1146,10 @@ public class BluetoothCentral {
         return bluezDevice;
     }
 
-    private @Nullable BluezDevice getDeviceByAddress(BluezAdapter adapter, String deviceAddress) {
+    private @Nullable BluezDevice getDeviceByAddress(@NotNull BluezAdapter adapter, @NotNull String deviceAddress) {
+        Objects.requireNonNull(adapter, "adapter is null");
+        Objects.requireNonNull(deviceAddress, "device address is null");
+
         return getDeviceByPath(adapter, adapter.getPath(deviceAddress));
     }
 
