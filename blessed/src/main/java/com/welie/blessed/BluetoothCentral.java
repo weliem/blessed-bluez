@@ -55,7 +55,7 @@ public class BluetoothCentral {
     private final Map<String, ScanResult> scanResultCache = new ConcurrentHashMap<>();
     @NotNull String[] scanPeripheralNames = new String[0];
     @NotNull String[] scanPeripheralAddresses = new String[0];
-    @NotNull UUID[] scanUUIDs = new UUID[0];
+    @NotNull UUID[] scanServiceUUIDs = new UUID[0];
     private final List<String> reconnectPeripheralAddresses = new ArrayList<>();
     private final Map<String, BluetoothPeripheralCallback> reconnectCallbacks = new ConcurrentHashMap<>();
     private final Map<String, String> pinCodes = new ConcurrentHashMap<>();
@@ -241,8 +241,13 @@ public class BluetoothCentral {
      * Scan for any peripheral that is advertising.
      */
     public void scanForPeripherals() {
-        initScanFilters();
+        // Stop the current scan if it is active
+        isScanning = adapter.isDiscovering();
+        if (isScanning) stopScan();
+
+        // Start unfiltered BLE scan
         normalScanActive = true;
+        resetScanFilters();
         startScanning();
     }
 
@@ -259,8 +264,13 @@ public class BluetoothCentral {
             throw new IllegalArgumentException("at least one service UUID  must be supplied");
         }
 
-        initScanFilters();
-        scanUUIDs = serviceUUIDs;
+        // Stop the current scan if it is active
+        isScanning = adapter.isDiscovering();
+        if (isScanning) stopScan();
+
+        // Store serviceUUIDs to scan for and start scan
+        resetScanFilters();
+        scanServiceUUIDs = serviceUUIDs;
         normalScanActive = true;
         startScanning();
     }
@@ -280,7 +290,12 @@ public class BluetoothCentral {
             throw new IllegalArgumentException("at least one peripheral name must be supplied");
         }
 
-        initScanFilters();
+        // Stop the current scan if it is active
+        isScanning = adapter.isDiscovering();
+        if (isScanning) stopScan();
+
+        // Store peripheral names to scan for and start scan
+        resetScanFilters();
         scanPeripheralNames = peripheralNames;
         normalScanActive = true;
         startScanning();
@@ -299,7 +314,12 @@ public class BluetoothCentral {
             throw new IllegalArgumentException("at least one peripheral address must be supplied");
         }
 
-        initScanFilters();
+        // Stop the current scan if it is active
+        isScanning = adapter.isDiscovering();
+        if (isScanning) stopScan();
+
+        // Store peripheral address to scan for and start scan
+        resetScanFilters();
         scanPeripheralAddresses = peripheralAddresses;
         normalScanActive = true;
         startScanning();
@@ -313,10 +333,10 @@ public class BluetoothCentral {
         stopScanning();
     }
 
-    private void initScanFilters() {
+    private void resetScanFilters() {
         scanPeripheralNames = new String[0];
         scanPeripheralAddresses = new String[0];
-        scanUUIDs = new UUID[0];
+        scanServiceUUIDs = new UUID[0];
         scanFilters.clear();
         setBasicFilters();
     }
@@ -349,9 +369,9 @@ public class BluetoothCentral {
         }
 
         // Check if peripheral uuid filter is set
-        if (scanUUIDs.length > 0) {
+        if (scanServiceUUIDs.length > 0) {
             List<UUID> scanResultUUIDs = scanResult.getUuids();
-            for (UUID uuid : scanUUIDs) {
+            for (UUID uuid : scanServiceUUIDs) {
                 if (scanResultUUIDs.contains(uuid)) {
                     return false;
                 }
