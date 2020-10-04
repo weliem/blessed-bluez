@@ -15,8 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static com.welie.blessed.BluetoothPeripheral.BLUEZ_DEVICE_INTERFACE;
 
-
-public class BluezSignalHandler {
+class BluezSignalHandler {
     private static final String TAG = BluezSignalHandler.class.getSimpleName();
     private static final Logger logger = LoggerFactory.getLogger(TAG);
 
@@ -26,7 +25,9 @@ public class BluezSignalHandler {
     private final Map<String, BluetoothPeripheral> peripheralsMap = new ConcurrentHashMap<>();
     private final List<BluetoothCentral> centralList = new ArrayList<>();
 
-    static synchronized BluezSignalHandler createInstance(DBusConnection dbusConnection) {
+    static synchronized BluezSignalHandler createInstance(@NotNull DBusConnection dbusConnection) {
+        Objects.requireNonNull(dbusConnection, "no valid dbusconnection provided");
+
         if (instance == null) {
             instance = new BluezSignalHandler(dbusConnection);
         }
@@ -57,7 +58,7 @@ public class BluezSignalHandler {
             for (final String peripheralAddress : peripherals) {
                 if (path.contains(peripheralAddress)) {
                     try {
-                        // Make sure there is at least 1 milisecond between every signal
+                        // Make sure there is at least 1 millisecond between every signal
                         Thread.sleep(1);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
@@ -82,22 +83,24 @@ public class BluezSignalHandler {
         }
     };
 
-    private BluezSignalHandler(DBusConnection dBusConnection) {
+    private BluezSignalHandler(@NotNull DBusConnection dBusConnection) {
+        Objects.requireNonNull(dBusConnection, "no valid dbusconnection provided");
+
         try {
             this.dbusConnection = dBusConnection;
-            registerPropertyHandler(signalHandler);
-            registerInterfaceAddedHandler(interfacesAddedHandler);
+            registerPropertiesChangedHandler(signalHandler);
+            registerInterfacesAddedHandler(interfacesAddedHandler);
         } catch (DBusException e) {
             logger.error("Error registering scan property handler");
             logger.error(e.toString());
         }
     }
 
-    private void registerPropertyHandler(@NotNull AbstractPropertiesChangedHandler handler) throws DBusException {
+    private void registerPropertiesChangedHandler(@NotNull AbstractPropertiesChangedHandler handler) throws DBusException {
         dbusConnection.addSigHandler(handler.getImplementationClass(), handler);
     }
 
-    private void registerInterfaceAddedHandler(@NotNull AbstractInterfacesAddedHandler handler) throws DBusException {
+    private void registerInterfacesAddedHandler(@NotNull AbstractInterfacesAddedHandler handler) throws DBusException {
         dbusConnection.addSigHandler(handler.getImplementationClass(), handler);
     }
 

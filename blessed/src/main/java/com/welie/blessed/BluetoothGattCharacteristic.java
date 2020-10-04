@@ -101,7 +101,7 @@ public class BluetoothGattCharacteristic {
     public static final int PERMISSION_WRITE_SIGNED_MITM = 0x100;
 
     /**
-     * Write characteristic, requesting acknoledgement by the remote device
+     * Write characteristic, requesting acknowledgement by the remote device
      */
     public static final int WRITE_TYPE_DEFAULT = 0x02;
 

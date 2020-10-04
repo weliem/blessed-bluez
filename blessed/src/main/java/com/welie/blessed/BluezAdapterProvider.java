@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Objects;
 
-public class BluezAdapterProvider {
+class BluezAdapterProvider {
 
     public final @Nullable DBusConnection dBusConnection;
     public final @Nullable BluezAdapter adapter;
