@@ -165,7 +165,7 @@ class BluetoothCentralTest {
     }
 
     @Test
-    void WhenScanningAndAnInterfaceIsAddedThenOnDiscoveredPeripheralIsCalled() throws InterruptedException, DBusException {
+    void WhenScanningUnfilteredAndAnInterfaceIsAddedThenOnDiscoveredPeripheralIsCalled() throws InterruptedException, DBusException {
         // Given
         startUnfilteredScan();
 
@@ -183,8 +183,11 @@ class BluetoothCentralTest {
         BluetoothPeripheral peripheral = peripheralCaptor.getValue();
         ScanResult scanResult = scanResultCaptor.getValue();
         assertEquals(DUMMY_MAC_ADDRESS, peripheral.getAddress());
-        assertEquals(DUMMY_PERIPHERAL_NAME, scanResult.getName());
         assertEquals(DUMMY_MAC_ADDRESS, scanResult.getAddress());
+        assertEquals(DUMMY_PERIPHERAL_NAME, scanResult.getName());
+        assertEquals(BLP_SERVICE_UUID, scanResult.getUuids().get(0));
+        assertEquals(1, scanResult.getManufacturerData().size());
+        assertEquals(1, scanResult.getServiceData().size());
     }
 
     @Test
@@ -317,22 +320,44 @@ class BluetoothCentralTest {
         DBusPath dBusPath = new DBusPath("/org/bluez/hci0/dev_00_11_22_33_44_55");
         HashMap<String, Map<String, Variant<?>>> interfaceAddedMap = new HashMap<>();
         Map<String, Variant<?>> interfaceMap = new HashMap<>();
+
         interfaceMap.put(PROPERTY_ADDRESS, new Variant<>(DUMMY_MAC_ADDRESS));
         interfaceMap.put(PROPERTY_NAME, new Variant<>(DUMMY_PERIPHERAL_NAME));
+        interfaceMap.put(PROPERTY_CONNECTED, new Variant<>(false));
+        interfaceMap.put(PROPERTY_SERVICES_RESOLVED, new Variant<>(false));
+        interfaceMap.put(PROPERTY_PAIRED, new Variant<>(false));
         interfaceMap.put(PROPERTY_RSSI, new Variant<>(new Short("-50")));
         ArrayList<String> uuids = new ArrayList<>();
         uuids.add(BLP_SERVICE_UUID.toString());
         interfaceMap.put(PROPERTY_SERVICE_UUIDS, new Variant<>(uuids, "as"));
 
+        // Build Manufacturer Data
         Object[][] testObjects = new Object[1][2];
         testObjects[0][0] = new UInt16(41);
         testObjects[0][1] = new Variant<>(new byte[]{0x10,0x20}, "ay");
-        final DBusMap<UInt16, byte[]> manufacturerData = new DBusMap<>(testObjects);
+        DBusMap<UInt16, byte[]> manufacturerData = new DBusMap<>(testObjects);
         interfaceMap.put(PROPERTY_MANUFACTURER_DATA, new Variant<>(manufacturerData, "a{qv}" ));
 
-        interfaceAddedMap.put(BLUEZ_DEVICE_INTERFACE, interfaceMap);
-        ObjectManager.InterfacesAdded interfacesAdded = new ObjectManager.InterfacesAdded(objectPath,dBusPath, interfaceAddedMap);
-        return interfacesAdded;
+        // Build Service Data
+        Map<String, Variant<?>> serviceData = new HashMap<>();
+        serviceData.put(BLP_SERVICE_UUID.toString(), new Variant<>(new byte[]{0x54, 0x12}));
+        interfaceMap.put(PROPERTY_SERVICE_DATA, new Variant<>(convertStringHashMapToDBusMap(serviceData), "a{sv}"));
+
+        DBusMap<String, Variant<?>> finalInterfacesAddedMap = convertStringHashMapToDBusMap(interfaceMap);
+        interfaceAddedMap.put(BLUEZ_DEVICE_INTERFACE, finalInterfacesAddedMap);
+        return new ObjectManager.InterfacesAdded(objectPath,dBusPath, interfaceAddedMap);
+    }
+
+    private DBusMap<String, Variant<?>> convertStringHashMapToDBusMap(Map<String, Variant<?>> source) {
+        Objects.requireNonNull(source);
+        Object[][] result = new Object[source.size()][2];
+        int index = 0;
+        for (Map.Entry<String, Variant<?>> entry : source.entrySet() ) {
+            result[index][0]= entry.getKey();
+            result[index][1] = entry.getValue();
+            index++;
+        }
+        return new DBusMap<>(result);
     }
 
     private void startUnfilteredScan() throws InterruptedException, DBusException {
