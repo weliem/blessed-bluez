@@ -6,10 +6,13 @@ import org.bluez.exceptions.BluezFailedException;
 import org.bluez.exceptions.BluezInvalidArgumentsException;
 import org.bluez.exceptions.BluezNotReadyException;
 import org.bluez.exceptions.BluezNotSupportedException;
+import org.freedesktop.dbus.DBusMap;
 import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.interfaces.ObjectManager;
 import org.freedesktop.dbus.interfaces.Properties;
+import org.freedesktop.dbus.types.DBusListType;
+import org.freedesktop.dbus.types.UInt16;
 import org.freedesktop.dbus.types.Variant;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
@@ -161,13 +164,6 @@ class BluetoothCentralTest {
         assertTrue(central.isScanning);
     }
 
-    @NotNull
-    private Properties.PropertiesChanged getPropertiesChangeSignalDiscoveryStarted() throws DBusException {
-        Map<String, Variant<?>> propertiesChanged = new HashMap<>();
-        propertiesChanged.put(PROPERTY_DISCOVERING, new Variant<>(true));
-        return new Properties.PropertiesChanged("/org/bluez/hci0", BLUEZ_ADAPTER_INTERFACE, propertiesChanged,new ArrayList() );
-    }
-
     @Test
     void WhenScanningAndAnInterfaceIsAddedThenOnDiscoveredPeripheralIsCalled() throws InterruptedException, DBusException {
         // Given
@@ -189,35 +185,6 @@ class BluetoothCentralTest {
         assertEquals(DUMMY_MAC_ADDRESS, peripheral.getAddress());
         assertEquals(DUMMY_PERIPHERAL_NAME, scanResult.getName());
         assertEquals(DUMMY_MAC_ADDRESS, scanResult.getAddress());
-    }
-
-    @NotNull
-    private ObjectManager.InterfacesAdded getInterfacesAddedNewDevice() throws DBusException {
-        String objectPath = "/";
-        DBusPath dBusPath = new DBusPath("/org/bluez/hci0/dev_00_11_22_33_44_55");
-        HashMap<String, Map<String, Variant<?>>> interfaceAddedMap = new HashMap<>();
-        Map<String, Variant<?>> interfaceMap = new HashMap<>();
-        interfaceMap.put(PROPERTY_ADDRESS, new Variant<>(DUMMY_MAC_ADDRESS));
-        interfaceMap.put(PROPERTY_NAME, new Variant<>(DUMMY_PERIPHERAL_NAME));
-        interfaceMap.put(PROPERTY_RSSI, new Variant<>(new Short("-50")));
-        ArrayList<String> uuids = new ArrayList<>();
-        uuids.add(BLP_SERVICE_UUID.toString());
-        interfaceMap.put(PROPERTY_SERVICE_UUIDS, new Variant<>(uuids, String.class));
-        interfaceAddedMap.put(BLUEZ_DEVICE_INTERFACE, interfaceMap);
-        ObjectManager.InterfacesAdded interfacesAdded = new ObjectManager.InterfacesAdded(objectPath,dBusPath, interfaceAddedMap);
-        return interfacesAdded;
-    }
-
-    private void startUnfilteredScan() throws InterruptedException, DBusException {
-        when(bluezAdapter.isDiscovering()).thenReturn(false);
-        when(bluezAdapter.isPowered()).thenReturn(true);
-        when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS)).thenReturn(DUMMY_MAC_ADDRESS_PATH);
-        when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH)).thenReturn(bluezDevice);
-        central = new BluetoothCentral(callback, Collections.emptySet(), bluezAdapter);
-        central.scanForPeripherals();
-        Thread.sleep(100);
-        Properties.PropertiesChanged propertiesChangedSignal = getPropertiesChangeSignalDiscoveryStarted();
-        central.handleSignal(propertiesChangedSignal);
     }
 
     @Test
@@ -335,5 +302,48 @@ class BluetoothCentralTest {
         assertThrows(IllegalArgumentException.class, ()-> {
             central.scanForPeripheralsWithNames(new String[0]);
         });
+    }
+
+    @NotNull
+    private Properties.PropertiesChanged getPropertiesChangeSignalDiscoveryStarted() throws DBusException {
+        Map<String, Variant<?>> propertiesChanged = new HashMap<>();
+        propertiesChanged.put(PROPERTY_DISCOVERING, new Variant<>(true));
+        return new Properties.PropertiesChanged("/org/bluez/hci0", BLUEZ_ADAPTER_INTERFACE, propertiesChanged,new ArrayList() );
+    }
+
+    @NotNull
+    private ObjectManager.InterfacesAdded getInterfacesAddedNewDevice() throws DBusException {
+        String objectPath = "/";
+        DBusPath dBusPath = new DBusPath("/org/bluez/hci0/dev_00_11_22_33_44_55");
+        HashMap<String, Map<String, Variant<?>>> interfaceAddedMap = new HashMap<>();
+        Map<String, Variant<?>> interfaceMap = new HashMap<>();
+        interfaceMap.put(PROPERTY_ADDRESS, new Variant<>(DUMMY_MAC_ADDRESS));
+        interfaceMap.put(PROPERTY_NAME, new Variant<>(DUMMY_PERIPHERAL_NAME));
+        interfaceMap.put(PROPERTY_RSSI, new Variant<>(new Short("-50")));
+        ArrayList<String> uuids = new ArrayList<>();
+        uuids.add(BLP_SERVICE_UUID.toString());
+        interfaceMap.put(PROPERTY_SERVICE_UUIDS, new Variant<>(uuids, "as"));
+
+        Object[][] testObjects = new Object[1][2];
+        testObjects[0][0] = new UInt16(41);
+        testObjects[0][1] = new Variant<>(new byte[]{0x10,0x20}, "ay");
+        final DBusMap<UInt16, byte[]> manufacturerData = new DBusMap<>(testObjects);
+        interfaceMap.put(PROPERTY_MANUFACTURER_DATA, new Variant<>(manufacturerData, "a{qv}" ));
+
+        interfaceAddedMap.put(BLUEZ_DEVICE_INTERFACE, interfaceMap);
+        ObjectManager.InterfacesAdded interfacesAdded = new ObjectManager.InterfacesAdded(objectPath,dBusPath, interfaceAddedMap);
+        return interfacesAdded;
+    }
+
+    private void startUnfilteredScan() throws InterruptedException, DBusException {
+        when(bluezAdapter.isDiscovering()).thenReturn(false);
+        when(bluezAdapter.isPowered()).thenReturn(true);
+        when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS)).thenReturn(DUMMY_MAC_ADDRESS_PATH);
+        when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH)).thenReturn(bluezDevice);
+        central = new BluetoothCentral(callback, Collections.emptySet(), bluezAdapter);
+        central.scanForPeripherals();
+        Thread.sleep(100);
+        Properties.PropertiesChanged propertiesChangedSignal = getPropertiesChangeSignalDiscoveryStarted();
+        central.handleSignal(propertiesChangedSignal);
     }
 }
