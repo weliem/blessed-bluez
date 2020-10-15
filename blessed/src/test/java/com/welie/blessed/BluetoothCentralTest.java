@@ -55,7 +55,6 @@ class BluetoothCentralTest {
     private static final String DUMMY_MAC_ADDRESS_PATH_HTS = "/org/bluez/hci0/dev_" + DUMMY_MAC_ADDRESS_HTS.replace(":", "_");
     private static final String DUMMY_PERIPHERAL_NAME_HTS = "Taidoc 1241";
 
-
     @BeforeEach
     void setup() {
     }
@@ -383,7 +382,7 @@ class BluetoothCentralTest {
     }
 
     @Test
-    void When_scanning_for_address_and_matching_InterfaceAdded_signal_comes_in_then_onDiscoveredPeripheral_is_called() throws InterruptedException, DBusException {
+    void When_scanning_for_address_and_a_matching_InterfaceAdded_signal_comes_in_then_onDiscoveredPeripheral_is_called() throws InterruptedException, DBusException {
         // Given
         when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_BLP)).thenReturn(DUMMY_MAC_ADDRESS_PATH_BLP);
         when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH_BLP)).thenReturn(bluezDevice);
@@ -407,7 +406,35 @@ class BluetoothCentralTest {
     }
 
     @Test
-    void When_scanning_for_address_and_non_matching_InterfaceAdded_signal_comes_in_then_onDiscoveredPeripheral_is_not_called() throws InterruptedException, DBusException {
+    void When_scanning_for_address_and_a_matching_PropertiesChanged_signal_comes_in_then_onDiscoveredPeripheral_is_called() throws InterruptedException, DBusException {
+        // Given
+        when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_BLP)).thenReturn(DUMMY_MAC_ADDRESS_PATH_BLP);
+        when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH_BLP)).thenReturn(bluezDevice);
+        when(bluezDevice.getAddress()).thenReturn(DUMMY_MAC_ADDRESS_BLP);
+        when(bluezDevice.getName()).thenReturn(DUMMY_PERIPHERAL_NAME_BLP);
+        when(bluezDevice.getUuids()).thenReturn(Collections.singletonList(BLP_SERVICE_UUID));
+        startScanWithAddress(DUMMY_MAC_ADDRESS_BLP);
+
+        // When
+        Properties.PropertiesChanged propertiesChanged = getPropertiesChangedSignalWhileScanning();
+        central.handleSignal(propertiesChanged);
+        Thread.sleep(100);
+
+        // Then
+        ArgumentCaptor<BluetoothPeripheral> peripheralCaptor = ArgumentCaptor.forClass(BluetoothPeripheral.class);
+        ArgumentCaptor<ScanResult> scanResultCaptor = ArgumentCaptor.forClass(ScanResult.class);
+        verify(callback).onDiscoveredPeripheral(peripheralCaptor.capture(), scanResultCaptor.capture());
+
+        // Then : check if the peripheral and scanResult have the right values
+        BluetoothPeripheral peripheral = peripheralCaptor.getValue();
+        ScanResult scanResult = scanResultCaptor.getValue();
+        assertEquals(DUMMY_MAC_ADDRESS_BLP, peripheral.getAddress());
+        assertEquals(DUMMY_MAC_ADDRESS_BLP, scanResult.getAddress());
+        assertEquals(-32, scanResult.getRssi());
+    }
+
+    @Test
+    void When_scanning_for_address_and_a_non_matching_InterfaceAdded_signal_comes_in_then_onDiscoveredPeripheral_is_not_called() throws InterruptedException, DBusException {
         // Given
         when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_HTS)).thenReturn(DUMMY_MAC_ADDRESS_PATH_HTS);
         when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH_HTS)).thenReturn(bluezDeviceHts);
@@ -416,6 +443,25 @@ class BluetoothCentralTest {
         // When
         ObjectManager.InterfacesAdded interfacesAdded = getInterfacesAddedNewHtsDevice();
         central.handleInterfaceAddedForDevice(interfacesAdded.getPath(), interfacesAdded.getInterfaces().get(BLUEZ_DEVICE_INTERFACE));
+        Thread.sleep(100);
+
+        // Then
+        verify(callback, never()).onDiscoveredPeripheral(any(), any());
+    }
+
+    @Test
+    void When_scanning_for_address_and_a_non_matching_PropertiesChanged_signal_comes_in_then_onDiscoveredPeripheral_is_not_called() throws InterruptedException, DBusException {
+        // Given
+        when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_BLP)).thenReturn(DUMMY_MAC_ADDRESS_PATH_BLP);
+        when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH_BLP)).thenReturn(bluezDevice);
+        when(bluezDevice.getAddress()).thenReturn(DUMMY_MAC_ADDRESS_BLP);
+        when(bluezDevice.getName()).thenReturn(DUMMY_PERIPHERAL_NAME_BLP);
+        when(bluezDevice.getUuids()).thenReturn(Collections.singletonList(BLP_SERVICE_UUID));
+        startScanWithAddress(DUMMY_MAC_ADDRESS_HTS);
+
+        // When
+        Properties.PropertiesChanged propertiesChanged = getPropertiesChangedSignalWhileScanning();
+        central.handleSignal(propertiesChanged);
         Thread.sleep(100);
 
         // Then
