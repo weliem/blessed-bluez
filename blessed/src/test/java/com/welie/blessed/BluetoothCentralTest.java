@@ -48,12 +48,12 @@ class BluetoothCentralTest {
 
     private static final UUID BLP_SERVICE_UUID = UUID.fromString("00001810-0000-1000-8000-00805f9b34fb");
     private static final String DUMMY_MAC_ADDRESS_BLP = "12:34:56:65:43:21";
-    private static final String DUMMY_MAC_ADDRESS_PATH_BLP = DUMMY_MAC_ADDRESS_BLP.replace(":", "_");
+    private static final String DUMMY_MAC_ADDRESS_PATH_BLP = "/org/bluez/hci0/dev_" + DUMMY_MAC_ADDRESS_BLP.replace(":", "_");
     private static final String DUMMY_PERIPHERAL_NAME_BLP = "Beurer BM57";
 
     private static final UUID HTS_SERVICE_UUID = UUID.fromString("00001809-0000-1000-8000-00805f9b34fb");
     private static final String DUMMY_MAC_ADDRESS_HTS = "44:33:22:11:99:77";
-    private static final String DUMMY_MAC_ADDRESS_PATH_HTS = DUMMY_MAC_ADDRESS_HTS.replace(":", "_");
+    private static final String DUMMY_MAC_ADDRESS_PATH_HTS = "/org/bluez/hci0/dev_" + DUMMY_MAC_ADDRESS_HTS.replace(":", "_");
     private static final String DUMMY_PERIPHERAL_NAME_HTS = "Taidoc 1241";
 
 
@@ -152,6 +152,33 @@ class BluetoothCentralTest {
         assertEquals(BLP_SERVICE_UUID, scanResult.getUuids().get(0));
         assertEquals(1, scanResult.getManufacturerData().size());
         assertEquals(1, scanResult.getServiceData().size());
+    }
+
+    @Test
+    void WhenScanningUnfilteredAndAPropertiesChangedThenDiscoveredPeripheralIsCalled() throws InterruptedException, DBusException {
+        // Given
+        when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_BLP)).thenReturn(DUMMY_MAC_ADDRESS_PATH_BLP);
+        when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH_BLP)).thenReturn(bluezDevice);
+        when(bluezDevice.getAddress()).thenReturn(DUMMY_MAC_ADDRESS_BLP);
+        when(bluezDevice.getName()).thenReturn(DUMMY_PERIPHERAL_NAME_BLP);
+        startUnfilteredScan();
+
+        // When
+        Properties.PropertiesChanged propertiesChanged = getPropertiesChangedSignalWhileScanning();
+        central.handleSignal(propertiesChanged);
+        Thread.sleep(100);
+
+        // Then
+        ArgumentCaptor<BluetoothPeripheral> peripheralCaptor = ArgumentCaptor.forClass(BluetoothPeripheral.class);
+        ArgumentCaptor<ScanResult> scanResultCaptor = ArgumentCaptor.forClass(ScanResult.class);
+        verify(callback).onDiscoveredPeripheral(peripheralCaptor.capture(), scanResultCaptor.capture());
+
+        // Then : check if the peripheral and scanResult have the right values
+        BluetoothPeripheral peripheral = peripheralCaptor.getValue();
+        ScanResult scanResult = scanResultCaptor.getValue();
+        assertEquals(DUMMY_MAC_ADDRESS_BLP, peripheral.getAddress());
+        assertEquals(DUMMY_MAC_ADDRESS_BLP, scanResult.getAddress());
+        assertEquals(-32, scanResult.getRssi());
     }
 
     @Test
@@ -447,6 +474,20 @@ class BluetoothCentralTest {
         Map<String, Variant<?>> propertiesChanged = new HashMap<>();
         propertiesChanged.put(PROPERTY_DISCOVERING, new Variant<>(true));
         return new Properties.PropertiesChanged("/org/bluez/hci0", BLUEZ_ADAPTER_INTERFACE, propertiesChanged,new ArrayList() );
+    }
+
+    @NotNull
+    private Properties.PropertiesChanged getPropertiesChangedSignalWhileScanning() throws DBusException {
+        Map<String, Variant<?>> propertiesChanged = new HashMap<>();
+        propertiesChanged.put(PROPERTY_ADDRESS, new Variant<>(DUMMY_MAC_ADDRESS_BLP));
+        propertiesChanged.put(PROPERTY_RSSI, new Variant<>(new Short("-32")));
+        Object[][] testObjects = new Object[1][2];
+        testObjects[0][0] = new UInt16(100);
+        testObjects[0][1] = new Variant<>(new byte[]{0x10,0x20}, "ay");
+        DBusMap<UInt16, byte[]> manufacturerData = new DBusMap<>(testObjects);
+        propertiesChanged.put(PROPERTY_MANUFACTURER_DATA, new Variant<>(manufacturerData, "a{qv}" ));
+        String dBusPath = DUMMY_MAC_ADDRESS_PATH_BLP;
+        return new Properties.PropertiesChanged(dBusPath, BLUEZ_DEVICE_INTERFACE, propertiesChanged,new ArrayList() );
     }
 
     @NotNull

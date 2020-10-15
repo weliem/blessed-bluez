@@ -42,6 +42,10 @@ public class ScanResult {
         return address;
     }
 
+    public int getRssi() {
+        return rssi;
+    }
+
     public @NotNull List<UUID> getUuids() {
         return uuids;
     }
