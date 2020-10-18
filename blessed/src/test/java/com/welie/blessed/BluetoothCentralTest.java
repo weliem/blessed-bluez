@@ -2,12 +2,10 @@ package com.welie.blessed;
 
 import com.welie.blessed.bluez.BluezAdapter;
 import com.welie.blessed.bluez.BluezDevice;
-import org.bluez.exceptions.BluezFailedException;
-import org.bluez.exceptions.BluezInvalidArgumentsException;
-import org.bluez.exceptions.BluezNotReadyException;
-import org.bluez.exceptions.BluezNotSupportedException;
+import org.bluez.exceptions.*;
 import org.freedesktop.dbus.DBusMap;
 import org.freedesktop.dbus.DBusPath;
+import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.interfaces.ObjectManager;
 import org.freedesktop.dbus.interfaces.Properties;
@@ -34,6 +32,9 @@ class BluetoothCentralTest {
     BluetoothCentral central;
 
     @Mock
+    DBusConnection dBusConnection;
+
+    @Mock
     BluetoothCentralCallback callback;
 
     @Mock
@@ -44,6 +45,9 @@ class BluetoothCentralTest {
 
     @Mock
     BluezDevice bluezDeviceHts;
+
+    @Mock
+    BluetoothPeripheralCallback peripheralCallback;
 
     private static final UUID BLP_SERVICE_UUID = UUID.fromString("00001810-0000-1000-8000-00805f9b34fb");
     private static final String DUMMY_MAC_ADDRESS_BLP = "12:34:56:65:43:21";
@@ -608,6 +612,45 @@ class BluetoothCentralTest {
         verify(callback, never()).onDiscoveredPeripheral(any(), any());
     }
 
+    @Test
+    void Given_a_scan_is_running_when_connectionPeripheral_is_called_then_the_scan_is_stopped() throws DBusException, InterruptedException {
+        // Given
+        when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_BLP)).thenReturn(DUMMY_MAC_ADDRESS_PATH_BLP);
+        when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH_BLP)).thenReturn(bluezDevice);
+        startUnfilteredScan();
+        when(bluezAdapter.isDiscovering()).thenReturn(true);
+
+        // When
+        BluetoothPeripheral peripheral = central.getPeripheral(DUMMY_MAC_ADDRESS_BLP);
+        central.connectPeripheral(peripheral, peripheralCallback);
+
+        Thread.sleep(100);
+
+        // Then
+        verify(bluezAdapter).stopDiscovery();
+    }
+
+    @Test
+    void When_connectPeripheral_is_called_then_a_connection_attempt_is_done_after_a_delay() throws BluezFailedException, BluezAlreadyConnectedException, BluezNotReadyException, BluezInProgressException, InterruptedException {
+        // Given
+        when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_BLP)).thenReturn(DUMMY_MAC_ADDRESS_PATH_BLP);
+        when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH_BLP)).thenReturn(bluezDevice);
+        when(bluezAdapter.isPowered()).thenReturn(true);
+        BluezSignalHandler.createInstance(dBusConnection);
+        central = new BluetoothCentral(callback, Collections.emptySet(), bluezAdapter);
+
+        // When
+        BluetoothPeripheral peripheral = central.getPeripheral(DUMMY_MAC_ADDRESS_BLP);
+        central.connectPeripheral(peripheral, peripheralCallback);
+
+
+        // Then
+        Thread.sleep(CONNECT_DELAY-50);
+        verify(bluezDevice, never()).connect();
+
+        Thread.sleep(CONNECT_DELAY+50);
+        verify(bluezDevice).connect();
+    }
 
     @NotNull
     private Properties.PropertiesChanged getPropertiesChangeSignalDiscoveryStarted() throws DBusException {

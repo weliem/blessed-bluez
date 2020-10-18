@@ -33,7 +33,7 @@ public class BluetoothPeripheral {
 
     // Core variables
     private final BluetoothCentral central;
-    BluezDevice device;
+    private BluezDevice device;
     String deviceName;
     private final String deviceAddress;
     private boolean isBonded = false;
@@ -324,9 +324,6 @@ public class BluetoothPeripheral {
         }
     };
 
-    /*
-     * PUBLIC HBDeviceAdapter Interface Methods
-     */
     public BluetoothPeripheral(@NotNull BluetoothCentral central, @Nullable BluezDevice bluezDevice, @Nullable String deviceName, @NotNull String deviceAddress, @NotNull InternalCallback listener, @Nullable BluetoothPeripheralCallback peripheralCallback, @NotNull Handler callBackHandler) {
         this.central = Objects.requireNonNull(central, "no valid central provided");
         this.device = bluezDevice;
@@ -1231,6 +1228,14 @@ public class BluetoothPeripheral {
         final byte[] copy = new byte[sourceLength];
         System.arraycopy(source, 0, copy, 0, sourceLength);
         return copy;
+    }
+
+    public BluezDevice getDevice() {
+        return device;
+    }
+
+    public void setDevice(BluezDevice device) {
+        this.device = device;
     }
 }
 

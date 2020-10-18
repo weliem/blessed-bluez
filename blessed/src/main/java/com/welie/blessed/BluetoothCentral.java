@@ -67,6 +67,7 @@ public class BluetoothCentral {
     // Scan in intervals. Make sure it is less than 10seconds to avoid issues with Bluez internal scanning
     private static final long SCAN_WINDOW = TimeUnit.SECONDS.toMillis(6);
     private static final long SCAN_INTERVAL = TimeUnit.SECONDS.toMillis(8);
+    static final long CONNECT_DELAY = TimeUnit.MILLISECONDS.toMillis(300);
 
     // Bluez Adapter property strings
     static final String PROPERTY_DISCOVERING = "Discovering";
@@ -396,10 +397,10 @@ public class BluetoothCentral {
         unconnectedPeripherals.remove(peripheralAddress);
 
         // Make sure we have a valid BluezDevice object and refresh the name
-        if (peripheral.device == null) {
-            peripheral.device = getDeviceByAddress(adapter, peripheralAddress);
-            if (peripheral.device != null) {
-                peripheral.deviceName = peripheral.device.getName();
+        if (peripheral.getDevice() == null) {
+            peripheral.setDevice(getDeviceByAddress(peripheralAddress));
+            if (peripheral.getDevice() != null) {
+                peripheral.deviceName = peripheral.getDevice().getName();
             }
         }
 
@@ -452,7 +453,7 @@ public class BluetoothCentral {
         }
 
         // Get the device
-        final BluezDevice device = getDeviceByAddress(adapter, deviceAddress);
+        final BluezDevice device = getDeviceByAddress(deviceAddress);
         if (device == null) {
             // Something is very wrong, don't handle this signal
             return;
@@ -513,7 +514,7 @@ public class BluetoothCentral {
                     if ((!isScanning) || isStoppingScan) return;
 
                     // Get the BluezDevice object
-                    final BluezDevice bluezDevice = getDeviceByPath(adapter, propertiesChanged.getPath());
+                    final BluezDevice bluezDevice = getDeviceByPath(propertiesChanged.getPath());
                     if (bluezDevice == null) return;
 
                     // Handle the propertiesChanged object
@@ -841,7 +842,7 @@ public class BluetoothCentral {
         }
 
         // Make sure we have BluezDevice
-        if (peripheral.device == null) {
+        if (peripheral.getDevice() == null) {
             logger.warn(String.format("WARNING: Peripheral '%s' doesn't have Bluez device", peripheral.getAddress()));
             return;
         }
@@ -852,14 +853,14 @@ public class BluetoothCentral {
         unconnectedPeripherals.put(peripheral.getAddress(), peripheral);
         boolean result = commandQueue.add(() -> {
             try {
-                sleep(300);
+                sleep(CONNECT_DELAY);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
 
             // Refresh BluezDevice because it may be old
             scannedBluezDevices.remove(adapter.getPath(peripheral.getAddress()));
-            peripheral.device = getDeviceByAddress(adapter, peripheral.getAddress());
+            peripheral.setDevice(getDeviceByAddress(peripheral.getAddress()));
 
             currentDeviceAddress = peripheral.getAddress();
             currentCommand = PROPERTY_CONNECTED;
@@ -984,7 +985,7 @@ public class BluetoothCentral {
     public boolean removeBond(@NotNull String peripheralAddress) {
         Objects.requireNonNull(peripheralAddress, "no peripheral address provided");
 
-        BluezDevice bluezDevice = getDeviceByAddress(adapter, peripheralAddress);
+        BluezDevice bluezDevice = getDeviceByAddress(peripheralAddress);
         if (bluezDevice == null) return false;
         return removeDevice(bluezDevice);
     }
@@ -1020,7 +1021,7 @@ public class BluetoothCentral {
         } else if (unconnectedPeripherals.containsKey(peripheralAddress)) {
             return unconnectedPeripherals.get(peripheralAddress);
         } else {
-            BluezDevice bluezDevice = scannedBluezDevices.get(adapter.getPath(peripheralAddress));
+            BluezDevice bluezDevice = getDeviceByAddress(peripheralAddress);
             BluetoothPeripheral bluetoothPeripheral = new BluetoothPeripheral(this, bluezDevice, bluezDevice != null ? bluezDevice.getName() : null, peripheralAddress, internalCallback, null, callBackHandler);
             scannedPeripherals.put(peripheralAddress, bluetoothPeripheral);
             return bluetoothPeripheral;
@@ -1132,8 +1133,7 @@ public class BluetoothCentral {
         }
     }
 
-    private @Nullable BluezDevice getDeviceByPath(@NotNull BluezAdapter adapter, @NotNull String devicePath) {
-        Objects.requireNonNull(adapter, "adapter is null");
+    private @Nullable BluezDevice getDeviceByPath(@NotNull String devicePath) {
         Objects.requireNonNull(devicePath, "device path is null");
 
         BluezDevice bluezDevice = scannedBluezDevices.get(devicePath);
@@ -1146,18 +1146,17 @@ public class BluetoothCentral {
         return bluezDevice;
     }
 
-    private @Nullable BluezDevice getDeviceByAddress(@NotNull BluezAdapter adapter, @NotNull String deviceAddress) {
-        Objects.requireNonNull(adapter, "adapter is null");
+    private @Nullable BluezDevice getDeviceByAddress(@NotNull String deviceAddress) {
         Objects.requireNonNull(deviceAddress, "device address is null");
 
-        return getDeviceByPath(adapter, adapter.getPath(deviceAddress));
+        return getDeviceByPath(adapter.getPath(deviceAddress));
     }
 
     /*
      * Function to clean up device from Bluetooth cache
      */
     protected void removeDevice(@NotNull final BluetoothPeripheral peripheral) {
-        BluezDevice bluetoothDevice = getDeviceByAddress(adapter, peripheral.getAddress());
+        BluezDevice bluetoothDevice = getDeviceByAddress(peripheral.getAddress());
         if (bluetoothDevice == null) return;
 
         boolean isBonded = peripheral.isPaired();
