@@ -1075,7 +1075,9 @@ public class BluetoothPeripheral {
             cancelServiceDiscoveryTimer();
             cleanupAfterFailedConnect();
         };
-        timeoutHandler.postDelayed(timeoutRunnable, SERVICE_DISCOVERY_TIMEOUT_IN_MS);
+        if (timeoutHandler != null) {
+            timeoutHandler.postDelayed(timeoutRunnable, SERVICE_DISCOVERY_TIMEOUT_IN_MS);
+        }
     }
 
     private void cancelServiceDiscoveryTimer() {

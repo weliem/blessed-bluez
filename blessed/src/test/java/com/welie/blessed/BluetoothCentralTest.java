@@ -621,13 +621,50 @@ class BluetoothCentralTest {
         BluetoothPeripheral peripheral = central.getPeripheral(DUMMY_MAC_ADDRESS_BLP);
         central.connectPeripheral(peripheral, peripheralCallback);
 
-
         // Then
         Thread.sleep(CONNECT_DELAY-50);
         verify(bluezDevice, never()).connect();
 
         Thread.sleep(CONNECT_DELAY+50);
         verify(bluezDevice).connect();
+    }
+
+    @Test
+    void Given_a_connected_peripheral_and_scanning_when_cancelPeripheralConnection_is_called_then_the_scan_is_stopped() throws DBusException, InterruptedException {
+        // Given
+        BluezSignalHandler.createInstance(dBusConnection);
+        when(bluezAdapter.isPowered()).thenReturn(true);
+        BluetoothCentral central = new BluetoothCentral(callback, Collections.emptySet(), bluezAdapter);
+
+        when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_BLP)).thenReturn(DUMMY_MAC_ADDRESS_PATH_BLP);
+        when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH_BLP)).thenReturn(bluezDevice);
+        BluetoothPeripheral peripheral = central.getPeripheral(DUMMY_MAC_ADDRESS_BLP);
+        central.connectPeripheral(peripheral, peripheralCallback);
+        Thread.sleep(500);
+        peripheral.handleSignal(getPropertiesChangedSignalConnected());
+        Thread.sleep(100);
+        assertEquals(STATE_CONNECTED, peripheral.getState());
+
+        central.scanForPeripherals();
+        Thread.sleep(100);
+        Properties.PropertiesChanged propertiesChangedSignal = getPropertiesChangeSignalDiscoveryStarted();
+        central.handleSignal(propertiesChangedSignal);
+        Thread.sleep(100);
+        when(bluezAdapter.isDiscovering()).thenReturn(true);
+
+        // When
+        central.cancelConnection(peripheral);
+        Thread.sleep(100);
+
+        // Then
+        verify(bluezAdapter).stopDiscovery();
+    }
+
+    @NotNull
+    private Properties.PropertiesChanged getPropertiesChangedSignalConnected() throws DBusException {
+        Map<String, Variant<?>> propertiesChanged = new HashMap<>();
+        propertiesChanged.put(PROPERTY_CONNECTED, new Variant<>(true));
+        return new Properties.PropertiesChanged("/org/bluez/hci0", BLUEZ_DEVICE_INTERFACE, propertiesChanged,new ArrayList() );
     }
 
     @NotNull
