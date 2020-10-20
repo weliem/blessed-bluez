@@ -632,25 +632,13 @@ class BluetoothCentralTest {
     @Test
     void Given_a_connected_peripheral_and_scanning_when_cancelPeripheralConnection_is_called_then_the_scan_is_stopped() throws DBusException, InterruptedException {
         // Given
-        BluezSignalHandler.createInstance(dBusConnection);
-        when(bluezAdapter.isPowered()).thenReturn(true);
-        BluetoothCentral central = new BluetoothCentral(callback, Collections.emptySet(), bluezAdapter);
+        BluetoothCentral central = getCentral();
 
         when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_BLP)).thenReturn(DUMMY_MAC_ADDRESS_PATH_BLP);
         when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH_BLP)).thenReturn(bluezDevice);
         BluetoothPeripheral peripheral = central.getPeripheral(DUMMY_MAC_ADDRESS_BLP);
-        central.connectPeripheral(peripheral, peripheralCallback);
-        Thread.sleep(500);
-        peripheral.handleSignal(getPropertiesChangedSignalConnected());
-        Thread.sleep(100);
-        assertEquals(STATE_CONNECTED, peripheral.getState());
-
-        central.scanForPeripherals();
-        Thread.sleep(100);
-        Properties.PropertiesChanged propertiesChangedSignal = getPropertiesChangeSignalDiscoveryStarted();
-        central.handleSignal(propertiesChangedSignal);
-        Thread.sleep(100);
-        when(bluezAdapter.isDiscovering()).thenReturn(true);
+        connectPeripheral(central, peripheral);
+        startScan(central);
 
         // When
         central.cancelConnection(peripheral);
@@ -658,6 +646,47 @@ class BluetoothCentralTest {
 
         // Then
         verify(bluezAdapter).stopDiscovery();
+    }
+
+    @Test
+    void Given_a_connected_peripheral_when_cancelPeripheralConnection_is_called_then_the_peripheral_is_disconnected() throws DBusException, InterruptedException {
+        // Given
+        BluetoothCentral central = getCentral();
+        when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_BLP)).thenReturn(DUMMY_MAC_ADDRESS_PATH_BLP);
+        when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH_BLP)).thenReturn(bluezDevice);
+        BluetoothPeripheral peripheral = central.getPeripheral(DUMMY_MAC_ADDRESS_BLP);
+        connectPeripheral(central, peripheral);
+
+        // When
+        central.cancelConnection(peripheral);
+        Thread.sleep(100);
+
+        // Then
+        verify(bluezDevice).disconnect();
+    }
+
+    @NotNull
+    private BluetoothCentral getCentral() {
+        BluezSignalHandler.createInstance(dBusConnection);
+        when(bluezAdapter.isPowered()).thenReturn(true);
+        return new BluetoothCentral(callback, Collections.emptySet(), bluezAdapter);
+    }
+
+    private void startScan(BluetoothCentral central) throws InterruptedException, DBusException {
+        central.scanForPeripherals();
+        Thread.sleep(100);
+        Properties.PropertiesChanged propertiesChangedSignal = getPropertiesChangeSignalDiscoveryStarted();
+        central.handleSignal(propertiesChangedSignal);
+        Thread.sleep(100);
+        when(bluezAdapter.isDiscovering()).thenReturn(true);
+    }
+
+    private void connectPeripheral(BluetoothCentral central, BluetoothPeripheral peripheral) throws InterruptedException, DBusException {
+        central.connectPeripheral(peripheral, peripheralCallback);
+        Thread.sleep(500);
+        peripheral.handleSignal(getPropertiesChangedSignalConnected());
+        Thread.sleep(100);
+        assertEquals(STATE_CONNECTED, peripheral.getState());
     }
 
     @NotNull
