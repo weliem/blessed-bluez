@@ -31,35 +31,82 @@ import static java.lang.Thread.sleep;
 public class BluetoothCentral {
     private static final String TAG = BluetoothCentral.class.getSimpleName();
     private final Logger logger = LoggerFactory.getLogger(TAG);
+
+    @NotNull
     private final BluezAdapter adapter;
+
+    @NotNull
     private final BluetoothCentralCallback bluetoothCentralCallback;
+
+    @NotNull
     private final Handler callBackHandler = new Handler("Central-callBackHandler");
+
+    @NotNull
     private final Handler timeoutHandler = new Handler("Central-timeoutHandler");
+
+    @NotNull
     private final Handler queueHandler = new Handler("CentralQueue");
+
+    @NotNull
     private final Handler signalHandler = new Handler("CentralQueue-signal");
+
+    @Nullable
     private Runnable timeoutRunnable;
+
     volatile boolean isScanning = false;
     private volatile boolean isPowered = false;
     private volatile boolean isStoppingScan = false;
     private volatile boolean autoScanActive = false;
     private volatile boolean normalScanActive = false;
     private volatile boolean commandQueueBusy;
+
+    @NotNull
     final Map<DiscoveryFilter, Object> scanFilters = new EnumMap<>(DiscoveryFilter.class);
+
+    @NotNull
     private final Queue<Runnable> commandQueue = new ConcurrentLinkedQueue<>();
-    private String currentCommand;
-    private String currentDeviceAddress;
+
+    @NotNull
+    private String currentCommand = "";
+
+    @NotNull
+    private String currentDeviceAddress = "";
+
+    @NotNull
     private final Map<String, BluetoothPeripheral> connectedPeripherals = new ConcurrentHashMap<>();
+
+    @NotNull
     private final Map<String, BluetoothPeripheral> unconnectedPeripherals = new ConcurrentHashMap<>();
+
+    @NotNull
     private final Map<String, BluezDevice> scannedBluezDevices = new ConcurrentHashMap<>();
+
+    @NotNull
     private final Map<String, BluetoothPeripheral> scannedPeripherals = new ConcurrentHashMap<>();
+
+    @NotNull
     private final Map<String, ScanResult> scanResultCache = new ConcurrentHashMap<>();
-    @NotNull String[] scanPeripheralNames = new String[0];
-    @NotNull String[] scanPeripheralAddresses = new String[0];
-    @NotNull UUID[] scanServiceUUIDs = new UUID[0];
+
+    @NotNull
+    String[] scanPeripheralNames = new String[0];
+
+    @NotNull
+    String[] scanPeripheralAddresses = new String[0];
+
+    @NotNull
+    UUID[] scanServiceUUIDs = new UUID[0];
+
+    @NotNull
     private final List<String> reconnectPeripheralAddresses = new ArrayList<>();
+
+    @NotNull
     private final Map<String, BluetoothPeripheralCallback> reconnectCallbacks = new ConcurrentHashMap<>();
+
+    @NotNull
     private final Map<String, String> pinCodes = new ConcurrentHashMap<>();
-    private Set<String> scanOptions = new HashSet<>();
+
+    @NotNull
+    private final Set<String> scanOptions;
 
     private static final int ADDRESS_LENGTH = 17;
     static final short DISCOVERY_RSSI_THRESHOLD = -80;
@@ -68,6 +115,9 @@ public class BluetoothCentral {
     private static final long SCAN_WINDOW = TimeUnit.SECONDS.toMillis(6);
     private static final long SCAN_INTERVAL = TimeUnit.SECONDS.toMillis(8);
     static final long CONNECT_DELAY = TimeUnit.MILLISECONDS.toMillis(300);
+
+    // Null check errors
+    private static final String NULL_PERIPHERAL_ERROR = "no valid peripheral specified";
 
     // Bluez Adapter property strings
     static final String PROPERTY_DISCOVERING = "Discovering";
@@ -750,7 +800,7 @@ public class BluetoothCentral {
             try {
                 Thread.sleep(SCAN_INTERVAL - SCAN_WINDOW);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                // Ignore
             }
             startScanning();
         };
@@ -825,7 +875,7 @@ public class BluetoothCentral {
      * @param peripheralCallback the peripheral callback to use
      */
     public void connectPeripheral(@NotNull final BluetoothPeripheral peripheral, @NotNull final BluetoothPeripheralCallback peripheralCallback) {
-        Objects.requireNonNull(peripheral, "no valid peripheral specified");
+        Objects.requireNonNull(peripheral, NULL_PERIPHERAL_ERROR);
         Objects.requireNonNull(peripheralCallback, "no valid peripheral callback specified");
         peripheral.setPeripheralCallback(peripheralCallback);
 
@@ -888,7 +938,7 @@ public class BluetoothCentral {
      */
     @SuppressWarnings("UnusedReturnValue,unused")
     public boolean autoConnectPeripheral(@NotNull BluetoothPeripheral peripheral, @NotNull BluetoothPeripheralCallback peripheralCallback) {
-        Objects.requireNonNull(peripheral, "no valid peripheral specified");
+        Objects.requireNonNull(peripheral, NULL_PERIPHERAL_ERROR);
         Objects.requireNonNull(peripheralCallback, "no valid peripheral callback specified");
 
         final String peripheralAddress = peripheral.getAddress();
@@ -941,7 +991,7 @@ public class BluetoothCentral {
      */
     @SuppressWarnings("unused")
     public void cancelConnection(@NotNull final BluetoothPeripheral peripheral) {
-        Objects.requireNonNull(peripheral, "no valid peripheral specified");
+        Objects.requireNonNull(peripheral, NULL_PERIPHERAL_ERROR);
 
         if (peripheral.getState() == STATE_CONNECTED) {
             // Some adapters have issues with (dis)connecting while scanning, so stop scan first
@@ -1086,6 +1136,8 @@ public class BluetoothCentral {
                     if (c == ':') {
                         break;  // OK
                     }
+                    return false;
+                default:
                     return false;
             }
         }
