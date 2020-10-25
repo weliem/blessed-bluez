@@ -142,9 +142,7 @@ public class BluetoothCentral {
             completeConnectOrDisconnectCommand(peripheralAddress);
 
             callBackHandler.post(() -> {
-                if (bluetoothCentralCallback != null) {
-                    bluetoothCentralCallback.onConnectedPeripheral(peripheral);
-                }
+                bluetoothCentralCallback.onConnectedPeripheral(peripheral);
             });
         }
 
@@ -172,9 +170,7 @@ public class BluetoothCentral {
             completeConnectOrDisconnectCommand(peripheralAddress);
 
             callBackHandler.post(() -> {
-                if (bluetoothCentralCallback != null) {
-                    bluetoothCentralCallback.onConnectionFailed(peripheral, 0);
-                }
+                bluetoothCentralCallback.onConnectionFailed(peripheral, 0);
             });
 
             restartScannerIfNeeded();
@@ -195,9 +191,7 @@ public class BluetoothCentral {
             }
 
             callBackHandler.post(() -> {
-                if (bluetoothCentralCallback != null) {
-                    bluetoothCentralCallback.onDisconnectedPeripheral(peripheral, 0);
-                }
+                bluetoothCentralCallback.onDisconnectedPeripheral(peripheral, 0);
             });
 
             restartScannerIfNeeded();
@@ -478,12 +472,8 @@ public class BluetoothCentral {
             if (notAllowedByFilter(scanResult)) return;
 
             callBackHandler.post(() -> {
-                if (bluetoothCentralCallback != null) {
-                    scanResult.stamp();
-                    bluetoothCentralCallback.onDiscoveredPeripheral(peripheral, scanResult);
-                } else {
-                    logger.error("bluetoothCentralCallback is null");
-                }
+                scanResult.stamp();
+                bluetoothCentralCallback.onDiscoveredPeripheral(peripheral, scanResult);
             });
         }
     }
@@ -1019,9 +1009,7 @@ public class BluetoothCentral {
             reconnectCallbacks.remove(peripheralAddress);
 
             callBackHandler.post(() -> {
-                if (bluetoothCentralCallback != null) {
-                    bluetoothCentralCallback.onDisconnectedPeripheral(peripheral, 0);
-                }
+                bluetoothCentralCallback.onDisconnectedPeripheral(peripheral, 0);
             });
         }
     }
@@ -1217,10 +1205,6 @@ public class BluetoothCentral {
     }
 
     private boolean removeDevice(BluezDevice bluetoothDevice) {
-        if (adapter == null) {
-            return false;
-        }
-
         try {
             Device1 rawDevice = bluetoothDevice.getRawDevice();
             if (rawDevice != null) {
