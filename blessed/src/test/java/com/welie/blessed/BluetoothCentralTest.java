@@ -755,6 +755,9 @@ class BluetoothCentralTest {
         Thread.sleep(500);
 
         verify(bluezDevice).connect();
+
+        assertFalse(central.reconnectPeripheralAddresses.contains(peripheral.getAddress()));
+        assertNull(central.reconnectCallbacks.get(peripheral.getAddress()));
     }
 
     @NotNull
