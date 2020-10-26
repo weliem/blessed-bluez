@@ -29,8 +29,6 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
 class BluetoothCentralTest {
- //   BluetoothCentral central;
-
     @Mock
     DBusConnection dBusConnection;
 
@@ -106,7 +104,6 @@ class BluetoothCentralTest {
         // Then : Verify scan filters
         ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
         verify(bluezAdapter).setDiscoveryFilter(captor.capture());
-
         Map<String, Variant<?>> filterMap = captor.getValue();
         checkFilters(filterMap);
 
@@ -474,7 +471,6 @@ class BluetoothCentralTest {
         // Then : Verify scan filters
         ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
         verify(bluezAdapter).setDiscoveryFilter(captor.capture());
-
         Map<String, Variant<?>> filterMap = captor.getValue();
         checkFilters(filterMap);
 
@@ -630,6 +626,21 @@ class BluetoothCentralTest {
     }
 
     @Test
+    void Given_a_disconnected_peripheral_when_a_peripherals_connects_then_onConnected_is_called() throws DBusException, InterruptedException {
+        // Given
+        BluetoothCentral central = getCentral();
+        when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_BLP)).thenReturn(DUMMY_MAC_ADDRESS_PATH_BLP);
+        when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH_BLP)).thenReturn(bluezDevice);
+        BluetoothPeripheral peripheral = central.getPeripheral(DUMMY_MAC_ADDRESS_BLP);
+
+        // When
+        connectPeripheral(central, peripheral);
+
+        // Then
+        verify(callback).onConnectedPeripheral(peripheral);
+    }
+
+    @Test
     void Given_a_connected_peripheral_and_scanning_when_cancelPeripheralConnection_is_called_then_the_scan_is_stopped() throws DBusException, InterruptedException {
         // Given
         BluetoothCentral central = getCentral();
@@ -665,6 +676,25 @@ class BluetoothCentralTest {
         verify(bluezDevice).disconnect();
     }
 
+    @Test
+    void Given_a_connected_peripheral_when_it_disconnects_then_onDisconnect_is_called() throws DBusException, InterruptedException {
+        // Given
+        BluetoothCentral central = getCentral();
+        when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_BLP)).thenReturn(DUMMY_MAC_ADDRESS_PATH_BLP);
+        when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH_BLP)).thenReturn(bluezDevice);
+        BluetoothPeripheral peripheral = central.getPeripheral(DUMMY_MAC_ADDRESS_BLP);
+        connectPeripheral(central, peripheral);
+
+        // When
+        central.cancelConnection(peripheral);
+        Thread.sleep(100);
+        Properties.PropertiesChanged disconnectedSignal = getPropertiesChangedSignalDisconnected();
+        peripheral.handleSignal(disconnectedSignal);
+
+        // Then
+        verify(callback).onDisconnectedPeripheral(peripheral, GATT_SUCCESS);
+    }
+
     @NotNull
     private BluetoothCentral getCentral() {
         BluezSignalHandler.createInstance(dBusConnection);
@@ -693,6 +723,13 @@ class BluetoothCentralTest {
     private Properties.PropertiesChanged getPropertiesChangedSignalConnected() throws DBusException {
         Map<String, Variant<?>> propertiesChanged = new HashMap<>();
         propertiesChanged.put(PROPERTY_CONNECTED, new Variant<>(true));
+        return new Properties.PropertiesChanged("/org/bluez/hci0", BLUEZ_DEVICE_INTERFACE, propertiesChanged,new ArrayList() );
+    }
+
+    @NotNull
+    private Properties.PropertiesChanged getPropertiesChangedSignalDisconnected() throws DBusException {
+        Map<String, Variant<?>> propertiesChanged = new HashMap<>();
+        propertiesChanged.put(PROPERTY_CONNECTED, new Variant<>(false));
         return new Properties.PropertiesChanged("/org/bluez/hci0", BLUEZ_DEVICE_INTERFACE, propertiesChanged,new ArrayList() );
     }
 
