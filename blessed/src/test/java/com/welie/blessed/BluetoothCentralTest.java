@@ -695,6 +695,68 @@ class BluetoothCentralTest {
         verify(callback).onDisconnectedPeripheral(peripheral, GATT_SUCCESS);
     }
 
+    @Test
+    void Given_a_disconnected_peripheral_when_autoConnect_is_called_it_is_added_to_reconnection_list() throws DBusException, InterruptedException {
+        // Given
+        BluetoothCentral central = getCentral();
+        when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_BLP)).thenReturn(DUMMY_MAC_ADDRESS_PATH_BLP);
+        when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH_BLP)).thenReturn(bluezDevice);
+        BluetoothPeripheral peripheral = central.getPeripheral(DUMMY_MAC_ADDRESS_BLP);
+
+        // When
+        central.autoConnectPeripheral(peripheral, peripheralCallback);
+
+        // Then
+        assertTrue(central.reconnectPeripheralAddresses.contains(peripheral.getAddress()));
+        assertSame(central.reconnectCallbacks.get(peripheral.getAddress()), peripheralCallback);
+    }
+
+    @Test
+    void Given_a_disconnected_peripheral_and_not_scanning_when_autoConnect_is_called_a_scan_is_started() throws DBusException, InterruptedException {
+        // Given
+        BluetoothCentral central = getCentral();
+        when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_BLP)).thenReturn(DUMMY_MAC_ADDRESS_PATH_BLP);
+        when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH_BLP)).thenReturn(bluezDevice);
+        BluetoothPeripheral peripheral = central.getPeripheral(DUMMY_MAC_ADDRESS_BLP);
+
+        // When
+        central.autoConnectPeripheral(peripheral, peripheralCallback);
+        Thread.sleep(100);
+
+        // Then
+        verify(bluezAdapter).startDiscovery();
+    }
+
+    @Test
+    void Given_an_autoConnect_is_issued_when_the_peripheral_is_seen_then_a_connect_is_attempted_and_it_is_removed_from_list() throws InterruptedException, DBusException {
+        // Given
+        BluetoothCentral central = getCentral();
+        when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_BLP)).thenReturn(DUMMY_MAC_ADDRESS_PATH_BLP);
+        when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH_BLP)).thenReturn(bluezDevice);
+        when(bluezDevice.getAddress()).thenReturn(DUMMY_MAC_ADDRESS_BLP);
+        when(bluezDevice.getName()).thenReturn("Something else");
+        when(bluezDevice.getUuids()).thenReturn(Collections.singletonList(BLP_SERVICE_UUID));
+        BluetoothPeripheral peripheral = central.getPeripheral(DUMMY_MAC_ADDRESS_BLP);
+        central.autoConnectPeripheral(peripheral, peripheralCallback);
+        Thread.sleep(100);
+        central.handleSignal(getPropertiesChangeSignalDiscoveryStarted());
+        Thread.sleep(100);
+        when(bluezAdapter.isDiscovering()).thenReturn(true);
+
+        // When
+        central.handleSignal(getPropertiesChangedSignalWhileScanning());
+        Thread.sleep(100);
+
+        // Then
+        verify(bluezAdapter).stopDiscovery();
+
+        central.handleSignal(getPropertiesChangeSignalDiscoveryStopped());
+        when(bluezAdapter.isDiscovering()).thenReturn(false);
+        Thread.sleep(500);
+
+        verify(bluezDevice).connect();
+    }
+
     @NotNull
     private BluetoothCentral getCentral() {
         BluezSignalHandler.createInstance(dBusConnection);
@@ -737,6 +799,13 @@ class BluetoothCentralTest {
     private Properties.PropertiesChanged getPropertiesChangeSignalDiscoveryStarted() throws DBusException {
         Map<String, Variant<?>> propertiesChanged = new HashMap<>();
         propertiesChanged.put(PROPERTY_DISCOVERING, new Variant<>(true));
+        return new Properties.PropertiesChanged("/org/bluez/hci0", BLUEZ_ADAPTER_INTERFACE, propertiesChanged,new ArrayList() );
+    }
+
+    @NotNull
+    private Properties.PropertiesChanged getPropertiesChangeSignalDiscoveryStopped() throws DBusException {
+        Map<String, Variant<?>> propertiesChanged = new HashMap<>();
+        propertiesChanged.put(PROPERTY_DISCOVERING, new Variant<>(false));
         return new Properties.PropertiesChanged("/org/bluez/hci0", BLUEZ_ADAPTER_INTERFACE, propertiesChanged,new ArrayList() );
     }
 

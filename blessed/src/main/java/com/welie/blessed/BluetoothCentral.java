@@ -97,10 +97,10 @@ public class BluetoothCentral {
     UUID[] scanServiceUUIDs = new UUID[0];
 
     @NotNull
-    private final List<String> reconnectPeripheralAddresses = new ArrayList<>();
+    protected final List<String> reconnectPeripheralAddresses = new ArrayList<>();
 
     @NotNull
-    private final Map<String, BluetoothPeripheralCallback> reconnectCallbacks = new ConcurrentHashMap<>();
+    protected final Map<String, BluetoothPeripheralCallback> reconnectCallbacks = new ConcurrentHashMap<>();
 
     @NotNull
     private final Map<String, String> pinCodes = new ConcurrentHashMap<>();
