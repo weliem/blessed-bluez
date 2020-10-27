@@ -53,7 +53,7 @@ public class BluetoothCentral {
     @Nullable
     private Runnable timeoutRunnable;
 
-    volatile boolean isScanning = false;
+    protected volatile boolean isScanning = false;
     private volatile boolean isPowered = false;
     private volatile boolean isStoppingScan = false;
     private volatile boolean autoScanActive = false;
@@ -61,10 +61,10 @@ public class BluetoothCentral {
     private volatile boolean commandQueueBusy;
 
     @NotNull
-    final Map<DiscoveryFilter, Object> scanFilters = new EnumMap<>(DiscoveryFilter.class);
+    protected final Map<DiscoveryFilter, Object> scanFilters = new EnumMap<>(DiscoveryFilter.class);
 
     @NotNull
-    private final Queue<Runnable> commandQueue = new ConcurrentLinkedQueue<>();
+    protected final Queue<Runnable> commandQueue = new ConcurrentLinkedQueue<>();
 
     @NotNull
     private String currentCommand = "";
@@ -88,13 +88,13 @@ public class BluetoothCentral {
     private final Map<String, ScanResult> scanResultCache = new ConcurrentHashMap<>();
 
     @NotNull
-    String[] scanPeripheralNames = new String[0];
+    protected String[] scanPeripheralNames = new String[0];
 
     @NotNull
-    String[] scanPeripheralAddresses = new String[0];
+    protected String[] scanPeripheralAddresses = new String[0];
 
     @NotNull
-    UUID[] scanServiceUUIDs = new UUID[0];
+    protected UUID[] scanServiceUUIDs = new UUID[0];
 
     @NotNull
     protected final List<String> reconnectPeripheralAddresses = new ArrayList<>();
@@ -114,7 +114,7 @@ public class BluetoothCentral {
     // Scan in intervals. Make sure it is less than 10seconds to avoid issues with Bluez internal scanning
     private static final long SCAN_WINDOW = TimeUnit.SECONDS.toMillis(6);
     private static final long SCAN_INTERVAL = TimeUnit.SECONDS.toMillis(8);
-    static final long CONNECT_DELAY = TimeUnit.MILLISECONDS.toMillis(300);
+    protected static final long CONNECT_DELAY = TimeUnit.MILLISECONDS.toMillis(300);
 
     // Null check errors
     private static final String NULL_PERIPHERAL_ERROR = "no valid peripheral specified";
@@ -124,7 +124,7 @@ public class BluetoothCentral {
     static final String PROPERTY_POWERED = "Powered";
 
     // Bluez interface names
-    static final String BLUEZ_ADAPTER_INTERFACE = "org.bluez.Adapter1";
+    protected static final String BLUEZ_ADAPTER_INTERFACE = "org.bluez.Adapter1";
 
     private static final String ENQUEUE_ERROR = "ERROR: Could not enqueue stop scanning command";
 
