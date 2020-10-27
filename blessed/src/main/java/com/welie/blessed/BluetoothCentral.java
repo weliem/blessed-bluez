@@ -103,7 +103,7 @@ public class BluetoothCentral {
     protected final Map<String, BluetoothPeripheralCallback> reconnectCallbacks = new ConcurrentHashMap<>();
 
     @NotNull
-    private final Map<String, String> pinCodes = new ConcurrentHashMap<>();
+    protected final Map<String, String> pinCodes = new ConcurrentHashMap<>();
 
     @NotNull
     private final Set<String> scanOptions;
@@ -740,6 +740,7 @@ public class BluetoothCentral {
             // Check if we are scanning
             isScanning = adapter.isDiscovering();
             if (!isScanning) {
+                isStoppingScan = false;
                 completedCommand();
                 return;
             }

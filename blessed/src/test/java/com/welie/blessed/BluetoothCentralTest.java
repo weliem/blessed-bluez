@@ -89,6 +89,19 @@ class BluetoothCentralTest {
     }
 
     @Test
+    void Given_a_central_and_adapter_on_when_adapterOff_is_called_then_setPowered_false_is_called() throws InterruptedException {
+        // Given
+        when(bluezAdapter.isPowered()).thenReturn(true);
+
+        // When
+        BluetoothCentral central = new BluetoothCentral(callback, Collections.emptySet(), bluezAdapter);
+        central.adapterOff();
+        Thread.sleep(100);
+
+        // Then
+        verify(bluezAdapter).setPowered(false);
+    }
+    @Test
     void When_scanForPeripherals_is_called_then_an_unfiltered_scan_is_started() throws InterruptedException, BluezFailedException, BluezNotReadyException, BluezNotSupportedException, BluezInvalidArgumentsException {
         // Given
         when(bluezAdapter.isDiscovering()).thenReturn(false);
@@ -127,6 +140,21 @@ class BluetoothCentralTest {
 
         Short rssi = (Short) filterMap.get("RSSI").getValue();
         assertEquals(DISCOVERY_RSSI_THRESHOLD, (int) rssi);
+    }
+
+    @Test
+    void Given_a_scan_is_active_when_stopScan_is_called_then_the_scan_is_stopped() throws DBusException, InterruptedException {
+        // Given
+        BluetoothCentral central = startUnfilteredScan();
+        Thread.sleep(100);
+        when(bluezAdapter.isDiscovering()).thenReturn(true);
+
+        // When
+        central.stopScan();
+        Thread.sleep(100);
+
+        // Then
+        verify(bluezAdapter).stopDiscovery();
     }
 
     @Test
@@ -690,6 +718,7 @@ class BluetoothCentralTest {
         Thread.sleep(100);
         Properties.PropertiesChanged disconnectedSignal = getPropertiesChangedSignalDisconnected();
         peripheral.handleSignal(disconnectedSignal);
+        Thread.sleep(100);
 
         // Then
         verify(callback).onDisconnectedPeripheral(peripheral, GATT_SUCCESS);
@@ -758,6 +787,72 @@ class BluetoothCentralTest {
 
         assertFalse(central.reconnectPeripheralAddresses.contains(peripheral.getAddress()));
         assertNull(central.reconnectCallbacks.get(peripheral.getAddress()));
+    }
+
+    @Test
+    void Given_two_disconnected_devices_when_autoConnectBatch_is_called_both_are_added_to_list_and_scan_is_started() throws BluezFailedException, BluezNotReadyException, InterruptedException {
+        // Given
+        BluetoothCentral central = getCentral();
+        when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_BLP)).thenReturn(DUMMY_MAC_ADDRESS_PATH_BLP);
+        when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH_BLP)).thenReturn(bluezDevice);
+        when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_HTS)).thenReturn(DUMMY_MAC_ADDRESS_PATH_HTS);
+        when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH_HTS)).thenReturn(bluezDeviceHts);
+        BluetoothPeripheral peripheral1 = central.getPeripheral(DUMMY_MAC_ADDRESS_BLP);
+        BluetoothPeripheral peripheral2 = central.getPeripheral(DUMMY_MAC_ADDRESS_HTS);
+
+        // When
+        Map<BluetoothPeripheral, BluetoothPeripheralCallback> map = new HashMap<>();
+        map.put(peripheral1, peripheralCallback);
+        map.put(peripheral2, peripheralCallback);
+        central.autoConnectPeripheralsBatch(map);
+
+        // Then
+        assertTrue(central.reconnectPeripheralAddresses.contains(peripheral1.getAddress()));
+        assertSame(central.reconnectCallbacks.get(peripheral1.getAddress()), peripheralCallback);
+        assertTrue(central.reconnectPeripheralAddresses.contains(peripheral2.getAddress()));
+        assertSame(central.reconnectCallbacks.get(peripheral2.getAddress()), peripheralCallback);
+
+        Thread.sleep(100);
+
+        // Then
+        verify(bluezAdapter).startDiscovery();
+    }
+
+    @Test
+    void When_setPinCode_is_called_with_valid_inputs_it_is_stored_by_central() {
+        // Given
+        BluetoothCentral central = getCentral();
+
+        // When
+        central.setPinCodeForPeripheral(DUMMY_MAC_ADDRESS_BLP, "123456");
+
+        // Then
+        assertTrue(central.pinCodes.containsKey(DUMMY_MAC_ADDRESS_BLP));
+        assertEquals(central.pinCodes.get(DUMMY_MAC_ADDRESS_BLP), "123456");
+    }
+
+    @Test
+    void When_setPinCode_is_called_with_invalid_macaddress_it_is_not_stored_by_central() {
+        // Given
+        BluetoothCentral central = getCentral();
+
+        // When
+        central.setPinCodeForPeripheral(DUMMY_MAC_ADDRESS_BLP+"A", "123456");
+
+        // Then
+        assertFalse(central.pinCodes.containsKey(DUMMY_MAC_ADDRESS_BLP));
+    }
+
+    @Test
+    void When_setPinCode_is_called_with_invalid_pincode_it_is_not_stored_by_central() {
+        // Given
+        BluetoothCentral central = getCentral();
+
+        // When
+        central.setPinCodeForPeripheral(DUMMY_MAC_ADDRESS_BLP, "12345");
+
+        // Then
+        assertFalse(central.pinCodes.containsKey(DUMMY_MAC_ADDRESS_BLP));
     }
 
     @NotNull
