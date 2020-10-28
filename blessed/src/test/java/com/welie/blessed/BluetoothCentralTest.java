@@ -22,6 +22,7 @@ import java.util.*;
 
 import static com.welie.blessed.BluetoothCentral.*;
 import static com.welie.blessed.BluetoothPeripheral.*;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -82,7 +83,8 @@ class BluetoothCentralTest {
         // When
         BluetoothCentral central = new BluetoothCentral(callback, Collections.emptySet(), bluezAdapter);
 
-        Thread.sleep(10);
+        await().until(() -> central.commandQueue.size() == 1);
+//        Thread.sleep(10);
 
         // Then
         verify(bluezAdapter).setPowered(true);

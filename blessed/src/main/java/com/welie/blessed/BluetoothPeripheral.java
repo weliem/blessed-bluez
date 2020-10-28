@@ -344,11 +344,11 @@ public class BluetoothPeripheral {
     public BluetoothPeripheral(@NotNull BluetoothCentral central, @Nullable BluezDevice bluezDevice, @Nullable String deviceName, @NotNull String deviceAddress, @NotNull InternalCallback listener, @Nullable BluetoothPeripheralCallback peripheralCallback, @NotNull Handler callBackHandler) {
         this.central = Objects.requireNonNull(central, "no valid central provided");
         this.device = bluezDevice;
-        this.deviceAddress = Objects.requireNonNull(deviceAddress, "no valid address provided");
         this.deviceName = deviceName;
+        this.deviceAddress = Objects.requireNonNull(deviceAddress, "no valid address provided");
         this.listener = Objects.requireNonNull(listener, "no valid listener provided");
-        this.callBackHandler = Objects.requireNonNull(callBackHandler, "no callbackhandler provided");
         this.peripheralCallback = peripheralCallback;
+        this.callBackHandler = Objects.requireNonNull(callBackHandler, "no callbackhandler provided");
     }
 
     void setPeripheralCallback(@NotNull final BluetoothPeripheralCallback peripheralCallback) {
