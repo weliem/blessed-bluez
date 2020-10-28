@@ -27,6 +27,15 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+// TODO
+// - Test proving that we always get the same BluetoothPeripheral object for a device while scanning or doing getPeripheral
+// - Test proving that we always get the same ScanResult object while scanning for a device
+// - Test proving that we continue scanning after connecting to a device that was autoConnected and there are more
+// - Test proving that we don't call onDiscoveredPeripheral anymore after stopScan is called although signals are coming in
+// - Test proving that we handle connectionFailed correctly
+// - Test proving that we don't call startDiscovery if we are already discovering
+// - Test proving that we don't call stopDiscovery if we are not discovering
+
 @ExtendWith(MockitoExtension.class)
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
 class BluetoothCentralTest {

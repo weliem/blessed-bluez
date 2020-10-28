@@ -12,7 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
-public class BluetoothPeripheralTest {
+class BluetoothPeripheralTest {
 
     @Mock
     BluezDevice bluezDevice;
