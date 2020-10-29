@@ -8,6 +8,7 @@ import org.bluez.exceptions.BluezFailedException;
 import org.bluez.exceptions.BluezInProgressException;
 import org.bluez.exceptions.BluezNotReadyException;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
+import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -101,6 +102,71 @@ class BluetoothPeripheralTest {
 
         // Then
         verify(internalCallback).connected(peripheral);
+    }
+
+    @Test
+    void Given_a_disconnected_peripheral_when_connect_is_called_and_bluez_not_ready_then_connectionFailed_is_called() throws BluezFailedException, BluezAlreadyConnectedException, BluezNotReadyException, BluezInProgressException {
+        // Given
+        BluetoothPeripheral peripheral = getPeripheral();
+
+        doThrow(new BluezNotReadyException("not ready"))
+                .when(bluezDevice)
+                .connect();
+
+        // When
+        peripheral.connect();
+
+        // Then
+        verify(internalCallback).connectFailed(peripheral);
+    }
+
+    // TODO, consider simply doing nothing when this happens....
+    @Test
+    void Given_a_disconnected_peripheral_when_connect_is_called_and_connectionInProgress_then_connectionFailed_is_called() throws BluezFailedException, BluezAlreadyConnectedException, BluezNotReadyException, BluezInProgressException {
+        // Given
+        BluetoothPeripheral peripheral = getPeripheral();
+
+        doThrow(new BluezInProgressException("connection in progress"))
+                .when(bluezDevice)
+                .connect();
+
+        // When
+        peripheral.connect();
+
+        // Then
+        verify(internalCallback).connectFailed(peripheral);
+    }
+
+    @Test
+    void Given_a_disconnected_peripheral_when_connect_is_called_and_connectionFailed_then_connectionFailed_is_called() throws BluezFailedException, BluezAlreadyConnectedException, BluezNotReadyException, BluezInProgressException {
+        // Given
+        BluetoothPeripheral peripheral = getPeripheral();
+
+        doThrow(new BluezFailedException("connect failed"))
+                .when(bluezDevice)
+                .connect();
+
+        // When
+        peripheral.connect();
+
+        // Then
+        verify(internalCallback).connectFailed(peripheral);
+    }
+
+    @Test
+    void Given_a_disconnected_peripheral_when_connect_is_called_and_dbusException_then_connectionFailed_is_called() throws BluezFailedException, BluezAlreadyConnectedException, BluezNotReadyException, BluezInProgressException {
+        // Given
+        BluetoothPeripheral peripheral = getPeripheral();
+
+        doThrow(new DBusExecutionException("dbus exception"))
+                .when(bluezDevice)
+                .connect();
+
+        // When
+        peripheral.connect();
+
+        // Then
+        verify(internalCallback).connectFailed(peripheral);
     }
 
     @NotNull
