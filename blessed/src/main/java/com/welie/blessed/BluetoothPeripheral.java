@@ -38,9 +38,10 @@ public class BluetoothPeripheral {
     private BluezDevice device;
 
     @Nullable
-    String deviceName;
+    protected String deviceName;
 
-    @NotNull private final String deviceAddress;
+    @NotNull
+    private final String deviceAddress;
 
     @Nullable
     private byte[] currentWriteBytes;
@@ -55,13 +56,13 @@ public class BluetoothPeripheral {
     private BluetoothPeripheralCallback peripheralCallback;
 
     @NotNull
-    private final Map<String, BluezGattService> serviceMap = new ConcurrentHashMap<>();
+    protected final Map<String, BluezGattService> serviceMap = new ConcurrentHashMap<>();
 
     @NotNull
-    private final Map<String, BluezGattCharacteristic> characteristicMap = new ConcurrentHashMap<>();
+    protected final Map<String, BluezGattCharacteristic> characteristicMap = new ConcurrentHashMap<>();
 
     @NotNull
-    private final Map<String, BluezGattDescriptor> descriptorMap = new ConcurrentHashMap<>();
+    protected final Map<String, BluezGattDescriptor> descriptorMap = new ConcurrentHashMap<>();
 
     @NotNull
     private List<@NotNull BluetoothGattService> mServices = new ArrayList<>();
@@ -84,7 +85,7 @@ public class BluetoothPeripheral {
     private boolean manualBonding = false;
     private long connectTimestamp;
     private boolean isRetrying;
-    private volatile int state = STATE_DISCONNECTED;
+    protected volatile int state = STATE_DISCONNECTED;
     private boolean serviceDiscoveryCompleted = false;
 
     // Numeric constants
@@ -871,6 +872,7 @@ public class BluetoothPeripheral {
         }
     }
 
+    // TODO Refactor this because this only works correctly if the UUID is unique across services
     private @Nullable BluezGattCharacteristic getBluezGattCharacteristic(UUID characteristicUUID) {
         BluezGattCharacteristic characteristic = null;
 
@@ -1072,7 +1074,9 @@ public class BluetoothPeripheral {
     }
 
 
-    private BluetoothGattCharacteristic getCharacteristicFromPath(String path) {
+    private BluetoothGattCharacteristic getCharacteristicFromPath(@NotNull String path) {
+        Objects.requireNonNull(path, "no valid path provided");
+
         BluezGattCharacteristic characteristic = characteristicMap.get(path);
         if (characteristic == null) return null;
 
@@ -1244,7 +1248,8 @@ public class BluetoothPeripheral {
      * @param source the byte array to copy, can be null
      * @return non-null byte array that is a copy of source
      */
-    private byte[] copyOf(byte[] source) {
+    @NotNull
+    private byte[] copyOf(@Nullable byte[] source) {
         if (source == null) return new byte[0];
         final int sourceLength = source.length;
         final byte[] copy = new byte[sourceLength];
@@ -1256,8 +1261,8 @@ public class BluetoothPeripheral {
         return device;
     }
 
-    public void setDevice(BluezDevice device) {
-        this.device = device;
+    public void setDevice(@NotNull BluezDevice device) {
+        this.device = Objects.requireNonNull(device, "no valid device supplied");
     }
 }
 

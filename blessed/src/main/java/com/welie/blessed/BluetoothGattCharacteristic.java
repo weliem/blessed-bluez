@@ -16,6 +16,8 @@ import java.util.UUID;
  * {@link BluetoothGattService}. The characteristic contains a value as well as
  * additional information and optional GATT descriptors, {@link BluetoothGattDescriptor}.
  */
+
+// TODO Implement hashCode and equals?
 public class BluetoothGattCharacteristic {
 
     /**
