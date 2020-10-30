@@ -29,6 +29,7 @@ import static com.welie.blessed.BluetoothGattCharacteristic.*;
  */
 public class BluetoothPeripheral {
     private static final String TAG = BluetoothPeripheral.class.getSimpleName();
+    public static final String ERROR_NATIVE_CHARACTERISTIC_IS_NULL = "ERROR: Native characteristic is null";
     private final Logger logger = LoggerFactory.getLogger(TAG);
 
     @NotNull
@@ -453,15 +454,15 @@ public class BluetoothPeripheral {
         }
 
         // Check if this characteristic actually has READ property
-        if ((characteristic.getProperties() & PROPERTY_READ) == 0) {
+        if (!characteristic.supportsReading()) {
             logger.error("characteristic does not have read property");
             return false;
         }
 
         // Check if we have the native characteristic
-        final BluezGattCharacteristic nativeCharacteristic = getBluezGattCharacteristic(characteristic.getUuid());
+        final BluezGattCharacteristic nativeCharacteristic = getBluezGattCharacteristic(characteristic.service.getUuid(), characteristic.getUuid());
         if (nativeCharacteristic == null) {
-            logger.error("ERROR: Native characteristic is null");
+            logger.error(ERROR_NATIVE_CHARACTERISTIC_IS_NULL);
             gattCallback.onCharacteristicRead(characteristic, GATT_ERROR);
             return false;
         }
@@ -530,9 +531,9 @@ public class BluetoothPeripheral {
         final byte[] bytesToWrite = copyOf(value);
 
         // Check if we have the native characteristic
-        final BluezGattCharacteristic nativeCharacteristic = getBluezGattCharacteristic(characteristic.getUuid());
+        final BluezGattCharacteristic nativeCharacteristic = getBluezGattCharacteristic(characteristic.service.getUuid(),characteristic.getUuid());
         if (nativeCharacteristic == null) {
-            logger.error("ERROR: Native characteristic is null");
+            logger.error(ERROR_NATIVE_CHARACTERISTIC_IS_NULL);
             return false;
         }
 
@@ -611,9 +612,9 @@ public class BluetoothPeripheral {
         }
 
         // Check if we have the native characteristic
-        final BluezGattCharacteristic nativeCharacteristic = getBluezGattCharacteristic(characteristic.getUuid());
+        final BluezGattCharacteristic nativeCharacteristic = getBluezGattCharacteristic(characteristic.service.getUuid(), characteristic.getUuid());
         if (nativeCharacteristic == null) {
-            logger.error("ERROR: Native characteristic is null");
+            logger.error(ERROR_NATIVE_CHARACTERISTIC_IS_NULL);
             gattCallback.onNotifySet(characteristic, false);
             return false;
         }
@@ -872,13 +873,15 @@ public class BluetoothPeripheral {
         }
     }
 
-    // TODO Refactor this because this only works correctly if the UUID is unique across services
-    private @Nullable BluezGattCharacteristic getBluezGattCharacteristic(UUID characteristicUUID) {
+
+    private @Nullable BluezGattCharacteristic getBluezGattCharacteristic(@NotNull UUID serviceUUID, @NotNull UUID characteristicUUID) {
         BluezGattCharacteristic characteristic = null;
 
         for (BluezGattCharacteristic gattCharacteristic : characteristicMap.values()) {
             if (characteristicUUID.toString().equalsIgnoreCase(gattCharacteristic.getUuid())) {
-                characteristic = gattCharacteristic;
+                if (gattCharacteristic.getService().getUuid().equalsIgnoreCase(serviceUUID.toString())) {
+                    characteristic = gattCharacteristic;
+                }
             }
         }
         return characteristic;
@@ -1013,9 +1016,9 @@ public class BluetoothPeripheral {
     public boolean isNotifying(@NotNull BluetoothGattCharacteristic characteristic) {
         Objects.requireNonNull(characteristic, "no valid characteristic provided");
 
-        final BluezGattCharacteristic nativeCharacteristic = getBluezGattCharacteristic(characteristic.getUuid());
+        final BluezGattCharacteristic nativeCharacteristic = getBluezGattCharacteristic(characteristic.service.getUuid(), characteristic.getUuid());
         if (nativeCharacteristic == null) {
-            logger.error("ERROR: Native characteristic is null");
+            logger.error(ERROR_NATIVE_CHARACTERISTIC_IS_NULL);
             return false;
         }
         return nativeCharacteristic.isNotifying();
