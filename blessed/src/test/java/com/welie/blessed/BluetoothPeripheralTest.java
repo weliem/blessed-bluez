@@ -2,6 +2,7 @@ package com.welie.blessed;
 
 import com.welie.blessed.bluez.BluezDevice;
 import com.welie.blessed.bluez.BluezGattCharacteristic;
+import com.welie.blessed.bluez.BluezGattService;
 import com.welie.blessed.internal.Handler;
 import com.welie.blessed.internal.InternalCallback;
 import org.bluez.exceptions.BluezAlreadyConnectedException;
@@ -25,8 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.welie.blessed.BluetoothGattCharacteristic.PROPERTY_INDICATE;
-import static com.welie.blessed.BluetoothGattCharacteristic.PROPERTY_READ;
+import static com.welie.blessed.BluetoothGattCharacteristic.*;
 import static com.welie.blessed.BluetoothPeripheral.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -225,18 +225,103 @@ class BluetoothPeripheralTest {
     void Given_a_connected_peripheral_when_readCharacteristic_is_called_then_a_read_is_done() throws DBusException, InterruptedException {
         // Given
         BluetoothPeripheral peripheral = getConnectedPeripheral();
-        BluetoothGattCharacteristic characteristic = new BluetoothGattCharacteristic(BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID, PROPERTY_READ + PROPERTY_INDICATE,0 );
-        BluezGattCharacteristic bluezGattCharacteristic = mock(BluezGattCharacteristic.class);
-        when(bluezGattCharacteristic.getDbusPath()).thenReturn("/org/bluez/hci0/characteristic/" + BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID.toString());
-        when(bluezGattCharacteristic.getUuid()).thenReturn(BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID.toString());
+        BluetoothGattCharacteristic characteristic = getBluetoothGattCharacteristic(BLP_SERVICE_UUID, BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID, PROPERTY_READ);
+        BluezGattCharacteristic bluezGattCharacteristic = getBluezGattCharacteristic();
         peripheral.characteristicMap.put(bluezGattCharacteristic.getDbusPath(), bluezGattCharacteristic);
 
         // When
         peripheral.readCharacteristic(characteristic);
+        Thread.sleep(10);
 
         // Then
         verify(bluezGattCharacteristic).readValue(anyMap());
     }
+
+    @Test
+    void Given_a_connected_peripheral_when_readCharacteristic_is_called_twice_then_a_read_is_done_twice() throws DBusException, InterruptedException {
+        // Given
+        BluetoothPeripheral peripheral = getConnectedPeripheral();
+        BluetoothGattCharacteristic characteristic = getBluetoothGattCharacteristic(BLP_SERVICE_UUID, BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID, PROPERTY_READ);
+        BluezGattCharacteristic bluezGattCharacteristic = getBluezGattCharacteristic();
+        peripheral.characteristicMap.put(bluezGattCharacteristic.getDbusPath(), bluezGattCharacteristic);
+
+        // When
+        peripheral.readCharacteristic(characteristic);
+        peripheral.readCharacteristic(characteristic);
+        Thread.sleep(10);
+
+        // Then
+        verify(bluezGattCharacteristic, times(2)).readValue(anyMap());
+    }
+
+    @Test
+    void Given_a_disconnected_peripheral_when_readCharacteristic_is_called_then_no_read_is_done() throws DBusException, InterruptedException {
+        // Given
+        BluetoothPeripheral peripheral = getPeripheral();
+        BluetoothGattCharacteristic characteristic = getBluetoothGattCharacteristic(BLP_SERVICE_UUID, BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID, PROPERTY_READ);
+        BluezGattCharacteristic bluezGattCharacteristic = mock(BluezGattCharacteristic.class);
+        when(bluezGattCharacteristic.getDbusPath()).thenReturn("/org/bluez/hci0/characteristic/" + BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID.toString());
+        peripheral.characteristicMap.put(bluezGattCharacteristic.getDbusPath(), bluezGattCharacteristic);
+
+        // When
+        peripheral.readCharacteristic(characteristic);
+        Thread.sleep(10);
+
+        // Then
+        verify(bluezGattCharacteristic, never()).readValue(anyMap());
+    }
+
+    @Test
+    void Given_a_connected_peripheral_and_not_readable_characteristic_when_readCharacteristic_is_called_then_no_read_is_done() throws DBusException, InterruptedException {
+        // Given
+        BluetoothPeripheral peripheral = getConnectedPeripheral();
+        BluetoothGattCharacteristic characteristic = getBluetoothGattCharacteristic(BLP_SERVICE_UUID, BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID, PROPERTY_NOTIFY);
+        BluezGattCharacteristic bluezGattCharacteristic = mock(BluezGattCharacteristic.class);
+        when(bluezGattCharacteristic.getDbusPath()).thenReturn("/org/bluez/hci0/characteristic/" + BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID.toString());
+        peripheral.characteristicMap.put(bluezGattCharacteristic.getDbusPath(), bluezGattCharacteristic);
+
+        // When
+        peripheral.readCharacteristic(characteristic);
+        Thread.sleep(10);
+
+        // Then
+        verify(bluezGattCharacteristic, never()).readValue(anyMap());
+    }
+
+    @Test
+    void Given_a_connected_peripheral_when_readCharacteristic_is_called_with_not_existing_characteristic_then_a_read_is_not_called() throws DBusException, InterruptedException {
+        // Given
+        BluetoothPeripheral peripheral = getConnectedPeripheral();
+        BluetoothGattCharacteristic characteristic = getBluetoothGattCharacteristic(BLP_SERVICE_UUID, BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID, PROPERTY_READ);
+        BluezGattCharacteristic bluezGattCharacteristic = mock(BluezGattCharacteristic.class);
+
+        // When
+        peripheral.readCharacteristic(characteristic);
+        Thread.sleep(10);
+
+        // Then
+        verify(bluezGattCharacteristic, never()).readValue(anyMap());
+    }
+
+    @NotNull
+    private BluezGattCharacteristic getBluezGattCharacteristic() {
+        BluezGattCharacteristic bluezGattCharacteristic = mock(BluezGattCharacteristic.class);
+        BluezGattService bluezGattService = mock(BluezGattService.class);
+        when(bluezGattCharacteristic.getDbusPath()).thenReturn("/org/bluez/hci0/characteristic/" + BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID.toString());
+        when(bluezGattCharacteristic.getUuid()).thenReturn(BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID.toString());
+        when(bluezGattCharacteristic.getService()).thenReturn(bluezGattService);
+        when(bluezGattService.getUuid()).thenReturn(BLP_SERVICE_UUID.toString());
+        return bluezGattCharacteristic;
+    }
+
+    @NotNull
+    private BluetoothGattCharacteristic getBluetoothGattCharacteristic(UUID serviceUUID, UUID characteristicUUID, int properties) {
+        BluetoothGattService service = new BluetoothGattService(serviceUUID);
+        BluetoothGattCharacteristic characteristic = new BluetoothGattCharacteristic(characteristicUUID, properties,0 );
+        characteristic.setService(service);
+        return characteristic;
+    }
+
 
     @NotNull
     private BluetoothPeripheral getConnectedPeripheral() throws InterruptedException, DBusException {
