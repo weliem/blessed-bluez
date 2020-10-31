@@ -444,7 +444,7 @@ public class BluetoothCentral {
         if (peripheral.getDevice() == null) {
             peripheral.setDevice(getDeviceByAddress(peripheralAddress));
             if (peripheral.getDevice() != null) {
-                peripheral.deviceName = peripheral.getDevice().getName();
+                peripheral.setName(peripheral.getDevice().getName());
             }
         }
 

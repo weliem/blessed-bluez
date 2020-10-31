@@ -27,7 +27,7 @@ import static com.welie.blessed.BluetoothGattCharacteristic.*;
 /**
  * Represents a Bluetooth BLE peripheral
  */
-public class BluetoothPeripheral {
+public final class BluetoothPeripheral {
     private static final String TAG = BluetoothPeripheral.class.getSimpleName();
     public static final String ERROR_NATIVE_CHARACTERISTIC_IS_NULL = "ERROR: Native characteristic is null";
     private final Logger logger = LoggerFactory.getLogger(TAG);
@@ -39,7 +39,7 @@ public class BluetoothPeripheral {
     private BluezDevice device;
 
     @Nullable
-    protected String deviceName;
+    private String deviceName;
 
     @NotNull
     private final String deviceAddress;
@@ -66,7 +66,7 @@ public class BluetoothPeripheral {
     protected final Map<String, BluezGattDescriptor> descriptorMap = new ConcurrentHashMap<>();
 
     @NotNull
-    private List<@NotNull BluetoothGattService> mServices = new ArrayList<>();
+    private List<@NotNull BluetoothGattService> services = new ArrayList<>();
 
     @Nullable
     private Handler timeoutHandler;
@@ -86,7 +86,7 @@ public class BluetoothPeripheral {
     private boolean manualBonding = false;
     private long connectTimestamp;
     private boolean isRetrying;
-    protected volatile int state = STATE_DISCONNECTED;
+    private volatile int state = STATE_DISCONNECTED;
     private boolean serviceDiscoveryCompleted = false;
 
     // Numeric constants
@@ -217,6 +217,7 @@ public class BluetoothPeripheral {
     final GattCallback gattCallback = new GattCallback() {
         @Override
         public void onConnectionStateChanged(int connectionState, int status) {
+            // TODO process the status field as well
             int previousState = state;
             state = connectionState;
 
@@ -411,6 +412,9 @@ public class BluetoothPeripheral {
         central.cancelConnection(this);
     }
 
+    /**
+     * Internal disconnect method that does the real disconnect
+     */
     void disconnectBluezDevice() {
         logger.info(String.format("force disconnect '%s' (%s)", getName(), getAddress()));
         gattCallback.onConnectionStateChanged(STATE_DISCONNECTING, GATT_SUCCESS);
@@ -697,14 +701,12 @@ public class BluetoothPeripheral {
 
         // Process all service, characteristics and descriptors
         if (device != null) {
-            // Get all native services
+            // Build list of services including the linked characteristics and descriptors
+            services.clear();
             List<BluezGattService> gattServices = device.getGattServices();
+            gattServices.forEach(service -> services.add(mapBluezGattServiceToBluetoothGattService(service)));
 
-            // Build list of HBService including the linked characteristics and descriptors
-            mServices = new ArrayList<>();
-            gattServices.forEach(service -> mServices.add(mapBluezGattServiceToBluetoothGattService(service)));
-
-            gattCallback.onServicesDiscovered(mServices);
+            gattCallback.onServicesDiscovered(services);
         }
     }
 
@@ -889,7 +891,7 @@ public class BluetoothPeripheral {
 
     private @Nullable BluetoothGattCharacteristic getBluetoothGattCharacteristic(BluezGattCharacteristic bluezGattCharacteristic) {
         UUID characteristicUUID = UUID.fromString(bluezGattCharacteristic.getUuid());
-        for (BluetoothGattService service : mServices) {
+        for (BluetoothGattService service : services) {
             for (BluetoothGattCharacteristic characteristic : service.getCharacteristics())
                 if (characteristic.getUuid().equals(characteristicUUID)) {
                     return characteristic;
@@ -906,7 +908,7 @@ public class BluetoothPeripheral {
      * @return Supported services.
      */
     public @NotNull List<BluetoothGattService> getServices() {
-        return mServices;
+        return services;
     }
 
     /**
@@ -915,10 +917,10 @@ public class BluetoothPeripheral {
      * @param serviceUUID the UUID of the service
      * @return the BluetoothGattService object for the service UUID or null if the peripheral does not have a service with the specified UUID
      */
-    public @Nullable BluetoothGattService getService(UUID serviceUUID) {
+    public @Nullable BluetoothGattService getService(@NotNull UUID serviceUUID) {
         Objects.requireNonNull(serviceUUID, "no valid service UUID provided");
 
-        for (BluetoothGattService service : mServices) {
+        for (BluetoothGattService service : services) {
             if (service.getUuid().equals(serviceUUID)) {
                 return service;
             }
@@ -952,6 +954,10 @@ public class BluetoothPeripheral {
      */
     public @Nullable String getName() {
         return deviceName;
+    }
+
+    void setName(@Nullable String name) {
+        deviceName = name;
     }
 
     /**
@@ -1076,7 +1082,7 @@ public class BluetoothPeripheral {
         return result;
     }
 
-
+    @Nullable
     private BluetoothGattCharacteristic getCharacteristicFromPath(@NotNull String path) {
         Objects.requireNonNull(path, "no valid path provided");
 
@@ -1165,32 +1171,32 @@ public class BluetoothPeripheral {
         return result;
     }
 
-    private BluetoothGattCharacteristic mapBluezGattCharacteristicToBluetoothGattCharacteristic(BluezGattCharacteristic bluetoothGattCharacteristic) {
-        int properties = mapFlagsToProperty(bluetoothGattCharacteristic.getFlags());
-        BluetoothGattCharacteristic BluetoothGattCharacteristic = new BluetoothGattCharacteristic(UUID.fromString(bluetoothGattCharacteristic.getUuid()), properties, 0);
+    private BluetoothGattCharacteristic mapBluezGattCharacteristicToBluetoothGattCharacteristic(BluezGattCharacteristic bluezGattCharacteristic) {
+        int properties = mapFlagsToProperty(bluezGattCharacteristic.getFlags());
+        BluetoothGattCharacteristic bluetoothGattCharacteristic = new BluetoothGattCharacteristic(UUID.fromString(bluezGattCharacteristic.getUuid()), properties, 0);
         // TODO sort our permissions
 
         // Get all descriptors for this characteristic
-        List<BluezGattDescriptor> descriptors = bluetoothGattCharacteristic.getGattDescriptors();
+        List<BluezGattDescriptor> descriptors = bluezGattCharacteristic.getGattDescriptors();
 
         // Process all descriptors
         if (descriptors != null) {
             descriptors.forEach(descriptor -> {
                 descriptorMap.put(descriptor.getDbusPath(), descriptor);
-                BluetoothGattCharacteristic.addDescriptor(mapBluezGattDescriptorToHBDescriptor(descriptor));
+                bluetoothGattCharacteristic.addDescriptor(mapBluezGattDescriptorToHBDescriptor(descriptor));
             });
         }
 
-        return BluetoothGattCharacteristic;
+        return bluetoothGattCharacteristic;
     }
 
-    private BluetoothGattService mapBluezGattServiceToBluetoothGattService(BluezGattService service) {
+    private BluetoothGattService mapBluezGattServiceToBluetoothGattService(@NotNull BluezGattService service) {
         // Build up internal services map
         serviceMap.put(service.getDbusPath(), service);
 
-        // Create HBService object
-        BluetoothGattService hbService = new BluetoothGattService(UUID.fromString(service.getUuid()));
-        hbService.setPeripheral(this);
+        // Create BluetoothGattService object
+        BluetoothGattService bluetoothGattService = new BluetoothGattService(UUID.fromString(service.getUuid()));
+        bluetoothGattService.setPeripheral(this);
 
         // Get all characteristics for this service
         List<BluezGattCharacteristic> characteristics = service.getGattCharacteristics();
@@ -1203,12 +1209,12 @@ public class BluetoothPeripheral {
 
                 // Create BluetoothGattCharacteristic
                 BluetoothGattCharacteristic characteristic = mapBluezGattCharacteristicToBluetoothGattCharacteristic(bluetoothGattCharacteristic);
-                characteristic.setService(hbService);
-                hbService.addCharacteristic(characteristic);
+                characteristic.setService(bluetoothGattService);
+                bluetoothGattService.addCharacteristic(characteristic);
             });
         }
 
-        return hbService;
+        return bluetoothGattService;
     }
 
 
