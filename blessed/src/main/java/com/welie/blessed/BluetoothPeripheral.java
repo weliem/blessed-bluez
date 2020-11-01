@@ -723,13 +723,18 @@ public final class BluetoothPeripheral {
     private final AbstractPropertiesChangedHandler propertiesChangedHandler = new AbstractPropertiesChangedHandler() {
         @Override
         public void handle(Properties.PropertiesChanged propertiesChanged) {
-            if (propertiesChanged.getInterfaceName().equals(BLUEZ_CHARACTERISTIC_INTERFACE)) {
-                BluetoothGattCharacteristic bluetoothGattCharacteristic = getCharacteristicFromPath(propertiesChanged.getPath());
-                if (bluetoothGattCharacteristic == null) return;
+            switch (propertiesChanged.getInterfaceName()) {
+                case BLUEZ_CHARACTERISTIC_INTERFACE:
+                    BluetoothGattCharacteristic bluetoothGattCharacteristic = getCharacteristicFromPath(propertiesChanged.getPath());
+                    if (bluetoothGattCharacteristic == null) return;
 
-                propertiesChanged.getPropertiesChanged().forEach((key, value) -> handlePropertyChangedForCharacteristic(bluetoothGattCharacteristic, key, value));
-            } else if (propertiesChanged.getInterfaceName().equals(BLUEZ_DEVICE_INTERFACE)) {
-                propertiesChanged.getPropertiesChanged().forEach((key, value) -> handlePropertyChangeForDevice(key, value));
+                    propertiesChanged.getPropertiesChanged().forEach((key, value) -> handlePropertyChangedForCharacteristic(bluetoothGattCharacteristic, key, value));
+                    break;
+                case BLUEZ_DEVICE_INTERFACE:
+                    propertiesChanged.getPropertiesChanged().forEach((key, value) -> handlePropertyChangeForDevice(key, value));
+                    break;
+                default:
+                    break;
             }
         }
     };
