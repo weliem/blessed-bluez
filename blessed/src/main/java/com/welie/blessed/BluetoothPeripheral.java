@@ -749,7 +749,6 @@ public final class BluetoothPeripheral {
                 if (value.getType() instanceof DBusListType) {
                     if (value.getValue() instanceof byte[]) {
                         byte[] byteVal = (byte[]) value.getValue();
-//                        byte[] valueCopy = copyOf(byteVal);   // Is this really needed????
                         gattCallback.onCharacteristicChanged(byteVal, bluetoothGattCharacteristic);
                     } else {
                         logger.error("got VALUE update that is not byte array");
@@ -764,11 +763,6 @@ public final class BluetoothPeripheral {
     }
 
     private void handlePropertyChangeForDevice(String propertyName, Variant<?> value) {
-//        System.out.println("Changed key " + key);
-//        System.out.println("Changed variant type " + value.getType());
-//        System.out.println("Changed variant sig " + value.getSig());
-//        System.out.println("Changed variant value " + value.getValue());
-
         switch (propertyName) {
             case PROPERTY_SERVICES_RESOLVED:
                 if (value.getValue().equals(true)) {
@@ -812,7 +806,6 @@ public final class BluetoothPeripheral {
      * The current command has been completed, move to the next command in the queue (if any)
      */
     private void completedCommand() {
-//        logger.info( "Command completed");
         isRetrying = false;
         commandQueue.poll();
         commandQueueBusy = false;
