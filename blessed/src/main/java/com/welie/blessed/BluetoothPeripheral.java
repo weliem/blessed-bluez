@@ -533,6 +533,10 @@ public final class BluetoothPeripheral {
 
         // Copy the value to avoid race conditions
         final byte[] bytesToWrite = copyOf(value);
+        if (bytesToWrite.length == 0) {
+            logger.error("value byte array is empty, ignoring write request");
+            return false;
+        }
 
         // Check if we have the native characteristic
         final BluezGattCharacteristic nativeCharacteristic = getBluezGattCharacteristic(characteristic.service.getUuid(),characteristic.getUuid());
@@ -891,6 +895,7 @@ public final class BluetoothPeripheral {
     private @Nullable BluetoothGattCharacteristic getBluetoothGattCharacteristic(@NotNull BluezGattCharacteristic bluezGattCharacteristic) {
         Objects.requireNonNull(bluezGattCharacteristic, "no valid characteristic provided");
 
+        // TODO this only works if the characteristic UUID is unique...also match service
         UUID characteristicUUID = UUID.fromString(bluezGattCharacteristic.getUuid());
         for (BluetoothGattService service : services) {
             for (BluetoothGattCharacteristic characteristic : service.getCharacteristics())
