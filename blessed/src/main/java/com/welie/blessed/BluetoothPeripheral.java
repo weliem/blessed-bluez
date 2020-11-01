@@ -873,10 +873,11 @@ public final class BluetoothPeripheral {
         }
     }
 
-
     private @Nullable BluezGattCharacteristic getBluezGattCharacteristic(@NotNull UUID serviceUUID, @NotNull UUID characteristicUUID) {
-        BluezGattCharacteristic characteristic = null;
+        Objects.requireNonNull(serviceUUID, "no valid service UUID provided");
+        Objects.requireNonNull(serviceUUID, "no valid characteristic UUID provided");
 
+        BluezGattCharacteristic characteristic = null;
         for (BluezGattCharacteristic gattCharacteristic : characteristicMap.values()) {
             if (characteristicUUID.toString().equalsIgnoreCase(gattCharacteristic.getUuid())) {
                 if (gattCharacteristic.getService().getUuid().equalsIgnoreCase(serviceUUID.toString())) {
@@ -887,7 +888,9 @@ public final class BluetoothPeripheral {
         return characteristic;
     }
 
-    private @Nullable BluetoothGattCharacteristic getBluetoothGattCharacteristic(BluezGattCharacteristic bluezGattCharacteristic) {
+    private @Nullable BluetoothGattCharacteristic getBluetoothGattCharacteristic(@NotNull BluezGattCharacteristic bluezGattCharacteristic) {
+        Objects.requireNonNull(bluezGattCharacteristic, "no valid characteristic provided");
+
         UUID characteristicUUID = UUID.fromString(bluezGattCharacteristic.getUuid());
         for (BluetoothGattService service : services) {
             for (BluetoothGattCharacteristic characteristic : service.getCharacteristics())
