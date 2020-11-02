@@ -238,6 +238,28 @@ class BluetoothPeripheralTest {
     }
 
     @Test
+    void Given_a_connected_peripheral_when_a_characteristic_is_read_then_onCharacteristicUpdate_is_called() throws DBusException, InterruptedException {
+        // Given
+        BluetoothPeripheral peripheral = getConnectedPeripheral();
+        BluetoothGattCharacteristic characteristic = getBluetoothGattCharacteristic(BLP_SERVICE_UUID, BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID, PROPERTY_READ);
+        peripheral.services.add(characteristic.service);
+        BluezGattCharacteristic bluezGattCharacteristic = getBluezGattCharacteristic();
+        when(bluezGattCharacteristic.getDbusPath()).thenReturn("/org/bluez/hci0/dev_C0_26_DF_01_F2_72/service0014/char0015");
+        when(bluezGattCharacteristic.getUuid()).thenReturn(BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID.toString());
+        peripheral.characteristicMap.put(bluezGattCharacteristic.getDbusPath(), bluezGattCharacteristic);
+
+        // When
+        peripheral.readCharacteristic(characteristic);
+        Thread.sleep(10);
+        byte[] value = new byte[]{0x01, 0x02};
+        peripheral.handleSignal(getPropertiesChangedSignalCharacteristicUpdate(bluezGattCharacteristic.getDbusPath(), characteristic, value));
+        Thread.sleep(50);
+
+        // Then
+        verify(peripheralCallback).onCharacteristicUpdate(peripheral, value, characteristic, GATT_SUCCESS);
+    }
+
+    @Test
     void Given_a_connected_peripheral_when_readCharacteristic_is_called_twice_then_a_read_is_done_twice() throws DBusException, InterruptedException {
         // Given
         BluetoothPeripheral peripheral = getConnectedPeripheral();
@@ -303,6 +325,23 @@ class BluetoothPeripheralTest {
         verify(bluezGattCharacteristic, never()).readValue(anyMap());
     }
 
+    @Test
+    void Given_a_connected_peripheral_when_readCharacteristic_is_called_and_BluezFailedException_occurs_then_onCharacteristicUpdate_is_called_with_GATT_ERROR() throws DBusException, InterruptedException {
+        // Given
+        BluetoothPeripheral peripheral = getConnectedPeripheral();
+        BluetoothGattCharacteristic characteristic = getBluetoothGattCharacteristic(BLP_SERVICE_UUID, BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID, PROPERTY_READ);
+        BluezGattCharacteristic bluezGattCharacteristic = getBluezGattCharacteristic();
+        peripheral.characteristicMap.put(bluezGattCharacteristic.getDbusPath(), bluezGattCharacteristic);
+        when(bluezGattCharacteristic.readValue(anyMap())).thenThrow(BluezFailedException.class);
+
+        // When
+        peripheral.readCharacteristic(characteristic);
+        Thread.sleep(10);
+
+        // Then
+        verify(peripheralCallback).onCharacteristicUpdate(peripheral,new byte[0], characteristic, GATT_ERROR);
+    }
+
     @NotNull
     private BluezGattCharacteristic getBluezGattCharacteristic() {
         BluezGattCharacteristic bluezGattCharacteristic = mock(BluezGattCharacteristic.class);
@@ -319,6 +358,7 @@ class BluetoothPeripheralTest {
         BluetoothGattService service = new BluetoothGattService(serviceUUID);
         BluetoothGattCharacteristic characteristic = new BluetoothGattCharacteristic(characteristicUUID, properties,0 );
         characteristic.setService(service);
+        service.addCharacteristic(characteristic);
         return characteristic;
     }
 
@@ -346,13 +386,20 @@ class BluetoothPeripheralTest {
     private Properties.PropertiesChanged getPropertiesChangedSignalConnected() throws DBusException {
         Map<String, Variant<?>> propertiesChanged = new HashMap<>();
         propertiesChanged.put(PROPERTY_CONNECTED, new Variant<>(true));
-        return new Properties.PropertiesChanged("/org/bluez/hci0", BLUEZ_DEVICE_INTERFACE, propertiesChanged,new ArrayList() );
+        return new Properties.PropertiesChanged("/org/bluez/hci0/dev_C0_26_DF_01_F2_72", BLUEZ_DEVICE_INTERFACE, propertiesChanged,new ArrayList() );
     }
 
     @NotNull
     private Properties.PropertiesChanged getPropertiesChangedSignalDisconnected() throws DBusException {
         Map<String, Variant<?>> propertiesChanged = new HashMap<>();
         propertiesChanged.put(PROPERTY_CONNECTED, new Variant<>(false));
-        return new Properties.PropertiesChanged("/org/bluez/hci0", BLUEZ_DEVICE_INTERFACE, propertiesChanged,new ArrayList() );
+        return new Properties.PropertiesChanged("/org/bluez/hci0/dev_C0_26_DF_01_F2_72", BLUEZ_DEVICE_INTERFACE, propertiesChanged,new ArrayList() );
+    }
+
+    @NotNull
+    private Properties.PropertiesChanged getPropertiesChangedSignalCharacteristicUpdate(String path, BluetoothGattCharacteristic characteristic, byte[] value) throws DBusException {
+        Map<String, Variant<?>> propertiesChanged = new HashMap<>();
+        propertiesChanged.put(PROPERTY_VALUE, new Variant<>(value, "ay"));
+        return new Properties.PropertiesChanged(path, BLUEZ_CHARACTERISTIC_INTERFACE, propertiesChanged,new ArrayList() );
     }
 }
