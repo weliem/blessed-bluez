@@ -196,20 +196,20 @@ public class BluetoothCentral {
 
             restartScannerIfNeeded();
         }
+
+        private void restartScannerIfNeeded() {
+            if (autoScanActive || normalScanActive) {
+                startScanning();
+            }
+        }
+
+        private void completeConnectOrDisconnectCommand(String deviceAddress) {
+            // Complete the 'connect' command if this was the device we were connecting
+            if (currentCommand.equalsIgnoreCase(PROPERTY_CONNECTED) && deviceAddress.equalsIgnoreCase(currentDeviceAddress)) {
+                completedCommand();
+            }
+        }
     };
-
-    private void restartScannerIfNeeded() {
-        if (autoScanActive || normalScanActive) {
-            startScanning();
-        }
-    }
-
-    private void completeConnectOrDisconnectCommand(String deviceAddress) {
-        // Complete the 'connect' command if this was the device we were connecting
-        if (currentCommand.equalsIgnoreCase(PROPERTY_CONNECTED) && deviceAddress.equalsIgnoreCase(currentDeviceAddress)) {
-            completedCommand();
-        }
-    }
 
     /**
      * Construct a new BluetoothCentral object
@@ -442,7 +442,7 @@ public class BluetoothCentral {
 
         // Make sure we have a valid BluezDevice object and refresh the name
         if (peripheral.getDevice() == null) {
-            peripheral.setDevice(getDeviceByAddress(peripheralAddress));
+            peripheral.setDevice(Objects.requireNonNull(getDeviceByAddress(peripheralAddress)));
             if (peripheral.getDevice() != null) {
                 peripheral.setName(peripheral.getDevice().getName());
             }

@@ -24,7 +24,7 @@ public class BluetoothGattService {
      * The UUID of this service.
      *
      */
-    protected UUID uuid;
+    protected final UUID uuid;
 
 
     /**

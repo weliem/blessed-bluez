@@ -30,6 +30,7 @@ import static com.welie.blessed.BluetoothGattCharacteristic.*;
 public final class BluetoothPeripheral {
     private static final String TAG = BluetoothPeripheral.class.getSimpleName();
     public static final String ERROR_NATIVE_CHARACTERISTIC_IS_NULL = "ERROR: Native characteristic is null";
+    public static final String NO_VALID_CHARACTERISTIC_PROVIDED = "no valid characteristic provided";
     private final Logger logger = LoggerFactory.getLogger(TAG);
 
     @NotNull
@@ -66,7 +67,7 @@ public final class BluetoothPeripheral {
     protected final Map<String, BluezGattDescriptor> descriptorMap = new ConcurrentHashMap<>();
 
     @NotNull
-    private List<@NotNull BluetoothGattService> services = new ArrayList<>();
+    protected List<@NotNull BluetoothGattService> services = new ArrayList<>();
 
     @Nullable
     private Handler timeoutHandler;
@@ -256,7 +257,7 @@ public final class BluetoothPeripheral {
         }
 
         @Override
-        public void onNotifySet(final BluetoothGattCharacteristic characteristic, final boolean enabled) {
+        public void onNotifySet(final @NotNull BluetoothGattCharacteristic characteristic, final boolean enabled) {
             if (peripheralCallback != null) {
                 callBackHandler.post(() -> peripheralCallback.onNotificationStateUpdate(BluetoothPeripheral.this, characteristic, GATT_SUCCESS));
             }
@@ -264,7 +265,7 @@ public final class BluetoothPeripheral {
         }
 
         @Override
-        public void onDescriptorWrite(BluetoothGattDescriptor descriptor, int status) {
+        public void onDescriptorWrite(final @NotNull BluetoothGattDescriptor descriptor, final int status) {
             // Do some checks first
             final BluetoothGattCharacteristic parentCharacteristic = descriptor.getCharacteristic();
             if (status != GATT_SUCCESS) {
@@ -278,9 +279,12 @@ public final class BluetoothPeripheral {
         }
 
         @Override
-        public void onCharacteristicRead(BluetoothGattCharacteristic characteristic, int status) {
+        public void onCharacteristicRead(final @NotNull BluetoothGattCharacteristic characteristic, final int status) {
             if (status != GATT_SUCCESS) {
-                logger.error(String.format(Locale.ENGLISH, "ERROR: Read failed for characteristic: %s, status %d", characteristic.getUuid(), status));
+                logger.error(String.format(Locale.ENGLISH, "read failed for characteristic: %s, status %d", characteristic.getUuid(), status));
+                if (peripheralCallback != null) {
+                    callBackHandler.post(() -> peripheralCallback.onCharacteristicUpdate(BluetoothPeripheral.this, new byte[0], characteristic, status));
+                }
             }
 
             // Just complete the command. The actual value will come in through onCharacteristicChanged
@@ -332,7 +336,7 @@ public final class BluetoothPeripheral {
         }
 
         @Override
-        public void onServicesDiscovered(List<BluetoothGattService> services) {
+        public void onServicesDiscovered(@NotNull List<BluetoothGattService> services) {
             serviceDiscoveryCompleted = true;
             logger.info(String.format("discovered %d services for '%s' (%s)", services.size(), getName(), getAddress()));
             if (peripheralCallback != null) {
@@ -341,6 +345,20 @@ public final class BluetoothPeripheral {
 
             // Let Central know as well so it can start scanning again if needed
             listener.servicesDiscovered(BluetoothPeripheral.this);
+        }
+
+        private void completeDisconnect(boolean notify) {
+            // Do some cleanup
+            if (queueHandler != null) {
+                queueHandler.stop();
+            }
+            queueHandler = null;
+            commandQueue.clear();
+            commandQueueBusy = false;
+
+            if (notify) {
+                listener.disconnected(BluetoothPeripheral.this);
+            }
         }
     };
 
@@ -423,20 +441,6 @@ public final class BluetoothPeripheral {
         }
     }
 
-    private void completeDisconnect(boolean notify) {
-        // Do some cleanup
-        if (queueHandler != null) {
-            queueHandler.stop();
-        }
-        queueHandler = null;
-        commandQueue.clear();
-        commandQueueBusy = false;
-
-        if (notify) {
-            listener.disconnected(BluetoothPeripheral.this);
-        }
-    }
-
     /**
      * Read the value of a characteristic.
      *
@@ -492,9 +496,10 @@ public final class BluetoothPeripheral {
                     logger.error(e.toString());
                 } catch (DBusExecutionException e) {
                     gattCallback.onCharacteristicRead(characteristic, GATT_ERROR);
-                    logger.error("ERROR: " + e.getMessage());
+                    logger.error(e.toString());
                 } catch (Exception e) {
-                    logger.error("ERROR: " + e.getMessage());
+                    gattCallback.onCharacteristicRead(characteristic, GATT_ERROR);
+                    logger.error(e.toString());
                 }
             }
         });
@@ -522,7 +527,7 @@ public final class BluetoothPeripheral {
      */
     @SuppressWarnings({"UnusedReturnValue", "unused"})
     public boolean writeCharacteristic(@NotNull final BluetoothGattCharacteristic characteristic, @NotNull final byte[] value, final int writeType) {
-        Objects.requireNonNull(characteristic, "no valid characteristic provided");
+        Objects.requireNonNull(characteristic, NO_VALID_CHARACTERISTIC_PROVIDED);
         Objects.requireNonNull(value, "no valid value provided");
 
         // Make sure we are still connected
@@ -587,7 +592,7 @@ public final class BluetoothPeripheral {
                     gattCallback.onCharacteristicWrite(characteristic, GATT_INSUFFICIENT_AUTHENTICATION);
                 } catch (Exception e) {
                     gattCallback.onCharacteristicWrite(characteristic, GATT_ERROR);
-                    logger.error("ERROR: " + e.getMessage());
+                    logger.error(e.getMessage());
                 }
             }
         });
@@ -611,7 +616,7 @@ public final class BluetoothPeripheral {
      */
     @SuppressWarnings("UnusedReturnValue")
     public boolean setNotify(@NotNull final BluetoothGattCharacteristic characteristic, boolean enable) {
-        Objects.requireNonNull(characteristic, "no valid characteristic provided");
+        Objects.requireNonNull(characteristic, NO_VALID_CHARACTERISTIC_PROVIDED);
 
         // Make sure we are still connected
         if (state != STATE_CONNECTED) {
@@ -741,70 +746,70 @@ public final class BluetoothPeripheral {
                     break;
             }
         }
-    };
 
-    private void handlePropertyChangedForCharacteristic(BluetoothGattCharacteristic bluetoothGattCharacteristic, String propertyName, Variant<?> value) {
-        switch (propertyName) {
-            case PROPERTY_NOTIFYING:
-                boolean isNotifying = (Boolean) value.getValue();
-                gattCallback.onNotifySet(bluetoothGattCharacteristic, isNotifying);
-                break;
-            case PROPERTY_VALUE:
-                if (value.getType() instanceof DBusListType) {
-                    if (value.getValue() instanceof byte[]) {
-                        byte[] byteVal = (byte[]) value.getValue();
-                        gattCallback.onCharacteristicChanged(byteVal, bluetoothGattCharacteristic);
+        private void handlePropertyChangedForCharacteristic(BluetoothGattCharacteristic bluetoothGattCharacteristic, String propertyName, Variant<?> value) {
+            switch (propertyName) {
+                case PROPERTY_NOTIFYING:
+                    boolean isNotifying = (Boolean) value.getValue();
+                    gattCallback.onNotifySet(bluetoothGattCharacteristic, isNotifying);
+                    break;
+                case PROPERTY_VALUE:
+                    if (value.getType() instanceof DBusListType) {
+                        if (value.getValue() instanceof byte[]) {
+                            byte[] byteVal = (byte[]) value.getValue();
+                            gattCallback.onCharacteristicChanged(byteVal, bluetoothGattCharacteristic);
+                        } else {
+                            logger.error("got VALUE update that is not byte array");
+                        }
                     } else {
-                        logger.error("got VALUE update that is not byte array");
+                        logger.error("got unknown type for VALUE update");
                     }
-                } else {
-                    logger.error("got unknown type for VALUE update");
-                }
-                break;
-            default:
-                logger.error(String.format("Unhandled characteristic property change %s", propertyName));
+                    break;
+                default:
+                    logger.error(String.format("Unhandled characteristic property change %s", propertyName));
+            }
         }
-    }
 
-    private void handlePropertyChangeForDevice(String propertyName, Variant<?> value) {
-        switch (propertyName) {
-            case PROPERTY_SERVICES_RESOLVED:
-                if (value.getValue().equals(true)) {
-                    cancelServiceDiscoveryTimer();
-                    servicesResolved();
-                } else {
-                    logger.debug(String.format("servicesResolved is false (%s)", deviceName));
-                }
-                break;
-            case PROPERTY_CONNECTED:
-                if (value.getValue().equals(true)) {
-                    long timePassed = System.currentTimeMillis() - connectTimestamp;
-                    logger.info(String.format("connected to '%s' (%s) in %.1fs", deviceName, isPaired() ? "BONDED" : "BOND_NONE", timePassed / 1000.0f));
-                    gattCallback.onConnectionStateChanged(STATE_CONNECTED, GATT_SUCCESS);
-                    startServiceDiscoveryTimer();
-                } else {
-                    logger.info(String.format("disconnected '%s' (%s)", deviceName, deviceAddress));
+        private void handlePropertyChangeForDevice(String propertyName, Variant<?> value) {
+            switch (propertyName) {
+                case PROPERTY_SERVICES_RESOLVED:
+                    if (value.getValue().equals(true)) {
+                        cancelServiceDiscoveryTimer();
+                        servicesResolved();
+                    } else {
+                        logger.debug(String.format("servicesResolved is false (%s)", deviceName));
+                    }
+                    break;
+                case PROPERTY_CONNECTED:
+                    if (value.getValue().equals(true)) {
+                        long timePassed = System.currentTimeMillis() - connectTimestamp;
+                        logger.info(String.format("connected to '%s' (%s) in %.1fs", deviceName, isPaired() ? "BONDED" : "BOND_NONE", timePassed / 1000.0f));
+                        gattCallback.onConnectionStateChanged(STATE_CONNECTED, GATT_SUCCESS);
+                        startServiceDiscoveryTimer();
+                    } else {
+                        logger.info(String.format("disconnected '%s' (%s)", deviceName, deviceAddress));
 
-                    // Clean up
-                    cancelServiceDiscoveryTimer();
-                    BluezSignalHandler.getInstance().removePeripheral(deviceAddress);
-                    gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, GATT_SUCCESS);
-                    if (timeoutHandler != null) timeoutHandler.stop();
-                    timeoutHandler = null;
-                }
-                break;
-            case PROPERTY_PAIRED:
-                if (value.getValue().equals(true)) {
-                    isBonded = true;
-                    gattCallback.onPaired();
-                } else {
-                    gattCallback.onPairingFailed();
-                }
-                break;
-            default:
-                // Ignore other properties
+                        // Clean up
+                        cancelServiceDiscoveryTimer();
+                        BluezSignalHandler.getInstance().removePeripheral(deviceAddress);
+                        gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, GATT_SUCCESS);
+                        if (timeoutHandler != null) timeoutHandler.stop();
+                        timeoutHandler = null;
+                    }
+                    break;
+                case PROPERTY_PAIRED:
+                    if (value.getValue().equals(true)) {
+                        isBonded = true;
+                        gattCallback.onPaired();
+                    } else {
+                        gattCallback.onPairingFailed();
+                    }
+                    break;
+                default:
+                    // Ignore other properties
+            }
         }
-    }
+    };
 
     /**
      * The current command has been completed, move to the next command in the queue (if any)
@@ -893,7 +898,7 @@ public final class BluetoothPeripheral {
     }
 
     private @Nullable BluetoothGattCharacteristic getBluetoothGattCharacteristic(@NotNull BluezGattCharacteristic bluezGattCharacteristic) {
-        Objects.requireNonNull(bluezGattCharacteristic, "no valid characteristic provided");
+        Objects.requireNonNull(bluezGattCharacteristic, NO_VALID_CHARACTERISTIC_PROVIDED);
 
         // TODO this only works if the characteristic UUID is unique...also match service
         UUID characteristicUUID = UUID.fromString(bluezGattCharacteristic.getUuid());
@@ -943,7 +948,7 @@ public final class BluetoothPeripheral {
      */
     public @Nullable BluetoothGattCharacteristic getCharacteristic(@NotNull UUID serviceUUID, @NotNull UUID characteristicUUID) {
         Objects.requireNonNull(serviceUUID, "no valid service UUID provided");
-        Objects.requireNonNull(characteristicUUID, "no valid characteristic provided");
+        Objects.requireNonNull(characteristicUUID, NO_VALID_CHARACTERISTIC_PROVIDED);
 
         BluetoothGattService service = getService(serviceUUID);
         if (service != null) {
@@ -1026,7 +1031,7 @@ public final class BluetoothPeripheral {
      * @return true if the characteristic is notifying or indicating, false if it is not
      */
     public boolean isNotifying(@NotNull BluetoothGattCharacteristic characteristic) {
-        Objects.requireNonNull(characteristic, "no valid characteristic provided");
+        Objects.requireNonNull(characteristic, NO_VALID_CHARACTERISTIC_PROVIDED);
 
         final BluezGattCharacteristic nativeCharacteristic = getBluezGattCharacteristic(characteristic.service.getUuid(), characteristic.getUuid());
         if (nativeCharacteristic == null) {

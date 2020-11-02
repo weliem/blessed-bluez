@@ -162,19 +162,19 @@ public class BluetoothGattCharacteristic {
      * The UUID of this characteristic.
      *
      */
-    protected UUID uuid;
+    protected final UUID uuid;
 
     /**
      * Characteristic properties.
      *
      */
-    protected int properties;
+    protected final int properties;
 
     /**
      * Characteristic permissions.
      *
      */
-    protected int permissions;
+    protected final int permissions;
 
     /**
      * Back-reference to the service this characteristic belongs to.

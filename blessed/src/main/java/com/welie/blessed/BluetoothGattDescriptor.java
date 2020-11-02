@@ -71,13 +71,13 @@ public class BluetoothGattDescriptor {
      * The UUID of this descriptor.
      *
      */
-    protected UUID uuid;
+    protected final UUID uuid;
 
     /**
      * Permissions for this descriptor
      *
      */
-    protected int permissions;
+    protected final int permissions;
 
     /**
      * Back-reference to the characteristic this descriptor belongs to.
