@@ -5,10 +5,7 @@ import com.welie.blessed.bluez.BluezGattCharacteristic;
 import com.welie.blessed.bluez.BluezGattService;
 import com.welie.blessed.internal.Handler;
 import com.welie.blessed.internal.InternalCallback;
-import org.bluez.exceptions.BluezAlreadyConnectedException;
-import org.bluez.exceptions.BluezFailedException;
-import org.bluez.exceptions.BluezInProgressException;
-import org.bluez.exceptions.BluezNotReadyException;
+import org.bluez.exceptions.*;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
@@ -21,10 +18,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static com.welie.blessed.BluetoothGattCharacteristic.*;
 import static com.welie.blessed.BluetoothPeripheral.*;
@@ -340,6 +334,142 @@ class BluetoothPeripheralTest {
 
         // Then
         verify(peripheralCallback).onCharacteristicUpdate(peripheral,new byte[0], characteristic, GATT_ERROR);
+    }
+
+    @Test
+    void Given_a_connected_peripheral_when_readCharacteristic_is_called_and_BluezNotPermittedException_occurs_then_onCharacteristicUpdate_is_called_with_GATT_READ_NOT_PERMITTED() throws DBusException, InterruptedException {
+        // Given
+        BluetoothPeripheral peripheral = getConnectedPeripheral();
+        BluetoothGattCharacteristic characteristic = getBluetoothGattCharacteristic(BLP_SERVICE_UUID, BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID, PROPERTY_READ);
+        BluezGattCharacteristic bluezGattCharacteristic = getBluezGattCharacteristic();
+        peripheral.characteristicMap.put(bluezGattCharacteristic.getDbusPath(), bluezGattCharacteristic);
+        when(bluezGattCharacteristic.readValue(anyMap())).thenThrow(BluezNotPermittedException.class);
+
+        // When
+        peripheral.readCharacteristic(characteristic);
+        Thread.sleep(10);
+
+        // Then
+        verify(peripheralCallback).onCharacteristicUpdate(peripheral,new byte[0], characteristic, GATT_READ_NOT_PERMITTED);
+    }
+
+    @Test
+    void Given_a_connected_peripheral_when_readCharacteristic_is_called_and_BluezNotAuthorizedException_occurs_then_onCharacteristicUpdate_is_called_with_GATT_INSUFFICIENT_AUTHENTICATION() throws DBusException, InterruptedException {
+        // Given
+        BluetoothPeripheral peripheral = getConnectedPeripheral();
+        BluetoothGattCharacteristic characteristic = getBluetoothGattCharacteristic(BLP_SERVICE_UUID, BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID, PROPERTY_READ);
+        BluezGattCharacteristic bluezGattCharacteristic = getBluezGattCharacteristic();
+        peripheral.characteristicMap.put(bluezGattCharacteristic.getDbusPath(), bluezGattCharacteristic);
+        when(bluezGattCharacteristic.readValue(anyMap())).thenThrow(BluezNotAuthorizedException.class);
+
+        // When
+        peripheral.readCharacteristic(characteristic);
+        Thread.sleep(10);
+
+        // Then
+        verify(peripheralCallback).onCharacteristicUpdate(peripheral,new byte[0], characteristic, GATT_INSUFFICIENT_AUTHENTICATION);
+    }
+
+    @Test
+    void Given_a_connected_peripheral_when_readCharacteristic_is_called_and_BluezNotSupportedException_occurs_then_onCharacteristicUpdate_is_called_with_GATT_REQUEST_NOT_SUPPORTED() throws DBusException, InterruptedException {
+        // Given
+        BluetoothPeripheral peripheral = getConnectedPeripheral();
+        BluetoothGattCharacteristic characteristic = getBluetoothGattCharacteristic(BLP_SERVICE_UUID, BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID, PROPERTY_READ);
+        BluezGattCharacteristic bluezGattCharacteristic = getBluezGattCharacteristic();
+        peripheral.characteristicMap.put(bluezGattCharacteristic.getDbusPath(), bluezGattCharacteristic);
+        when(bluezGattCharacteristic.readValue(anyMap())).thenThrow(BluezNotSupportedException.class);
+
+        // When
+        peripheral.readCharacteristic(characteristic);
+        Thread.sleep(10);
+
+        // Then
+        verify(peripheralCallback).onCharacteristicUpdate(peripheral,new byte[0], characteristic, GATT_REQUEST_NOT_SUPPORTED);
+    }
+
+    @Test
+    void Given_a_connected_peripheral_when_readCharacteristic_is_called_and_DBusExecutionException_occurs_then_onCharacteristicUpdate_is_called_with_GATT_ERROR() throws DBusException, InterruptedException {
+        // Given
+        BluetoothPeripheral peripheral = getConnectedPeripheral();
+        BluetoothGattCharacteristic characteristic = getBluetoothGattCharacteristic(BLP_SERVICE_UUID, BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID, PROPERTY_READ);
+        BluezGattCharacteristic bluezGattCharacteristic = getBluezGattCharacteristic();
+        peripheral.characteristicMap.put(bluezGattCharacteristic.getDbusPath(), bluezGattCharacteristic);
+        when(bluezGattCharacteristic.readValue(anyMap())).thenThrow(DBusExecutionException.class);
+
+        // When
+        peripheral.readCharacteristic(characteristic);
+        Thread.sleep(10);
+
+        // Then
+        verify(peripheralCallback).onCharacteristicUpdate(peripheral,new byte[0], characteristic, GATT_ERROR);
+    }
+
+    @Test
+    void Given_a_connected_peripheral_when_writeCharacteristic_with_WRITE_TYPE_DEFAULT_is_called_then_a_write_is_done() throws DBusException, InterruptedException {
+        // Given
+        BluetoothPeripheral peripheral = getConnectedPeripheral();
+        BluetoothGattCharacteristic characteristic = getBluetoothGattCharacteristic(BLP_SERVICE_UUID, BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID, PROPERTY_WRITE);
+        BluezGattCharacteristic bluezGattCharacteristic = getBluezGattCharacteristic();
+        peripheral.characteristicMap.put(bluezGattCharacteristic.getDbusPath(), bluezGattCharacteristic);
+
+        // When
+        byte[] value = new byte[]{0x01,0x02,0x03};
+        peripheral.writeCharacteristic(characteristic, value, WRITE_TYPE_DEFAULT);
+        Thread.sleep(10);
+
+        // Then
+        ArgumentCaptor<Map<String, Object>> mapCaptor = ArgumentCaptor.forClass(Map.class);
+        ArgumentCaptor<byte[]> valueCaptor = ArgumentCaptor.forClass(byte[].class);
+        verify(bluezGattCharacteristic).writeValue(valueCaptor.capture(),mapCaptor.capture());
+        assertEquals("request", mapCaptor.getValue().get("type"));
+        assertTrue(Arrays.equals(value, valueCaptor.getValue()));
+    }
+
+    @Test
+    void Given_a_connected_peripheral_when_writeCharacteristic_with_WRITE_TYPE_NO_RESPONSE_is_called_then_a_write_is_done() throws DBusException, InterruptedException {
+        // Given
+        BluetoothPeripheral peripheral = getConnectedPeripheral();
+        BluetoothGattCharacteristic characteristic = getBluetoothGattCharacteristic(BLP_SERVICE_UUID, BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID, PROPERTY_WRITE_NO_RESPONSE);
+        BluezGattCharacteristic bluezGattCharacteristic = getBluezGattCharacteristic();
+        peripheral.characteristicMap.put(bluezGattCharacteristic.getDbusPath(), bluezGattCharacteristic);
+
+        // When
+        byte[] value = new byte[]{0x01,0x02,0x03};
+        peripheral.writeCharacteristic(characteristic, value, WRITE_TYPE_NO_RESPONSE);
+        Thread.sleep(10);
+
+        // Then
+        ArgumentCaptor<Map<String, Object>> mapCaptor = ArgumentCaptor.forClass(Map.class);
+        ArgumentCaptor<byte[]> valueCaptor = ArgumentCaptor.forClass(byte[].class);
+        verify(bluezGattCharacteristic).writeValue(valueCaptor.capture(),mapCaptor.capture());
+        assertEquals("command", mapCaptor.getValue().get("type"));
+        assertTrue(Arrays.equals(value, valueCaptor.getValue()));
+    }
+
+    @Test
+    void Given_a_connected_peripheral_when_writeCharacteristic_is_called_and_BluezNotPermittedException_occurs_then_onCharacteristicWrite_is_called_with_GATT_WRITE_NOT_PERMITTED() throws DBusException, InterruptedException {
+        // Given
+        BluetoothPeripheral peripheral = getConnectedPeripheral();
+        BluetoothGattCharacteristic characteristic = getBluetoothGattCharacteristic(BLP_SERVICE_UUID, BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID, PROPERTY_WRITE);
+        BluezGattCharacteristic bluezGattCharacteristic = getBluezGattCharacteristic();
+        peripheral.characteristicMap.put(bluezGattCharacteristic.getDbusPath(), bluezGattCharacteristic);
+        doThrow(new BluezNotPermittedException("not permitted"))
+                .when(bluezGattCharacteristic)
+                .writeValue(any(), anyMap());
+
+        // When
+        byte[] value = new byte[]{0x01,0x02,0x03};
+        peripheral.writeCharacteristic(characteristic, value, WRITE_TYPE_DEFAULT);
+        Thread.sleep(10);
+
+        // Then
+        ArgumentCaptor<BluetoothPeripheral> peripheralCaptor = ArgumentCaptor.forClass(BluetoothPeripheral.class);
+        ArgumentCaptor<byte[]> valueCaptor = ArgumentCaptor.forClass(byte[].class);
+        ArgumentCaptor<BluetoothGattCharacteristic> characteristicCaptor = ArgumentCaptor.forClass(BluetoothGattCharacteristic.class);
+        ArgumentCaptor<Integer> statusCaptor = ArgumentCaptor.forClass(Integer.class);
+        verify(peripheralCallback).onCharacteristicWrite(peripheralCaptor.capture(),valueCaptor.capture(), characteristicCaptor.capture(), statusCaptor.capture());
+        assertEquals(GATT_WRITE_NOT_PERMITTED, statusCaptor.getValue());
+        assertTrue(Arrays.equals(value, valueCaptor.getValue()));
     }
 
     @NotNull

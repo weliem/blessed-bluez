@@ -4,10 +4,7 @@ package com.welie.blessed;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Represents a Bluetooth GATT Characteristic
@@ -301,5 +298,24 @@ public class BluetoothGattCharacteristic {
 
     public boolean supportsNotifying() {
         return (((properties & PROPERTY_NOTIFY) > 0) || ((properties & PROPERTY_INDICATE) > 0));
+    }
+
+    public boolean supportsWriteType(int writeType) {
+        int writeProperty;
+        switch (writeType) {
+            case WRITE_TYPE_DEFAULT:
+                writeProperty = PROPERTY_WRITE;
+                break;
+            case WRITE_TYPE_NO_RESPONSE:
+                writeProperty = PROPERTY_WRITE_NO_RESPONSE;
+                break;
+            case WRITE_TYPE_SIGNED:
+                writeProperty = PROPERTY_SIGNED_WRITE;
+                break;
+            default:
+                writeProperty = 0;
+                break;
+        }
+        return (getProperties() & writeProperty) != 0;
     }
 }

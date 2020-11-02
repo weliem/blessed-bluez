@@ -551,23 +551,8 @@ public final class BluetoothPeripheral {
         }
 
         // Check if this characteristic actually supports this writeType
-        int writeProperty;
-        switch (writeType) {
-            case WRITE_TYPE_DEFAULT:
-                writeProperty = PROPERTY_WRITE;
-                break;
-            case WRITE_TYPE_NO_RESPONSE:
-                writeProperty = PROPERTY_WRITE_NO_RESPONSE;
-                break;
-            case WRITE_TYPE_SIGNED:
-                writeProperty = PROPERTY_SIGNED_WRITE;
-                break;
-            default:
-                writeProperty = 0;
-                break;
-        }
-        if ((characteristic.getProperties() & writeProperty) == 0) {
-            logger.error(String.format(Locale.ENGLISH, "ERROR: Characteristic cannot be written with this writeType : %d", writeType));
+        if (!characteristic.supportsWriteType(writeType)) {
+            logger.error(String.format(Locale.ENGLISH, "characteristic cannot be written with this writeType : %d", writeType));
             return false;
         }
 
