@@ -18,7 +18,7 @@ public abstract class GattCallback {
 
     public abstract void onDescriptorWrite(@NotNull BluetoothGattDescriptor descriptor, int status);
 
-    public abstract void onNotifySet(@NotNull BluetoothGattCharacteristic characteristic, boolean enabled);
+    public abstract void onNotificationStateUpdate(@NotNull BluetoothGattCharacteristic characteristic, int status);
 
     public abstract void onServicesDiscovered(@NotNull List<@NotNull BluetoothGattService> services);
 
