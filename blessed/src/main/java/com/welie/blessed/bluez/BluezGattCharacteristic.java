@@ -157,11 +157,11 @@ public class BluezGattCharacteristic extends AbstractBluetoothObject {
      * @return cached characteristics value, maybe null
      */
     public byte[] getValue() {
-        List<?> typed = getTyped("UUIDs", ArrayList.class);
+        List<?> typed = getTyped("Value", ArrayList.class);
         if (typed != null) {
             return byteListToByteArray(typed);
         }
-        return null;
+        return new byte[0];
     }
 
     /**
@@ -202,8 +202,13 @@ public class BluezGattCharacteristic extends AbstractBluetoothObject {
      * </pre>
      * @return string, maybe null
      */
-    public ArrayList<String> getFlags() {
-        return getTyped("Flags", ArrayList.class);
+    public List<String> getFlags() {
+        // TODO check real type
+        List<String> typed = getTyped("Flags", ArrayList.class);
+        if (typed != null) {
+            return typed;
+        }
+        return Collections.emptyList();
     }
 
     /**
