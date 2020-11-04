@@ -886,15 +886,9 @@ public final class BluetoothPeripheral {
     private @Nullable BluetoothGattCharacteristic getBluetoothGattCharacteristic(@NotNull BluezGattCharacteristic bluezGattCharacteristic) {
         Objects.requireNonNull(bluezGattCharacteristic, NO_VALID_CHARACTERISTIC_PROVIDED);
 
-        // TODO this only works if the characteristic UUID is unique...also match service
         UUID characteristicUUID = UUID.fromString(bluezGattCharacteristic.getUuid());
-        for (BluetoothGattService service : services) {
-            for (BluetoothGattCharacteristic characteristic : service.getCharacteristics())
-                if (characteristic.getUuid().equals(characteristicUUID)) {
-                    return characteristic;
-                }
-        }
-        return null;
+        UUID serviceUUID = UUID.fromString(bluezGattCharacteristic.getService().getUuid());
+        return getCharacteristic(serviceUUID, characteristicUUID);
     }
 
 
@@ -1143,7 +1137,9 @@ public final class BluetoothPeripheral {
      * @param flags array of characteristic flags
      * @return flags as an int
      */
-    private int mapFlagsToProperty(List<String> flags) {
+    private int mapFlagsToProperty(@NotNull List<String> flags) {
+        Objects.requireNonNull(flags, "flags list not valid");
+
         int result = 0;
         if (flags.contains("read")) {
             result = result + PROPERTY_READ;
