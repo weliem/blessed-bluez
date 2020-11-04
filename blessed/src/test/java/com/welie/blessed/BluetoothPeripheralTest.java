@@ -718,11 +718,15 @@ class BluetoothPeripheralTest {
         List<String> flags1 = new ArrayList<>();
         flags1.add("read");
         flags1.add("notify");
+        flags1.add("write");
         when(characteristic1.getFlags()).thenReturn(flags1);
         BluezGattCharacteristic characteristic2 = mock(BluezGattCharacteristic.class);
         when(characteristic2.getUuid()).thenReturn(TEMPERATURE_MEASUREMENT_CHARACTERISTIC_UUID.toString());
         when(characteristic2.getDbusPath()).thenReturn("bb");
-
+        List<String> flags2 = new ArrayList<>();
+        flags2.add("indicate");
+        flags2.add("write-without-response");
+        when(characteristic2.getFlags()).thenReturn(flags2);
         BluezGattDescriptor descriptor = mock(BluezGattDescriptor.class);
         when(descriptor.getUuid()).thenReturn(CCC_DESCRIPTOR_UUID);
         when(descriptor.getDbusPath()).thenReturn("ccc");
@@ -745,6 +749,16 @@ class BluetoothPeripheralTest {
         assertNotNull(measurementCharacteristic);
         assertTrue(measurementCharacteristic.supportsReading());
         assertTrue(measurementCharacteristic.supportsNotifying());
+        assertTrue(measurementCharacteristic.supportsWritingWithResponse());
+
+        BluetoothGattCharacteristic temperatureCharacteristic = peripheral.getCharacteristic(HTS_SERVICE_UUID, TEMPERATURE_MEASUREMENT_CHARACTERISTIC_UUID);
+        assertNotNull(temperatureCharacteristic);
+        assertTrue(temperatureCharacteristic.supportsNotifying());
+        assertTrue(temperatureCharacteristic.supportsWriteType(WRITE_TYPE_NO_RESPONSE));
+        assertTrue(temperatureCharacteristic.supportsWritingWithoutResponse());
+
+        BluetoothGattDescriptor cccDescriptor = measurementCharacteristic.getDescriptor(UUID.fromString(CCC_DESCRIPTOR_UUID));
+        assertNotNull(cccDescriptor);
     }
 
     @NotNull
