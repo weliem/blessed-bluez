@@ -1143,7 +1143,7 @@ public final class BluetoothPeripheral {
      * @param flags array of characteristic flags
      * @return flags as an int
      */
-    private int mapFlagsToProperty(ArrayList<String> flags) {
+    private int mapFlagsToProperty(List<String> flags) {
         int result = 0;
         if (flags.contains("read")) {
             result = result + PROPERTY_READ;

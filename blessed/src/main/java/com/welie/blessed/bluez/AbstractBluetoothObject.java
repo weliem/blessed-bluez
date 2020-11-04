@@ -24,7 +24,7 @@ public abstract class AbstractBluetoothObject {
     private final Logger logger = Logger.getLogger(getClass().getSimpleName());
 
     private final BluezDeviceType bluetoothType;
-    private DBusConnection dbusConnection;
+    private final DBusConnection dbusConnection;
     private final String dbusPath;
 
     public AbstractBluetoothObject(BluezDeviceType _bluetoothType, DBusConnection _dbusConnection, String _dbusPath) {
@@ -90,7 +90,7 @@ public abstract class AbstractBluetoothObject {
             }
 
         } catch (DBusException _ex) {
-            logger.severe(String.format("Error while receiving data from DBUS (Field: {}, Type: {}).", _field, _type, _ex));
+            logger.severe(String.format("Error while receiving data from DBUS (Field: {%s}): %s", _field, _ex.getMessage()));
         }
         return null;
     }
@@ -106,7 +106,7 @@ public abstract class AbstractBluetoothObject {
             Properties remoteObject = dbusConnection.getRemoteObject("org.bluez", dbusPath, Properties.class);
             remoteObject.Set(getInterfaceClass().getName(), _field, _value);
         } catch (DBusException _ex) {
-            logger.severe(String.format("Error while setting data for DBUS (Field: {}, Value: {}).", _field, _value, _ex));
+            logger.severe(String.format("Error while setting data for DBUS (Field: {%s}): %s", _field, _ex.getMessage()));
         }
     }
 
@@ -153,20 +153,5 @@ public abstract class AbstractBluetoothObject {
         }
 
         return result;
-    }
-
-    /**
-     * Convert Byte[] to byte[] array.
-     * @param oBytes the array to convert
-     * @return primitive byte array
-     */
-    protected byte[] toPrimitives(Byte[] oBytes) {
-        byte[] bytes = new byte[oBytes.length];
-
-        for (int i = 0; i < oBytes.length; i++) {
-            bytes[i] = oBytes[i];
-        }
-
-        return bytes;
     }
 }
