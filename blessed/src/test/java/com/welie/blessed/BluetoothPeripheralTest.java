@@ -609,6 +609,26 @@ class BluetoothPeripheralTest {
         verify(bluezGattCharacteristic, timeout(50).times(0)).startNotify();
     }
 
+    @Test
+    void Given_a_connected_peripheral_and_setNotify_has_been_called_when_the_notifyingSignal_comes_in_then_onNotificationStateUpdate_is_called() throws DBusException, InterruptedException {
+        // Given
+        BluetoothPeripheral peripheral = getConnectedPeripheral();
+        BluetoothGattCharacteristic characteristic = getBluetoothGattCharacteristic(BLP_SERVICE_UUID, BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID, PROPERTY_NOTIFY);
+        peripheral.services.add(characteristic.getService());
+        BluezGattCharacteristic bluezGattCharacteristic = getBluezGattCharacteristic();
+        when(bluezGattCharacteristic.getDbusPath()).thenReturn("/org/bluez/hci0/dev_C0_26_DF_01_F2_72/service0014/char0015");
+        when(bluezGattCharacteristic.getUuid()).thenReturn(BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID.toString());
+        peripheral.characteristicMap.put(bluezGattCharacteristic.getDbusPath(), bluezGattCharacteristic);
+
+        // When
+        peripheral.setNotify(characteristic, true);
+        Thread.sleep(50);
+        peripheral.handleSignal(getPropertiesChangedSignalCharacteristicNotifying("/org/bluez/hci0/dev_C0_26_DF_01_F2_72/service0014/char0015", true));
+
+        // Then
+        verify(peripheralCallback, timeout(50)).onNotificationStateUpdate(peripheral, characteristic, GATT_SUCCESS);
+    }
+
     @NotNull
     private BluezGattCharacteristic getBluezGattCharacteristic() {
         BluezGattCharacteristic bluezGattCharacteristic = mock(BluezGattCharacteristic.class);
@@ -668,5 +688,12 @@ class BluetoothPeripheralTest {
         Map<String, Variant<?>> propertiesChanged = new HashMap<>();
         propertiesChanged.put(PROPERTY_VALUE, new Variant<>(value, "ay"));
         return new Properties.PropertiesChanged(path, BLUEZ_CHARACTERISTIC_INTERFACE, propertiesChanged,new ArrayList() );
+    }
+
+    @NotNull
+    private Properties.PropertiesChanged getPropertiesChangedSignalCharacteristicNotifying(String path, boolean value) throws DBusException {
+        Map<String, Variant<?>> propertiesChanged = new HashMap<>();
+        propertiesChanged.put(PROPERTY_NOTIFYING, new Variant<>(value));
+        return new Properties.PropertiesChanged(path, BLUEZ_CHARACTERISTIC_INTERFACE, propertiesChanged,new ArrayList<String>() );
     }
 }
