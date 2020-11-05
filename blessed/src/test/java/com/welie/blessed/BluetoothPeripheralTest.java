@@ -125,7 +125,7 @@ class BluetoothPeripheralTest {
         peripheral.connect();
 
         // Then
-        verify(internalCallback).connectFailed(peripheral);
+        verify(internalCallback).connectFailed(peripheral, GATT_ERROR);
         assertEquals(STATE_DISCONNECTED, peripheral.getState());
     }
 
@@ -143,7 +143,7 @@ class BluetoothPeripheralTest {
         peripheral.connect();
 
         // Then
-        verify(internalCallback).connectFailed(peripheral);
+        verify(internalCallback).connectFailed(peripheral, GATT_ERROR);
         assertEquals(STATE_DISCONNECTED, peripheral.getState());
     }
 
@@ -160,7 +160,7 @@ class BluetoothPeripheralTest {
         peripheral.connect();
 
         // Then
-        verify(internalCallback).connectFailed(peripheral);
+        verify(internalCallback).connectFailed(peripheral, GATT_ERROR);
         assertEquals(STATE_DISCONNECTED, peripheral.getState());
     }
 
@@ -177,7 +177,7 @@ class BluetoothPeripheralTest {
         peripheral.connect();
 
         // Then
-        verify(internalCallback).connectFailed(peripheral);
+        verify(internalCallback).connectFailed(peripheral, GATT_ERROR);
         assertEquals(STATE_DISCONNECTED, peripheral.getState());
     }
 
@@ -215,7 +215,7 @@ class BluetoothPeripheralTest {
         peripheral.handleSignal(getPropertiesChangedSignalDisconnected());
 
         // Then
-        verify(internalCallback).disconnected(peripheral);
+        verify(internalCallback).disconnected(peripheral, GATT_SUCCESS);
         assertEquals(STATE_DISCONNECTED, peripheral.getState());
     }
 

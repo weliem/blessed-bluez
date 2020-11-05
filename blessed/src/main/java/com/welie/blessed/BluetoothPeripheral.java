@@ -229,8 +229,8 @@ public final class BluetoothPeripheral {
                     break;
                 case STATE_DISCONNECTED:
                     if (previousState == STATE_CONNECTING) {
-                        listener.connectFailed(BluetoothPeripheral.this);
-                        completeDisconnect(false);
+                        listener.connectFailed(BluetoothPeripheral.this, status);
+                        completeDisconnect(false, status);
                     } else {
                         if (!serviceDiscoveryCompleted) {
 //                            if (isBonded) {
@@ -241,7 +241,7 @@ public final class BluetoothPeripheral {
 //                            }
                             listener.serviceDiscoveryFailed(BluetoothPeripheral.this);
                         }
-                        completeDisconnect(true);
+                        completeDisconnect(true, status);
                     }
                     break;
                 case STATE_CONNECTING:
@@ -347,7 +347,7 @@ public final class BluetoothPeripheral {
             listener.servicesDiscovered(BluetoothPeripheral.this);
         }
 
-        private void completeDisconnect(boolean notify) {
+        private void completeDisconnect(boolean notify, final int status) {
             // Do some cleanup
             if (queueHandler != null) {
                 queueHandler.stop();
@@ -357,7 +357,7 @@ public final class BluetoothPeripheral {
             commandQueueBusy = false;
 
             if (notify) {
-                listener.disconnected(BluetoothPeripheral.this);
+                listener.disconnected(BluetoothPeripheral.this, status);
             }
         }
     };

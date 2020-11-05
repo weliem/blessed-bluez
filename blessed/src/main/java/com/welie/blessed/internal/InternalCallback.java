@@ -7,6 +7,7 @@ package com.welie.blessed.internal;
 
 import com.welie.blessed.BluetoothCentral;
 import com.welie.blessed.BluetoothPeripheral;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Interface between {@link BluetoothCentral} and a {@link BluetoothPeripheral}.
@@ -20,23 +21,23 @@ public interface InternalCallback {
      *
      * @param peripheral {@link BluetoothPeripheral} that connected.
      */
-    void connected(final BluetoothPeripheral peripheral);
+    void connected(@NotNull final BluetoothPeripheral peripheral);
 
     /**
      * Connecting with {@link BluetoothPeripheral} has failed.
      *
      * @param peripheral {@link BluetoothPeripheral} of which connect failed.
      */
-    void connectFailed(final BluetoothPeripheral peripheral);
+    void connectFailed(@NotNull final BluetoothPeripheral peripheral, final int status);
 
     /**
      * {@link BluetoothPeripheral} has disconnected.
      *
      * @param peripheral {@link BluetoothPeripheral} that disconnected.
      */
-    void disconnected(final BluetoothPeripheral peripheral);
+    void disconnected(@NotNull final BluetoothPeripheral peripheral, final int status);
 
-    void servicesDiscovered(final BluetoothPeripheral peripheral);
+    void servicesDiscovered(@NotNull final BluetoothPeripheral peripheral);
 
-    void serviceDiscoveryFailed(final BluetoothPeripheral peripheral);
+    void serviceDiscoveryFailed(@NotNull final BluetoothPeripheral peripheral);
 }

@@ -133,7 +133,7 @@ public class BluetoothCentral {
 
     private final InternalCallback internalCallback = new InternalCallback() {
         @Override
-        public void connected(final BluetoothPeripheral peripheral) {
+        public void connected(final @NotNull BluetoothPeripheral peripheral) {
             final String peripheralAddress = peripheral.getAddress();
             connectedPeripherals.put(peripheralAddress, peripheral);
             unconnectedPeripherals.remove(peripheralAddress);
@@ -147,12 +147,12 @@ public class BluetoothCentral {
         }
 
         @Override
-        public void servicesDiscovered(final BluetoothPeripheral peripheral) {
+        public void servicesDiscovered(final @NotNull BluetoothPeripheral peripheral) {
             restartScannerIfNeeded();
         }
 
         @Override
-        public void serviceDiscoveryFailed(final BluetoothPeripheral peripheral) {
+        public void serviceDiscoveryFailed(final @NotNull BluetoothPeripheral peripheral) {
             logger.info("Service discovery failed");
             if (peripheral.isPaired()) {
                 callBackHandler.postDelayed(() -> removeDevice(peripheral), 200L);
@@ -160,7 +160,7 @@ public class BluetoothCentral {
         }
 
         @Override
-        public void connectFailed(final BluetoothPeripheral peripheral) {
+        public void connectFailed(@NotNull BluetoothPeripheral peripheral, int status) {
             final String peripheralAddress = peripheral.getAddress();
             connectedPeripherals.remove(peripheralAddress);
             unconnectedPeripherals.remove(peripheralAddress);
@@ -177,7 +177,7 @@ public class BluetoothCentral {
         }
 
         @Override
-        public void disconnected(final BluetoothPeripheral peripheral) {
+        public void disconnected(@NotNull BluetoothPeripheral peripheral, int status) {
             final String peripheralAddress = peripheral.getAddress();
             connectedPeripherals.remove(peripheralAddress);
             unconnectedPeripherals.remove(peripheralAddress);
