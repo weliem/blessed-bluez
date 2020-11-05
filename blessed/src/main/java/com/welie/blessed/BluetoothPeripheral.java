@@ -1088,7 +1088,7 @@ public final class BluetoothPeripheral {
     }
 
     private void startServiceDiscoveryTimer() {
-        if (timeoutRunnable != null) {
+        if (timeoutRunnable != null && timeoutHandler != null) {
             timeoutHandler.removeCallbacks(timeoutRunnable);
         }
 
@@ -1105,7 +1105,7 @@ public final class BluetoothPeripheral {
     }
 
     private void cancelServiceDiscoveryTimer() {
-        if (timeoutRunnable != null) {
+        if (timeoutRunnable != null && timeoutHandler != null) {
             timeoutHandler.removeCallbacks(timeoutRunnable);
             timeoutRunnable = null;
         }

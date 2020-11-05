@@ -54,11 +54,11 @@ public final class DbusHelper {
             }
             return foundNodes;
         } catch (DBusException _ex) {
-            LOGGER.info(String.format("Exception while search DBus.", _ex));
+            LOGGER.info(String.format("Exception while search DBus %s", _ex));
         } catch (IOException _ex) {
-            LOGGER.severe(String.format("Exception while applying Xpath to introspection result", _ex));
+            LOGGER.severe(String.format("Exception while applying Xpath to introspection result: %s", _ex));
         } catch (Exception _ex) {
-            LOGGER.severe(String.format("Critical error while reading DBUS response (maybe no bluetoothd daemon running?)", _ex));
+            LOGGER.severe(String.format("Critical error while reading DBUS response (maybe no bluetoothd daemon running?): %s", _ex));
         }
         return foundNodes;
     }
@@ -75,7 +75,7 @@ public final class DbusHelper {
         try {
             return _connection.getRemoteObject("org.bluez", _path, _objClass);
         } catch (DBusException _ex) {
-            LOGGER.severe(String.format("Error while converting dbus response to object.", _ex));
+            LOGGER.severe(String.format("Error while converting dbus response to object: %s", _ex));
         }
         return null;
     }
