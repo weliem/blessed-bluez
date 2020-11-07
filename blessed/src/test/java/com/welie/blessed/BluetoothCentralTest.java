@@ -875,10 +875,10 @@ class BluetoothCentralTest {
 
     private void startScan(BluetoothCentral central) throws InterruptedException, DBusException {
         central.scanForPeripherals();
-        Thread.sleep(100);
+        Thread.sleep(10);
         Properties.PropertiesChanged propertiesChangedSignal = getPropertiesChangeSignalDiscoveryStarted();
         central.handleSignal(propertiesChangedSignal);
-        Thread.sleep(100);
+        Thread.sleep(10);
         when(bluezAdapter.isDiscovering()).thenReturn(true);
     }
 
@@ -886,8 +886,10 @@ class BluetoothCentralTest {
         central.connectPeripheral(peripheral, peripheralCallback);
         Thread.sleep(500);
         peripheral.handleSignal(getPropertiesChangedSignalConnected());
-        Thread.sleep(100);
+        Thread.sleep(10);
         assertEquals(STATE_CONNECTED, peripheral.getState());
+        peripheral.handleSignal(getPropertiesChangedSignalServicesResolved());
+        Thread.sleep(10);
     }
 
     @NotNull
@@ -902,6 +904,13 @@ class BluetoothCentralTest {
         Map<String, Variant<?>> propertiesChanged = new HashMap<>();
         propertiesChanged.put(PROPERTY_CONNECTED, new Variant<>(false));
         return new Properties.PropertiesChanged("/org/bluez/hci0", BLUEZ_DEVICE_INTERFACE, propertiesChanged,new ArrayList() );
+    }
+
+    @NotNull
+    private Properties.PropertiesChanged getPropertiesChangedSignalServicesResolved() throws DBusException {
+        Map<String, Variant<?>> propertiesChanged = new HashMap<>();
+        propertiesChanged.put(PROPERTY_SERVICES_RESOLVED, new Variant<>(true));
+        return new Properties.PropertiesChanged("/org/bluez/hci0/dev_C0_26_DF_01_F2_72", BLUEZ_DEVICE_INTERFACE, propertiesChanged,new ArrayList() );
     }
 
     @NotNull

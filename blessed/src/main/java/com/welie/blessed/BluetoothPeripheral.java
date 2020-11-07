@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +32,7 @@ public final class BluetoothPeripheral {
     private static final String TAG = BluetoothPeripheral.class.getSimpleName();
     public static final String ERROR_NATIVE_CHARACTERISTIC_IS_NULL = "ERROR: Native characteristic is null";
     public static final String NO_VALID_CHARACTERISTIC_PROVIDED = "no valid characteristic provided";
+    public static final String NO_VALID_SERVICE_UUID_PROVIDED = "no valid service UUID provided";
     private final Logger logger = LoggerFactory.getLogger(TAG);
 
     @NotNull
@@ -88,7 +90,7 @@ public final class BluetoothPeripheral {
     private long connectTimestamp;
     private boolean isRetrying;
     private volatile int state = STATE_DISCONNECTED;
-    private boolean serviceDiscoveryCompleted = false;
+    private volatile boolean serviceDiscoveryCompleted = false;
 
     // Numeric constants
     private static final int MAX_TRIES = 2;
@@ -218,41 +220,62 @@ public final class BluetoothPeripheral {
     final GattCallback gattCallback = new GattCallback() {
         @Override
         public void onConnectionStateChanged(int connectionState, int status) {
-            // TODO process the status field as well
             int previousState = state;
             state = connectionState;
 
-            switch (connectionState) {
-                case STATE_CONNECTED:
-                    isBonded = isPaired();
-                    listener.connected(BluetoothPeripheral.this);
-                    break;
-                case STATE_DISCONNECTED:
-                    if (previousState == STATE_CONNECTING) {
-                        listener.connectFailed(BluetoothPeripheral.this, status);
-                        completeDisconnect(false, status);
-                    } else {
-                        if (!serviceDiscoveryCompleted) {
+            if (status == GATT_SUCCESS) {
+                switch (connectionState) {
+                    case STATE_CONNECTED:
+                        successfullyConnected();
+                        break;
+                    case STATE_DISCONNECTED:
+                        successfullyDisconnected(status, previousState);
+                        break;
+                    case STATE_CONNECTING:
+                        logger.info("peripheral is connecting");
+                        break;
+                    case STATE_DISCONNECTING:
+                        logger.info("peripheral is disconnecting");
+                        break;
+                    default:
+                        logger.error("unhandled connection state");
+                        break;
+                }
+            } else {
+                connectionStateChangeUnsuccessful(status, previousState, connectionState);
+            }
+        }
+
+        private void successfullyConnected() {
+            long timePassed = System.currentTimeMillis() - connectTimestamp;
+            isBonded = isPaired();
+            logger.info(String.format("connected to '%s' (%s) in %.1fs", deviceName, isBonded ? "BONDED" : "BOND_NONE", timePassed / 1000.0f));
+        }
+
+        private void successfullyDisconnected(int status, int previousState) {
+                if (!serviceDiscoveryCompleted) {
 //                            if (isBonded) {
 //                                // Assume we lost the bond
 //                                if (peripheralCallback != null) {
 //                                    callBackHandler.post(() -> peripheralCallback.onBondLost(BluetoothPeripheral.this));
 //                                }
 //                            }
-                            listener.serviceDiscoveryFailed(BluetoothPeripheral.this);
-                        }
-                        completeDisconnect(true, status);
-                    }
-                    break;
-                case STATE_CONNECTING:
-                    break;
-                case STATE_DISCONNECTING:
-                    commandQueue.clear();
-                    commandQueueBusy = false;
-                    break;
-                default:
-                    logger.error("unhandled connection state");
-                    break;
+                    listener.serviceDiscoveryFailed(BluetoothPeripheral.this);
+                }
+                completeDisconnect(true, status);
+        }
+
+        void connectionStateChangeUnsuccessful(int status, int previousState, int newState) {
+            if (previousState == STATE_CONNECTING) {
+                completeDisconnect(false, status);
+                logger.error(String.format("connection failed with status %d", status));
+                listener.connectFailed(BluetoothPeripheral.this, status);
+            } else if (previousState == STATE_CONNECTED && newState == STATE_DISCONNECTED && !serviceDiscoveryCompleted) {
+                completeDisconnect(false, status);
+                logger.error(String.format("connection failed with status %d during service discovery", status));
+                listener.connectFailed(BluetoothPeripheral.this, status);
+            } else {
+                completeDisconnect(true, status);
             }
         }
 
@@ -339,6 +362,10 @@ public final class BluetoothPeripheral {
         public void onServicesDiscovered(@NotNull List<BluetoothGattService> services) {
             serviceDiscoveryCompleted = true;
             logger.info(String.format("discovered %d services for '%s' (%s)", services.size(), getName(), getAddress()));
+
+            // We are now fully connected and service discovery was successful, so let Central know
+            listener.connected(BluetoothPeripheral.this);
+
             if (peripheralCallback != null) {
                 callBackHandler.post(() -> peripheralCallback.onServicesDiscovered(BluetoothPeripheral.this));
             }
@@ -348,11 +375,19 @@ public final class BluetoothPeripheral {
         }
 
         private void completeDisconnect(boolean notify, final int status) {
-            // Do some cleanup
+            // Cleanup queueHandler
             if (queueHandler != null) {
                 queueHandler.stop();
             }
             queueHandler = null;
+
+            // Cleanup timeoutHandler
+            if (timeoutHandler != null) {
+                timeoutHandler.stop();
+            }
+            timeoutHandler = null;
+
+            // Empty the queue
             commandQueue.clear();
             commandQueueBusy = false;
 
@@ -399,6 +434,8 @@ public final class BluetoothPeripheral {
         } catch (BluezAlreadyConnectedException e) {
             logger.error("connect exception: already connected");
             gattCallback.onConnectionStateChanged(STATE_CONNECTED, GATT_SUCCESS);
+            serviceDiscoveryCompleted = true;
+            listener.connected(BluetoothPeripheral.this);
         } catch (BluezNotReadyException e) {
             logger.error("connect exception: not ready");
             logger.error(e.getMessage());
@@ -544,7 +581,7 @@ public final class BluetoothPeripheral {
         }
 
         // Check if we have the native characteristic
-        final BluezGattCharacteristic nativeCharacteristic = getBluezGattCharacteristic(characteristic.service.getUuid(),characteristic.getUuid());
+        final BluezGattCharacteristic nativeCharacteristic = getBluezGattCharacteristic(characteristic.service.getUuid(), characteristic.getUuid());
         if (nativeCharacteristic == null) {
             logger.error(ERROR_NATIVE_CHARACTERISTIC_IS_NULL);
             return false;
@@ -759,28 +796,33 @@ public final class BluetoothPeripheral {
         private void handlePropertyChangeForDevice(String propertyName, Variant<?> value) {
             switch (propertyName) {
                 case PROPERTY_SERVICES_RESOLVED:
+                    cancelServiceDiscoveryTimer();
                     if (value.getValue().equals(true)) {
-                        cancelServiceDiscoveryTimer();
                         servicesResolved();
                     } else {
+                        // Services_Resolved false will be followed by Connected == false, so no action needed
                         logger.debug(String.format("servicesResolved is false (%s)", deviceName));
                     }
                     break;
                 case PROPERTY_CONNECTED:
                     if (value.getValue().equals(true)) {
-                        long timePassed = System.currentTimeMillis() - connectTimestamp;
-                        logger.info(String.format("connected to '%s' (%s) in %.1fs", deviceName, isPaired() ? "BONDED" : "BOND_NONE", timePassed / 1000.0f));
+                        // Getting connected can only be GATT_SUCCESS
                         gattCallback.onConnectionStateChanged(STATE_CONNECTED, GATT_SUCCESS);
                         startServiceDiscoveryTimer();
                     } else {
                         logger.info(String.format("disconnected '%s' (%s)", deviceName, deviceAddress));
 
-                        // Clean up
+                        // Cancel service discovery timer, just in case it was started
                         cancelServiceDiscoveryTimer();
-                        BluezSignalHandler.getInstance().removePeripheral(deviceAddress);
-                        gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, GATT_SUCCESS);
-                        if (timeoutHandler != null) timeoutHandler.stop();
-                        timeoutHandler = null;
+
+                        // Determine if this disconnect was intentional or not
+                        if (state == STATE_DISCONNECTING) {
+                            // We were intentionally disconnecting, so this was expected
+                            gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, GATT_SUCCESS);
+                        } else {
+                            // The connection was lost for some other reason
+                            gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, GATT_CONN_TERMINATE_PEER_USER);
+                        }
                     }
                     break;
                 case PROPERTY_PAIRED:
@@ -869,8 +911,8 @@ public final class BluetoothPeripheral {
     }
 
     private @Nullable BluezGattCharacteristic getBluezGattCharacteristic(@NotNull UUID serviceUUID, @NotNull UUID characteristicUUID) {
-        Objects.requireNonNull(serviceUUID, "no valid service UUID provided");
-        Objects.requireNonNull(serviceUUID, "no valid characteristic UUID provided");
+        Objects.requireNonNull(serviceUUID, NO_VALID_SERVICE_UUID_PROVIDED);
+        Objects.requireNonNull(characteristicUUID, "no valid characteristic UUID provided");
 
         BluezGattCharacteristic characteristic = null;
         for (BluezGattCharacteristic gattCharacteristic : characteristicMap.values()) {
@@ -909,7 +951,7 @@ public final class BluetoothPeripheral {
      * @return the BluetoothGattService object for the service UUID or null if the peripheral does not have a service with the specified UUID
      */
     public @Nullable BluetoothGattService getService(@NotNull UUID serviceUUID) {
-        Objects.requireNonNull(serviceUUID, "no valid service UUID provided");
+        Objects.requireNonNull(serviceUUID, NO_VALID_SERVICE_UUID_PROVIDED);
 
         for (BluetoothGattService service : services) {
             if (service.getUuid().equals(serviceUUID)) {
@@ -927,7 +969,7 @@ public final class BluetoothPeripheral {
      * @return the BluetoothGattCharacteristic matching the serviceUUID and characteristicUUID
      */
     public @Nullable BluetoothGattCharacteristic getCharacteristic(@NotNull UUID serviceUUID, @NotNull UUID characteristicUUID) {
-        Objects.requireNonNull(serviceUUID, "no valid service UUID provided");
+        Objects.requireNonNull(serviceUUID, NO_VALID_SERVICE_UUID_PROVIDED);
         Objects.requireNonNull(characteristicUUID, NO_VALID_CHARACTERISTIC_PROVIDED);
 
         BluetoothGattService service = getService(serviceUUID);

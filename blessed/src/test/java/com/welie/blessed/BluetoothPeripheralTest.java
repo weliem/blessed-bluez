@@ -182,12 +182,25 @@ class BluetoothPeripheralTest {
     }
 
     @Test
-    void Given_connecting_a_peripheral_when_connected_signal_comes_in_then_a_connected_is_called() throws DBusException, InterruptedException {
+    void Given_connecting_a_peripheral_when_connected_signal_comes_in_then_a_connected_is_not_called() throws DBusException, InterruptedException {
         // Given
         BluetoothPeripheral peripheral = getConnectedPeripheral();
 
         // Then
-        verify(internalCallback).connected(peripheral);
+        verify(internalCallback, never()).connected(peripheral);
+        assertEquals(STATE_CONNECTED, peripheral.getState());
+    }
+
+    @Test
+    void Given_connecting_a_peripheral_when_connected_and_serviceResolved_signal_comes_in_then_a_connected_is_called() throws DBusException, InterruptedException {
+        // Given
+        BluetoothPeripheral peripheral = getConnectedPeripheral();
+
+        //  When
+        peripheral.handleSignal(getPropertiesChangedSignalServicesResolved());
+
+        // Then
+        verify(internalCallback, timeout(50)).connected(peripheral);
         assertEquals(STATE_CONNECTED, peripheral.getState());
     }
 
