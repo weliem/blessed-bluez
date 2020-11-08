@@ -178,12 +178,11 @@ class BluetoothCentralTest {
         // When
         ObjectManager.InterfacesAdded interfacesAdded = getInterfacesAddedNewBlpDevice();
         central.handleInterfaceAddedForDevice(interfacesAdded.getPath(), interfacesAdded.getInterfaces().get(BLUEZ_DEVICE_INTERFACE));
-        Thread.sleep(100);
 
         // Then
         ArgumentCaptor<BluetoothPeripheral> peripheralCaptor = ArgumentCaptor.forClass(BluetoothPeripheral.class);
         ArgumentCaptor<ScanResult> scanResultCaptor = ArgumentCaptor.forClass(ScanResult.class);
-        verify(callback).onDiscoveredPeripheral(peripheralCaptor.capture(), scanResultCaptor.capture());
+        verify(callback, timeout(500)).onDiscoveredPeripheral(peripheralCaptor.capture(), scanResultCaptor.capture());
 
         // Then : check if the peripheral and scanResult have the right values
         BluetoothPeripheral peripheral = peripheralCaptor.getValue();
@@ -1029,9 +1028,10 @@ class BluetoothCentralTest {
         when(bluezAdapter.isPowered()).thenReturn(true);
         BluetoothCentral central = new BluetoothCentral(callback, Collections.emptySet(), bluezAdapter);
         central.scanForPeripherals();
-        Thread.sleep(100);
+        Thread.sleep(10);
         Properties.PropertiesChanged propertiesChangedSignal = getPropertiesChangeSignalDiscoveryStarted();
         central.handleSignal(propertiesChangedSignal);
+        Thread.sleep(10);
         return central;
     }
 
@@ -1040,9 +1040,10 @@ class BluetoothCentralTest {
         when(bluezAdapter.isPowered()).thenReturn(true);
         BluetoothCentral central = new BluetoothCentral(callback, Collections.emptySet(), bluezAdapter);
         central.scanForPeripheralsWithServices(new UUID[]{service});
-        Thread.sleep(100);
+        Thread.sleep(10);
         Properties.PropertiesChanged propertiesChangedSignal = getPropertiesChangeSignalDiscoveryStarted();
         central.handleSignal(propertiesChangedSignal);
+        Thread.sleep(10);
         return central;
     }
 
@@ -1051,9 +1052,10 @@ class BluetoothCentralTest {
         when(bluezAdapter.isPowered()).thenReturn(true);
         BluetoothCentral central = new BluetoothCentral(callback, Collections.emptySet(), bluezAdapter);
         central.scanForPeripheralsWithAddresses(new String[]{peripheralAddress});
-        Thread.sleep(100);
+        Thread.sleep(10);
         Properties.PropertiesChanged propertiesChangedSignal = getPropertiesChangeSignalDiscoveryStarted();
         central.handleSignal(propertiesChangedSignal);
+        Thread.sleep(10);
         return central;
     }
 
@@ -1062,9 +1064,10 @@ class BluetoothCentralTest {
         when(bluezAdapter.isPowered()).thenReturn(true);
         BluetoothCentral central = new BluetoothCentral(callback, Collections.emptySet(), bluezAdapter);
         central.scanForPeripheralsWithNames(new String[]{peripheralName});
-        Thread.sleep(100);
+        Thread.sleep(10);
         Properties.PropertiesChanged propertiesChangedSignal = getPropertiesChangeSignalDiscoveryStarted();
         central.handleSignal(propertiesChangedSignal);
+        Thread.sleep(10);
         return central;
     }
 }

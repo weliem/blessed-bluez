@@ -1201,7 +1201,7 @@ public class BluetoothCentral {
         if (bluetoothDevice == null) return;
 
         boolean isBonded = peripheral.isPaired();
-        logger.info(String.format("removing peripheral %s (%s)", peripheral.getAddress(), isBonded ? "BONDED" : "BOND_NONE"));
+        logger.info(String.format("removing peripheral '%s' %s (%s)", peripheral.getName(), peripheral.getAddress(), isBonded ? "BONDED" : "BOND_NONE"));
         removeDevice(bluetoothDevice);
     }
 

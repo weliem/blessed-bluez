@@ -30,10 +30,11 @@ import static com.welie.blessed.BluetoothGattCharacteristic.*;
  */
 public final class BluetoothPeripheral {
     private static final String TAG = BluetoothPeripheral.class.getSimpleName();
+    private final Logger logger = LoggerFactory.getLogger(TAG);
+
     public static final String ERROR_NATIVE_CHARACTERISTIC_IS_NULL = "ERROR: Native characteristic is null";
     public static final String NO_VALID_CHARACTERISTIC_PROVIDED = "no valid characteristic provided";
     public static final String NO_VALID_SERVICE_UUID_PROVIDED = "no valid service UUID provided";
-    private final Logger logger = LoggerFactory.getLogger(TAG);
 
     @NotNull
     private final BluetoothCentral central;

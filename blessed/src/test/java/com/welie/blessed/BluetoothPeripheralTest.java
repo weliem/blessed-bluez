@@ -242,10 +242,9 @@ class BluetoothPeripheralTest {
 
         // When
         peripheral.readCharacteristic(characteristic);
-        Thread.sleep(10);
 
         // Then
-        verify(bluezGattCharacteristic).readValue(anyMap());
+        verify(bluezGattCharacteristic, timeout(100)).readValue(anyMap());
     }
 
     @Test
@@ -264,10 +263,9 @@ class BluetoothPeripheralTest {
         Thread.sleep(10);
         byte[] value = new byte[]{0x01, 0x02};
         peripheral.handleSignal(getPropertiesChangedSignalCharacteristicUpdate(bluezGattCharacteristic.getDbusPath(), characteristic, value));
-        Thread.sleep(50);
 
         // Then
-        verify(peripheralCallback).onCharacteristicUpdate(peripheral, value, characteristic, GATT_SUCCESS);
+        verify(peripheralCallback, timeout(100)).onCharacteristicUpdate(peripheral, value, characteristic, GATT_SUCCESS);
     }
 
     @Test
@@ -281,10 +279,9 @@ class BluetoothPeripheralTest {
         // When
         peripheral.readCharacteristic(characteristic);
         peripheral.readCharacteristic(characteristic);
-        Thread.sleep(10);
 
         // Then
-        verify(bluezGattCharacteristic, times(2)).readValue(anyMap());
+        verify(bluezGattCharacteristic, timeout(200).times(2)).readValue(anyMap());
     }
 
     @Test
@@ -298,10 +295,9 @@ class BluetoothPeripheralTest {
 
         // When
         peripheral.readCharacteristic(characteristic);
-        Thread.sleep(10);
 
         // Then
-        verify(bluezGattCharacteristic, never()).readValue(anyMap());
+        verify(bluezGattCharacteristic, timeout(100).times(0)).readValue(anyMap());
     }
 
     @Test
@@ -315,10 +311,9 @@ class BluetoothPeripheralTest {
 
         // When
         peripheral.readCharacteristic(characteristic);
-        Thread.sleep(10);
 
         // Then
-        verify(bluezGattCharacteristic, never()).readValue(anyMap());
+        verify(bluezGattCharacteristic, timeout(100).times(0)).readValue(anyMap());
     }
 
     @Test
@@ -330,10 +325,9 @@ class BluetoothPeripheralTest {
 
         // When
         peripheral.readCharacteristic(characteristic);
-        Thread.sleep(10);
 
         // Then
-        verify(bluezGattCharacteristic, never()).readValue(anyMap());
+        verify(bluezGattCharacteristic, timeout(100).times(0)).readValue(anyMap());
     }
 
     @Test
@@ -347,10 +341,9 @@ class BluetoothPeripheralTest {
 
         // When
         peripheral.readCharacteristic(characteristic);
-        Thread.sleep(10);
 
         // Then
-        verify(peripheralCallback).onCharacteristicUpdate(peripheral,new byte[0], characteristic, GATT_ERROR);
+        verify(peripheralCallback, timeout(100)).onCharacteristicUpdate(peripheral,new byte[0], characteristic, GATT_ERROR);
     }
 
     @Test
@@ -364,10 +357,9 @@ class BluetoothPeripheralTest {
 
         // When
         peripheral.readCharacteristic(characteristic);
-        Thread.sleep(10);
 
         // Then
-        verify(peripheralCallback).onCharacteristicUpdate(peripheral,new byte[0], characteristic, GATT_READ_NOT_PERMITTED);
+        verify(peripheralCallback, timeout(100)).onCharacteristicUpdate(peripheral,new byte[0], characteristic, GATT_READ_NOT_PERMITTED);
     }
 
     @Test
@@ -381,10 +373,9 @@ class BluetoothPeripheralTest {
 
         // When
         peripheral.readCharacteristic(characteristic);
-        Thread.sleep(10);
 
         // Then
-        verify(peripheralCallback).onCharacteristicUpdate(peripheral,new byte[0], characteristic, GATT_INSUFFICIENT_AUTHENTICATION);
+        verify(peripheralCallback, timeout(100)).onCharacteristicUpdate(peripheral,new byte[0], characteristic, GATT_INSUFFICIENT_AUTHENTICATION);
     }
 
     @Test
@@ -398,10 +389,9 @@ class BluetoothPeripheralTest {
 
         // When
         peripheral.readCharacteristic(characteristic);
-        Thread.sleep(10);
 
         // Then
-        verify(peripheralCallback).onCharacteristicUpdate(peripheral,new byte[0], characteristic, GATT_REQUEST_NOT_SUPPORTED);
+        verify(peripheralCallback, timeout(100)).onCharacteristicUpdate(peripheral,new byte[0], characteristic, GATT_REQUEST_NOT_SUPPORTED);
     }
 
     @Test
@@ -415,10 +405,9 @@ class BluetoothPeripheralTest {
 
         // When
         peripheral.readCharacteristic(characteristic);
-        Thread.sleep(10);
 
         // Then
-        verify(peripheralCallback).onCharacteristicUpdate(peripheral,new byte[0], characteristic, GATT_ERROR);
+        verify(peripheralCallback, timeout(100)).onCharacteristicUpdate(peripheral,new byte[0], characteristic, GATT_ERROR);
     }
 
     @Test
@@ -432,12 +421,11 @@ class BluetoothPeripheralTest {
         // When
         byte[] value = new byte[]{0x01,0x02,0x03};
         peripheral.writeCharacteristic(characteristic, value, WRITE_TYPE_DEFAULT);
-        Thread.sleep(10);
 
         // Then
         ArgumentCaptor<Map<String, Object>> mapCaptor = ArgumentCaptor.forClass(Map.class);
         ArgumentCaptor<byte[]> valueCaptor = ArgumentCaptor.forClass(byte[].class);
-        verify(bluezGattCharacteristic).writeValue(valueCaptor.capture(),mapCaptor.capture());
+        verify(bluezGattCharacteristic, timeout(100)).writeValue(valueCaptor.capture(),mapCaptor.capture());
         assertEquals("request", mapCaptor.getValue().get("type"));
         assertTrue(Arrays.equals(value, valueCaptor.getValue()));
     }
@@ -797,12 +785,8 @@ class BluetoothPeripheralTest {
 
     @NotNull
     private BluetoothPeripheral getConnectedPeripheral() throws InterruptedException, DBusException {
-        // Given
         BluetoothPeripheral peripheral = getPeripheral();
-
-        // When
         peripheral.connect();
-
         Thread.sleep(10);
         peripheral.handleSignal(getPropertiesChangedSignalConnected());
         return peripheral;
