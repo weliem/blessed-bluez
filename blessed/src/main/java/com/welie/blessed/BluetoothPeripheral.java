@@ -306,6 +306,7 @@ public final class BluetoothPeripheral {
             if (status != GATT_SUCCESS) {
                 logger.error(String.format(Locale.ENGLISH, "read failed for characteristic: %s, status %s", characteristic.getUuid(), statusToString(status)));
                 if (peripheralCallback != null) {
+                    // Propagate error so it can be handled
                     callBackHandler.post(() -> peripheralCallback.onCharacteristicUpdate(BluetoothPeripheral.this, new byte[0], characteristic, status));
                 }
             }
@@ -323,7 +324,6 @@ public final class BluetoothPeripheral {
 
         @Override
         public void onCharacteristicWrite(@NotNull final BluetoothGattCharacteristic characteristic, final int status) {
-            // Perform some checks on the status field
             if (status != GATT_SUCCESS) {
                 logger.error(String.format("write failed for characteristic: %s, status %s", characteristic.getUuid(), statusToString(status)));
             }
@@ -394,6 +394,8 @@ public final class BluetoothPeripheral {
             if (notify) {
                 listener.disconnected(BluetoothPeripheral.this, status);
             }
+
+            BluezSignalHandler.getInstance().removePeripheral(deviceAddress);
         }
     };
 
@@ -452,9 +454,9 @@ public final class BluetoothPeripheral {
     }
 
     private void cleanupAfterFailedConnect() {
-        BluezSignalHandler.getInstance().removePeripheral(deviceAddress);
-        if (timeoutHandler != null) timeoutHandler.stop();
-        timeoutHandler = null;
+//        BluezSignalHandler.getInstance().removePeripheral(deviceAddress);
+//        if (timeoutHandler != null) timeoutHandler.stop();
+//        timeoutHandler = null;
         gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, GATT_ERROR);
     }
 
