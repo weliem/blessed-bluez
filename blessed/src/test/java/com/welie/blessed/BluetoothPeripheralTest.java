@@ -762,6 +762,32 @@ class BluetoothPeripheralTest {
         assertNotNull(cccDescriptor);
     }
 
+    @Test
+    void Given_a_disconnected_peripheral_when_a_bluezDevice_is_set_it_can_be_retrieved() {
+        // Given
+        BluetoothPeripheral peripheral = getPeripheral();
+        BluezDevice bluezDevice = mock(BluezDevice.class);
+
+        // When
+        peripheral.setDevice(bluezDevice);
+
+        // Then
+        assertSame(peripheral.getDevice(), bluezDevice);
+    }
+
+    @Test
+    void Given_a_disconnected_peripheral_when_createBond_is_called_then_pair_is_called() throws BluezInvalidArgumentsException, BluezConnectionAttemptFailedException, BluezAuthenticationCanceledException, BluezAuthenticationRejectedException, BluezAlreadyExistsException, BluezAuthenticationFailedException, BluezAuthenticationTimeoutException, BluezFailedException {
+        // Given
+        BluetoothPeripheral peripheral = getPeripheral();
+        BluezDevice bluezDevice = mock(BluezDevice.class);
+        peripheral.setDevice(bluezDevice);
+
+        // When
+        peripheral.createBond();
+
+        // Then
+        verify(bluezDevice, timeout(100)).pair();
+    }
     @NotNull
     private BluezGattCharacteristic getBluezGattCharacteristic() {
         BluezGattCharacteristic bluezGattCharacteristic = mock(BluezGattCharacteristic.class);

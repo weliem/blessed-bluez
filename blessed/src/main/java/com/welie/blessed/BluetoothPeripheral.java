@@ -432,7 +432,7 @@ public final class BluetoothPeripheral {
 
             // Unregister handler only if we are not connected. A connected event may have already been received!
             if (state != STATE_CONNECTED) {
-                cleanupAfterFailedConnect();
+                gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, GATT_ERROR);
             }
         } catch (BluezAlreadyConnectedException e) {
             logger.error("connect exception: already connected");
@@ -442,23 +442,16 @@ public final class BluetoothPeripheral {
         } catch (BluezNotReadyException e) {
             logger.error("connect exception: not ready");
             logger.error(e.getMessage());
-            cleanupAfterFailedConnect();
+            gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, GATT_ERROR);
         } catch (BluezFailedException e) {
             logger.error("connect exception: connect failed");
             logger.error(e.getMessage());
-            cleanupAfterFailedConnect();
+            gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, GATT_ERROR);
         } catch (BluezInProgressException e) {
             logger.error("connect exception: in progress");
             logger.error(e.getMessage());
-            cleanupAfterFailedConnect();
+            gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, GATT_ERROR);
         }
-    }
-
-    private void cleanupAfterFailedConnect() {
-//        BluezSignalHandler.getInstance().removePeripheral(deviceAddress);
-//        if (timeoutHandler != null) timeoutHandler.stop();
-//        timeoutHandler = null;
-        gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, GATT_ERROR);
     }
 
     /**
@@ -1112,7 +1105,7 @@ public final class BluetoothPeripheral {
         if (device.isConnected()) {
             device.disconnect();
         } else {
-            cleanupAfterFailedConnect();
+            gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, GATT_ERROR);
         }
 
         return result;
@@ -1142,7 +1135,7 @@ public final class BluetoothPeripheral {
 
             // Disconnecting doesn't work so do it ourselves
             cancelServiceDiscoveryTimer();
-            cleanupAfterFailedConnect();
+            gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, GATT_ERROR);
         };
         if (timeoutHandler != null) {
             timeoutHandler.postDelayed(timeoutRunnable, SERVICE_DISCOVERY_TIMEOUT_IN_MS);
@@ -1255,14 +1248,15 @@ public final class BluetoothPeripheral {
         return bluetoothGattService;
     }
 
-
     /**
      * Converts byte array to hex string
      *
      * @param bytes the byte array to convert
      * @return String representing the byte array as a HEX string
      */
-    private static String bytes2String(final byte[] bytes) {
+    @NotNull
+    private static String bytes2String(@Nullable final byte[] bytes) {
+        if (bytes == null) return "";
         StringBuilder sb = new StringBuilder();
         for (byte b : bytes) {
             sb.append(String.format("%02x", b & 0xff));
