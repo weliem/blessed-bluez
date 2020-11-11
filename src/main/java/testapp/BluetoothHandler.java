@@ -220,22 +220,23 @@ public class BluetoothHandler {
 
         @Override
         public void onBondingStarted(@NotNull BluetoothPeripheral peripheral) {
-            super.onBondingStarted(peripheral);
+            logger.info("bonding started");
         }
 
         @Override
         public void onBondingSucceeded(@NotNull BluetoothPeripheral peripheral) {
+            logger.info("bonding succeeded");
             justBonded = true;
         }
 
         @Override
         public void onBondingFailed(@NotNull BluetoothPeripheral peripheral) {
-            super.onBondingFailed(peripheral);
+            logger.info("bonding failed");
         }
 
         @Override
         public void onBondLost(@NotNull BluetoothPeripheral peripheral) {
-            super.onBondLost(peripheral);
+            logger.info("bond lost");
         }
 
         @Override
@@ -287,7 +288,8 @@ public class BluetoothHandler {
             // Not blacklisted so put it on the blacklist and connect to it
             blackList.add(peripheralAddress);
             logger.info(scanResult.toString());
-            central.connectPeripheral(peripheral, peripheralCallback);
+//            central.connectPeripheral(peripheral, peripheralCallback);
+            peripheral.createBond(peripheralCallback);
         }
     };
 
@@ -299,8 +301,8 @@ public class BluetoothHandler {
     }
 
     void startScanning() {
-        central.scanForPeripheralsWithServices(new UUID[]{WSS_SERVICE_UUID, HTS_SERVICE_UUID, PLX_SERVICE_UUID, BLP_SERVICE_UUID, HRS_SERVICE_UUID});
-//        central.scanForPeripheralsWithNames(new String[]{"Nonin"});
+//        central.scanForPeripheralsWithServices(new UUID[]{WSS_SERVICE_UUID, HTS_SERVICE_UUID, PLX_SERVICE_UUID, BLP_SERVICE_UUID, HRS_SERVICE_UUID});
+        central.scanForPeripheralsWithNames(new String[]{"TAID"});
 //        central.scanForPeripheralsWithAddresses(new String[]{"C0:26:DF:01:F2:72"});
 //        central.scanForPeripherals();
 //

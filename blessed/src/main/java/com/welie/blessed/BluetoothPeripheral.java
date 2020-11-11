@@ -337,7 +337,7 @@ public final class BluetoothPeripheral {
 
         @Override
         public void onPairingStarted() {
-            logger.info("pairing (bonding) started");
+            logger.info("bonding started");
             if (peripheralCallback != null) {
                 callBackHandler.post(() -> peripheralCallback.onBondingStarted(BluetoothPeripheral.this));
             }
@@ -345,7 +345,7 @@ public final class BluetoothPeripheral {
 
         @Override
         public void onPaired() {
-            logger.info("pairing (bonding) succeeded");
+            logger.info("bonding succeeded");
             if (peripheralCallback != null) {
                 callBackHandler.post(() -> peripheralCallback.onBondingSucceeded(BluetoothPeripheral.this));
             }
@@ -353,7 +353,7 @@ public final class BluetoothPeripheral {
 
         @Override
         public void onPairingFailed() {
-            logger.info("pairing failed");
+            logger.info("bonding failed");
             if (peripheralCallback != null) {
                 callBackHandler.post(() -> peripheralCallback.onBondingFailed(BluetoothPeripheral.this));
             }
@@ -832,6 +832,7 @@ public final class BluetoothPeripheral {
                         if (manualBonding) {
                             // We are now done with createBond, so call servicesResolved
                             servicesResolved();
+                            manualBonding = false;
                         }
                     } else {
                         gattCallback.onPairingFailed();
