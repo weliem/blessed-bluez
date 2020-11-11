@@ -88,6 +88,7 @@ public final class BluetoothPeripheral {
     private int nrTries;
     private boolean isBonded = false;
     private boolean manualBonding = false;
+    private volatile boolean bondingInProgress = false;
     private long connectTimestamp;
     private boolean isRetrying;
     private volatile int state = STATE_DISCONNECTED;
@@ -338,6 +339,7 @@ public final class BluetoothPeripheral {
         @Override
         public void onPairingStarted() {
             logger.info("bonding started");
+            bondingInProgress = true;
             if (peripheralCallback != null) {
                 callBackHandler.post(() -> peripheralCallback.onBondingStarted(BluetoothPeripheral.this));
             }
@@ -796,7 +798,7 @@ public final class BluetoothPeripheral {
                     if (value.getValue().equals(true)) {
                         logger.info("service discovery completed");
                         // If we are bonding, we postpone calling servicesResolved
-                        if (!manualBonding) {
+                        if (!(manualBonding || bondingInProgress)) {
                             servicesResolved();
                         }
                     } else {
@@ -829,10 +831,11 @@ public final class BluetoothPeripheral {
                     if (value.getValue().equals(true)) {
                         isBonded = true;
                         gattCallback.onPaired();
-                        if (manualBonding) {
+                        if (manualBonding || bondingInProgress) {
                             // We are now done with createBond, so call servicesResolved
                             servicesResolved();
                             manualBonding = false;
+                            bondingInProgress = false;
                         }
                     } else {
                         gattCallback.onPairingFailed();

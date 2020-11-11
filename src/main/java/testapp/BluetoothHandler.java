@@ -288,8 +288,8 @@ public class BluetoothHandler {
             // Not blacklisted so put it on the blacklist and connect to it
             blackList.add(peripheralAddress);
             logger.info(scanResult.toString());
-//            central.connectPeripheral(peripheral, peripheralCallback);
-            peripheral.createBond(peripheralCallback);
+            central.connectPeripheral(peripheral, peripheralCallback);
+//            peripheral.createBond(peripheralCallback);
         }
     };
 
@@ -301,8 +301,8 @@ public class BluetoothHandler {
     }
 
     void startScanning() {
-//        central.scanForPeripheralsWithServices(new UUID[]{WSS_SERVICE_UUID, HTS_SERVICE_UUID, PLX_SERVICE_UUID, BLP_SERVICE_UUID, HRS_SERVICE_UUID});
-        central.scanForPeripheralsWithNames(new String[]{"TAID"});
+        central.scanForPeripheralsWithServices(new UUID[]{WSS_SERVICE_UUID, HTS_SERVICE_UUID, PLX_SERVICE_UUID, BLP_SERVICE_UUID, HRS_SERVICE_UUID});
+//        central.scanForPeripheralsWithNames(new String[]{"TAID"});
 //        central.scanForPeripheralsWithAddresses(new String[]{"C0:26:DF:01:F2:72"});
 //        central.scanForPeripherals();
 //
