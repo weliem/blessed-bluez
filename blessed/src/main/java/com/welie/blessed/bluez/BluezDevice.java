@@ -512,7 +512,7 @@ public class BluezDevice extends AbstractBluetoothObject {
      * </p>
      * @return true on successful pair, false otherwise
      */
-    public void pair() throws BluezInvalidArgumentsException, BluezFailedException, BluezAuthenticationFailedException, BluezAlreadyExistsException, BluezAuthenticationCanceledException, BluezAuthenticationRejectedException, BluezAuthenticationTimeoutException, BluezConnectionAttemptFailedException {
+    public void pair() throws BluezInProgressException, BluezInvalidArgumentsException, BluezFailedException, BluezAuthenticationFailedException, BluezAlreadyExistsException, BluezAuthenticationCanceledException, BluezAuthenticationRejectedException, BluezAuthenticationTimeoutException, BluezConnectionAttemptFailedException {
         rawdevice.Pair();
     }
 

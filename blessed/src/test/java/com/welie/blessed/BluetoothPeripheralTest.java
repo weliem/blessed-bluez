@@ -776,14 +776,14 @@ class BluetoothPeripheralTest {
     }
 
     @Test
-    void Given_a_disconnected_peripheral_when_createBond_is_called_then_pair_is_called() throws BluezInvalidArgumentsException, BluezConnectionAttemptFailedException, BluezAuthenticationCanceledException, BluezAuthenticationRejectedException, BluezAlreadyExistsException, BluezAuthenticationFailedException, BluezAuthenticationTimeoutException, BluezFailedException {
+    void Given_a_disconnected_peripheral_when_createBond_is_called_then_pair_is_called() throws BluezInvalidArgumentsException, BluezConnectionAttemptFailedException, BluezAuthenticationCanceledException, BluezAuthenticationRejectedException, BluezAlreadyExistsException, BluezAuthenticationFailedException, BluezAuthenticationTimeoutException, BluezFailedException, BluezInProgressException {
         // Given
         BluetoothPeripheral peripheral = getPeripheral();
         BluezDevice bluezDevice = mock(BluezDevice.class);
         peripheral.setDevice(bluezDevice);
 
         // When
-        peripheral.createBond();
+        peripheral.createBond(peripheralCallback);
 
         // Then
         verify(bluezDevice, timeout(100)).pair();

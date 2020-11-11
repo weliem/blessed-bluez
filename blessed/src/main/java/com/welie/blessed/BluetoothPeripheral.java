@@ -254,16 +254,16 @@ public final class BluetoothPeripheral {
         }
 
         private void successfullyDisconnected(int status, int previousState) {
-                if (!serviceDiscoveryCompleted) {
+            if (!serviceDiscoveryCompleted) {
 //                            if (isBonded) {
 //                                // Assume we lost the bond
 //                                if (peripheralCallback != null) {
 //                                    callBackHandler.post(() -> peripheralCallback.onBondLost(BluetoothPeripheral.this));
 //                                }
 //                            }
-                    listener.serviceDiscoveryFailed(BluetoothPeripheral.this);
-                }
-                completeDisconnect(true, status);
+                listener.serviceDiscoveryFailed(BluetoothPeripheral.this);
+            }
+            completeDisconnect(true, status);
         }
 
         void connectionStateChangeUnsuccessful(int status, int previousState, int newState) {
@@ -794,7 +794,11 @@ public final class BluetoothPeripheral {
                 case PROPERTY_SERVICES_RESOLVED:
                     cancelServiceDiscoveryTimer();
                     if (value.getValue().equals(true)) {
-                        servicesResolved();
+                        logger.info("service discovery completed");
+                        // If we are bonding, we postpone calling servicesResolved
+                        if (!manualBonding) {
+                            servicesResolved();
+                        }
                     } else {
                         // Services_Resolved false will be followed by Connected == false, so no action needed
                         logger.debug(String.format("servicesResolved is false (%s)", deviceName));
@@ -825,6 +829,10 @@ public final class BluetoothPeripheral {
                     if (value.getValue().equals(true)) {
                         isBonded = true;
                         gattCallback.onPaired();
+                        if (manualBonding) {
+                            // We are now done with createBond, so call servicesResolved
+                            servicesResolved();
+                        }
                     } else {
                         gattCallback.onPairingFailed();
                     }
@@ -1067,15 +1075,30 @@ public final class BluetoothPeripheral {
      *
      * @return true if bonding was started/enqueued, false if not
      */
-    public boolean createBond() {
-        logger.info(String.format("Pairing with '%s' (%s)", deviceName, deviceAddress));
-        manualBonding = true;
-        connectTimestamp = System.currentTimeMillis();
+    public boolean createBond(@NotNull BluetoothPeripheralCallback peripheralCallback) {
+        Objects.requireNonNull(peripheralCallback, "peripheral callback not valid");
+        Objects.requireNonNull(device, "device is null");
+
+        setPeripheralCallback(peripheralCallback);
         boolean result = false;
         try {
-            if (device != null) {
+            if (state == STATE_DISCONNECTED) {
+                BluezSignalHandler.getInstance().addPeripheral(deviceAddress, this);
+                queueHandler = new Handler("BLE-" + deviceAddress);
+                timeoutHandler = new Handler(TAG + " serviceDiscovery " + deviceAddress);
+            }
+
+            if (device.isPaired()) {
+                // Bluez will hang if we call pair on already paired devices, so connect instead
+                logger.error("device already bonded, connecting instead");
+                connect();
+            } else {
+                manualBonding = true;
+                logger.info(String.format("pairing with '%s' (%s)", deviceName, deviceAddress));
+                connectTimestamp = System.currentTimeMillis();
                 device.pair();
             }
+
             return true;
         } catch (BluezInvalidArgumentsException e) {
             logger.error("Pair exception: invalid argument");
@@ -1099,13 +1122,15 @@ public final class BluetoothPeripheral {
             } else {
                 logger.error(e.getMessage());
             }
+        } catch (BluezInProgressException e) {
+            e.printStackTrace();
         }
 
         // Clean up after failed pairing
         if (device.isConnected()) {
             device.disconnect();
         } else {
-            gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, GATT_ERROR);
+            gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, GATT_AUTH_FAIL);
         }
 
         return result;
