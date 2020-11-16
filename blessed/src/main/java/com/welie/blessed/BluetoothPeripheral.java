@@ -381,21 +381,14 @@ public final class BluetoothPeripheral {
         }
 
         private void completeDisconnect(boolean notify, final int status) {
-            // Cleanup queueHandler
-//            if (queueHandler != null) {
-//                queueHandler.stop();
-//            }
-            queueHandler = null;
-
-            // Cleanup timeoutHandler
-//            if (timeoutHandler != null) {
-//                timeoutHandler.stop();
-//            }
-            timeoutHandler = null;
-
             // Empty the queue
             commandQueue.clear();
             commandQueueBusy = false;
+
+            // Cleanup handlers
+            queueHandler = null;
+            timeoutHandler = null;
+            internalHandler = null;
 
             if (notify) {
                 listener.disconnected(BluetoothPeripheral.this, status);
