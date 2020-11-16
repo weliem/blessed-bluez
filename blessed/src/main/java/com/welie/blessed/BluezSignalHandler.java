@@ -57,12 +57,6 @@ class BluezSignalHandler {
             final Set<String> peripherals = peripheralsMap.keySet();
             for (final String peripheralAddress : peripherals) {
                 if (path.contains(peripheralAddress)) {
-                    try {
-                        // Make sure there is at least 1 millisecond between every signal
-                        Thread.sleep(1);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
                     peripheralsMap.get(peripheralAddress).handleSignal(propertiesChanged);
                 }
             }

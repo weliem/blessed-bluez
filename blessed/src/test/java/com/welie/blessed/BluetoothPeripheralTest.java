@@ -228,7 +228,7 @@ class BluetoothPeripheralTest {
         peripheral.handleSignal(getPropertiesChangedSignalDisconnected());
 
         // Then
-        verify(internalCallback).disconnected(peripheral, GATT_SUCCESS);
+        verify(internalCallback, timeout(50)).disconnected(peripheral, GATT_SUCCESS);
         assertEquals(STATE_DISCONNECTED, peripheral.getState());
     }
 
@@ -815,6 +815,7 @@ class BluetoothPeripheralTest {
         peripheral.connect();
         Thread.sleep(10);
         peripheral.handleSignal(getPropertiesChangedSignalConnected());
+        Thread.sleep(10);
         return peripheral;
     }
 

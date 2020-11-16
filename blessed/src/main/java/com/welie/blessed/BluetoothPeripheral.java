@@ -84,6 +84,9 @@ public final class BluetoothPeripheral {
     @Nullable
     private Handler queueHandler;
 
+    @Nullable
+    private Handler internalHandler;
+
     private volatile boolean commandQueueBusy = false;
     private int nrTries;
     private boolean isBonded = false;
@@ -424,9 +427,10 @@ public final class BluetoothPeripheral {
 
         try {
             logger.info(String.format("connecting to '%s' (%s)", deviceName, deviceAddress));
-            BluezSignalHandler.getInstance().addPeripheral(deviceAddress, this);
             queueHandler = new Handler("BLE-" + deviceAddress);
             timeoutHandler = new Handler(TAG + " serviceDiscovery " + deviceAddress);
+            internalHandler = new Handler("peripheral " + deviceAddress);
+            BluezSignalHandler.getInstance().addPeripheral(deviceAddress, this);
             connectTimestamp = System.currentTimeMillis();
             device.connect();
         } catch (DBusExecutionException e) {
@@ -746,7 +750,9 @@ public final class BluetoothPeripheral {
     }
 
     void handleSignal(Properties.PropertiesChanged propertiesChanged) {
-        propertiesChangedHandler.handle(propertiesChanged);
+        if (internalHandler != null) {
+            internalHandler.post(() -> propertiesChangedHandler.handle(propertiesChanged));
+        }
     }
 
     private final AbstractPropertiesChangedHandler propertiesChangedHandler = new AbstractPropertiesChangedHandler() {
