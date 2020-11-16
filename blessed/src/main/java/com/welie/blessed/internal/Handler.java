@@ -1,38 +1,55 @@
 package com.welie.blessed.internal;
 
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Map;
+import java.util.Objects;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+
 public class Handler {
 
-    private final MessageQueue messageQueue = new MessageQueue();
-    private final Looper looper;
+    public static final String RUNNABLE_IS_NULL = "runnable is null";
+    private final Executor executor ;
+    private final Map<Runnable, Timer> delayedRunnables = new ConcurrentHashMap<>();
 
-    public Handler(String name) {
-        looper = new Looper(messageQueue,name);
-        looper.run();
+    public Handler(@NotNull String name) {
+        Objects.requireNonNull(name, "name is null");
+
+        executor = Executors.newSingleThreadExecutor();
+        executor.execute(() -> Thread.currentThread().setName(name));
     }
 
-    public void stop() {
-        if (looper != null) {
-            looper.stop();
+    public final void post(@NotNull final Runnable runnable) {
+        Objects.requireNonNull(runnable, RUNNABLE_IS_NULL);
+
+        executor.execute(runnable);
+    }
+
+    public final void postDelayed(@NotNull final Runnable runnable, long delayMillis) {
+        Objects.requireNonNull(runnable, RUNNABLE_IS_NULL);
+
+       final Timer timer = new Timer();
+       delayedRunnables.put(runnable, timer);
+       timer.schedule(new TimerTask() {
+           @Override
+           public void run() {
+               delayedRunnables.remove(runnable);
+               post(runnable);
+           }
+       }, delayMillis);
+    }
+
+    public final void removeCallbacks(@NotNull final Runnable runnable) {
+        Objects.requireNonNull(runnable, RUNNABLE_IS_NULL);
+
+        final Timer timer = delayedRunnables.get(runnable);
+        if (timer != null) {
+            timer.cancel();
+            delayedRunnables.remove(runnable);
         }
-    }
-
-    @SuppressWarnings("UnusedReturnValue")
-    public final boolean post(Runnable r) {
-        return this.postDelayed(r, 0);
-    }
-
-    public final boolean postDelayed(Runnable r, long delayMillis) {
-        if (delayMillis < 0) {
-            delayMillis = 0;
-        }
-        return sendRunnableAtTime(r, System.currentTimeMillis() + delayMillis);
-    }
-
-    private boolean sendRunnableAtTime(Runnable r, long targetTime) {
-        return messageQueue.enqueueMessage(new Message(r, targetTime));
-    }
-
-    public final void removeCallbacks(Runnable r) {
-        messageQueue.removeMessages(r);
     }
 }
