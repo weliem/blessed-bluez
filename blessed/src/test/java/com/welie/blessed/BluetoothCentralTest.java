@@ -162,10 +162,9 @@ class BluetoothCentralTest {
 
         // When
         central.stopScan();
-        Thread.sleep(100);
 
         // Then
-        verify(bluezAdapter).stopDiscovery();
+        verify(bluezAdapter, timeout(200)).stopDiscovery();
     }
 
     @Test
@@ -544,12 +543,11 @@ class BluetoothCentralTest {
         // When
         ObjectManager.InterfacesAdded interfacesAdded = getInterfacesAddedNewBlpDevice();
         central.handleInterfaceAddedForDevice(interfacesAdded.getPath(), interfacesAdded.getInterfaces().get(BLUEZ_DEVICE_INTERFACE));
-        Thread.sleep(100);
 
         // Then
         ArgumentCaptor<BluetoothPeripheral> peripheralCaptor = ArgumentCaptor.forClass(BluetoothPeripheral.class);
         ArgumentCaptor<ScanResult> scanResultCaptor = ArgumentCaptor.forClass(ScanResult.class);
-        verify(callback).onDiscoveredPeripheral(peripheralCaptor.capture(), scanResultCaptor.capture());
+        verify(callback, timeout(200)).onDiscoveredPeripheral(peripheralCaptor.capture(), scanResultCaptor.capture());
 
         // Then : check if the peripheral and scanResult have the right values
         BluetoothPeripheral peripheral = peripheralCaptor.getValue();
@@ -674,7 +672,7 @@ class BluetoothCentralTest {
         connectPeripheral(central, peripheral);
 
         // Then
-        verify(callback).onConnectedPeripheral(peripheral);
+        verify(callback, timeout(200)).onConnectedPeripheral(peripheral);
     }
 
     @Test
