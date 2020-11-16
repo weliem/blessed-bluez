@@ -17,9 +17,6 @@ public class PoolHandler {
         executor.execute(() -> Thread.currentThread().setName(name));
     }
 
-    public void stop() {
-    }
-
     public final void post(Runnable runnable) {
         executor.execute(runnable);
     }
@@ -43,6 +40,4 @@ public class PoolHandler {
             delayedRunnables.remove(runnable);
         }
     }
-
-
 }
