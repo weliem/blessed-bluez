@@ -420,9 +420,9 @@ public final class BluetoothPeripheral {
 
         try {
             logger.info(String.format("connecting to '%s' (%s)", deviceName, deviceAddress));
-            queueHandler = new Handler("BLE-" + deviceAddress);
-            timeoutHandler = new Handler(TAG + " serviceDiscovery " + deviceAddress);
-            internalHandler = new Handler("peripheral " + deviceAddress);
+            queueHandler = new Handler(deviceAddress + "-queue");
+            timeoutHandler = new Handler(deviceAddress + "-timeout");
+            internalHandler = new Handler(deviceAddress + "-internal");
             BluezSignalHandler.getInstance().addPeripheral(deviceAddress, this);
             connectTimestamp = System.currentTimeMillis();
             device.connect();

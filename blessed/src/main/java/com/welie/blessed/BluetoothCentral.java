@@ -39,16 +39,16 @@ public class BluetoothCentral {
     private final BluetoothCentralCallback bluetoothCentralCallback;
 
     @NotNull
-    private final Handler callBackHandler = new Handler("Central-callBackHandler");
+    private final Handler callBackHandler = new Handler("Central-callback");
 
     @NotNull
-    private final Handler timeoutHandler = new Handler("Central-timeoutHandler");
+    private final Handler timeoutHandler = new Handler("Central-timeout");
 
     @NotNull
-    private final Handler queueHandler = new Handler("CentralQueue");
+    private final Handler queueHandler = new Handler("Central-queue");
 
     @NotNull
-    private final Handler signalHandler = new Handler("CentralQueue-signal");
+    private final Handler signalHandler = new Handler("Central-signal");
 
     @Nullable
     private Runnable timeoutRunnable;
