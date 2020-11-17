@@ -39,6 +39,8 @@ public class Handler {
            public void run() {
                delayedRunnables.remove(runnable);
                post(runnable);
+               timer.cancel();
+               timer.purge();
            }
        }, delayMillis);
     }
@@ -49,6 +51,7 @@ public class Handler {
         final Timer timer = delayedRunnables.get(runnable);
         if (timer != null) {
             timer.cancel();
+            timer.purge();
             delayedRunnables.remove(runnable);
         }
     }
