@@ -25,6 +25,6 @@ public class Handler {
     }
 
     public final void shutdown() {
-        executor.shutdownNow();
+        executor.shutdown();
     }
 }
