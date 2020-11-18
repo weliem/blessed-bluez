@@ -17,6 +17,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -52,6 +53,9 @@ public class BluetoothCentral {
 
     @Nullable
     private Runnable timeoutRunnable;
+
+    @Nullable
+    private ScheduledFuture<?> timeoutFuture;
 
     protected volatile boolean isScanning = false;
     private volatile boolean isPowered = false;
@@ -795,16 +799,16 @@ public class BluetoothCentral {
             }
             startScanning();
         };
-        timeoutHandler.postDelayed(timeoutRunnable, SCAN_WINDOW);
+        timeoutFuture = timeoutHandler.postDelayed(timeoutRunnable, SCAN_WINDOW);
     }
 
     /**
      * Cancel the scan timeout timer
      */
     private void cancelTimeoutTimer() {
-        if (timeoutRunnable != null) {
-            timeoutHandler.removeCallbacks(timeoutRunnable);
-            timeoutRunnable = null;
+        if (timeoutFuture != null) {
+            timeoutFuture.cancel(false);
+            timeoutFuture = null;
         }
     }
 

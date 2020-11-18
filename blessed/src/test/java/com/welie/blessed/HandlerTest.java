@@ -7,6 +7,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ScheduledFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -58,13 +59,14 @@ public class HandlerTest {
             }
         };
 
-        handler.postDelayed(runnable , 1000);
-        handler.post(() -> output.add("second"));
-        handler.post(() -> output.add("third"));
-        handler.removeCallbacks(runnable);
+        ScheduledFuture<?> future = handler.postDelayed(runnable , 1000);
+        handler.postDelayed(() -> output.add("second"),100);
+        handler.postDelayed(() -> output.add("third"), 200);
+        future.cancel(true);
 
         Thread.sleep(1200);
 
+        assertEquals(2, output.size());
         assertEquals("second", output.get(0));
         assertEquals("third", output.get(1));
     }

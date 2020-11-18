@@ -5,6 +5,7 @@ import com.welie.blessed.internal.Handler;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.concurrent.ScheduledFuture;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -245,14 +246,16 @@ public class BluetoothHandler {
         }
     };
 
+    private ScheduledFuture<?> timeoutFuture;
+
     public void startDisconnectTimer(final BluetoothPeripheral peripheral) {
-        if (timeoutRunnable != null) {
-            handler.removeCallbacks(timeoutRunnable);
-            timeoutRunnable = null;
+        if (timeoutFuture != null) {
+            timeoutFuture.cancel(false);
+            timeoutFuture = null;
         }
 
         this.timeoutRunnable = peripheral::cancelConnection;
-        handler.postDelayed(timeoutRunnable, 2000L);
+        timeoutFuture = handler.postDelayed(timeoutRunnable, 2000L);
     }
 
     private final BluetoothCentralCallback bluetoothCentralCallback = new BluetoothCentralCallback() {

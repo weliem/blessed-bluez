@@ -22,7 +22,6 @@ import java.util.*;
 
 import static com.welie.blessed.BluetoothCentral.*;
 import static com.welie.blessed.BluetoothPeripheral.*;
-import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -92,11 +91,8 @@ class BluetoothCentralTest {
         // When
         BluetoothCentral central = new BluetoothCentral(callback, Collections.emptySet(), bluezAdapter);
 
-        await().until(() -> central.commandQueue.size() == 1);
-//        Thread.sleep(10);
-
         // Then
-        verify(bluezAdapter).setPowered(true);
+        verify(bluezAdapter, timeout(1000)).setPowered(true);
     }
 
     @Test
@@ -107,10 +103,9 @@ class BluetoothCentralTest {
         // When
         BluetoothCentral central = new BluetoothCentral(callback, Collections.emptySet(), bluezAdapter);
         central.adapterOff();
-        Thread.sleep(100);
 
         // Then
-        verify(bluezAdapter).setPowered(false);
+        verify(bluezAdapter, timeout(1000)).setPowered(false);
     }
     @Test
     void When_scanForPeripherals_is_called_then_an_unfiltered_scan_is_started() throws InterruptedException, BluezFailedException, BluezNotReadyException, BluezNotSupportedException, BluezInvalidArgumentsException {
@@ -164,7 +159,7 @@ class BluetoothCentralTest {
         central.stopScan();
 
         // Then
-        verify(bluezAdapter, timeout(200)).stopDiscovery();
+        verify(bluezAdapter, timeout(1000)).stopDiscovery();
     }
 
     @Test
@@ -181,7 +176,7 @@ class BluetoothCentralTest {
         // Then
         ArgumentCaptor<BluetoothPeripheral> peripheralCaptor = ArgumentCaptor.forClass(BluetoothPeripheral.class);
         ArgumentCaptor<ScanResult> scanResultCaptor = ArgumentCaptor.forClass(ScanResult.class);
-        verify(callback, timeout(500)).onDiscoveredPeripheral(peripheralCaptor.capture(), scanResultCaptor.capture());
+        verify(callback, timeout(1000)).onDiscoveredPeripheral(peripheralCaptor.capture(), scanResultCaptor.capture());
 
         // Then : check if the peripheral and scanResult have the right values
         BluetoothPeripheral peripheral = peripheralCaptor.getValue();
@@ -211,7 +206,7 @@ class BluetoothCentralTest {
         // Then
         ArgumentCaptor<BluetoothPeripheral> peripheralCaptor = ArgumentCaptor.forClass(BluetoothPeripheral.class);
         ArgumentCaptor<ScanResult> scanResultCaptor = ArgumentCaptor.forClass(ScanResult.class);
-        verify(callback, timeout(200)).onDiscoveredPeripheral(peripheralCaptor.capture(), scanResultCaptor.capture());
+        verify(callback, timeout(1000)).onDiscoveredPeripheral(peripheralCaptor.capture(), scanResultCaptor.capture());
 
         // Then : check if the peripheral and scanResult have the right values
         BluetoothPeripheral peripheral = peripheralCaptor.getValue();

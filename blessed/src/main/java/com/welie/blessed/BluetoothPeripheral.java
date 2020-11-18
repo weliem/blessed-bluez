@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ScheduledFuture;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,6 +78,9 @@ public final class BluetoothPeripheral {
 
     @Nullable
     private Runnable timeoutRunnable;
+
+    @Nullable
+    private ScheduledFuture<?> timeoutFuture;
 
     @NotNull
     private final Queue<Runnable> commandQueue = new ConcurrentLinkedQueue<>();
@@ -1154,9 +1158,7 @@ public final class BluetoothPeripheral {
     }
 
     private void startServiceDiscoveryTimer() {
-        if (timeoutRunnable != null && timeoutHandler != null) {
-            timeoutHandler.removeCallbacks(timeoutRunnable);
-        }
+        cancelServiceDiscoveryTimer();
 
         timeoutRunnable = () -> {
             logger.error(String.format("Service Discovery timeout, disconnecting '%s'", device.getName()));
@@ -1166,14 +1168,14 @@ public final class BluetoothPeripheral {
             gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, GATT_ERROR);
         };
         if (timeoutHandler != null) {
-            timeoutHandler.postDelayed(timeoutRunnable, SERVICE_DISCOVERY_TIMEOUT_IN_MS);
+            timeoutFuture = timeoutHandler.postDelayed(timeoutRunnable, SERVICE_DISCOVERY_TIMEOUT_IN_MS);
         }
     }
 
     private void cancelServiceDiscoveryTimer() {
-        if (timeoutRunnable != null && timeoutHandler != null) {
-            timeoutHandler.removeCallbacks(timeoutRunnable);
-            timeoutRunnable = null;
+        if (timeoutFuture != null) {
+            timeoutFuture.cancel(false);
+            timeoutFuture = null;
         }
     }
 
