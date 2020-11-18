@@ -390,8 +390,11 @@ public final class BluetoothPeripheral {
             commandQueueBusy = false;
 
             // Cleanup handlers
+            queueHandler.shutdown();
             queueHandler = null;
+            timeoutHandler.shutdown();
             timeoutHandler = null;
+            internalHandler.shutdown();
             internalHandler = null;
 
             if (notify) {

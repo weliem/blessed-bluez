@@ -23,4 +23,8 @@ public class Handler {
     public final ScheduledFuture<?> postDelayed(@NotNull final Runnable runnable, long delayMillis) {
         return executor.schedule(runnable, delayMillis, TimeUnit.MILLISECONDS);
     }
+
+    public final void shutdown() {
+        executor.shutdownNow();
+    }
 }
