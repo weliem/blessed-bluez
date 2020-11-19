@@ -203,7 +203,7 @@ class BluetoothCentralTest {
         // Then
         ArgumentCaptor<BluetoothPeripheral> peripheralCaptor = ArgumentCaptor.forClass(BluetoothPeripheral.class);
         ArgumentCaptor<ScanResult> scanResultCaptor = ArgumentCaptor.forClass(ScanResult.class);
-        verify(callback, timeout(1000)).onDiscoveredPeripheral(peripheralCaptor.capture(), scanResultCaptor.capture());
+        verify(callback, timeout(2000)).onDiscoveredPeripheral(peripheralCaptor.capture(), scanResultCaptor.capture());
 
         // Then : check if the peripheral and scanResult have the right values
         BluetoothPeripheral peripheral = peripheralCaptor.getValue();
