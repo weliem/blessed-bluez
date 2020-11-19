@@ -783,7 +783,9 @@ public final class BluetoothPeripheral {
                     if (value.getType() instanceof DBusListType) {
                         if (value.getValue() instanceof byte[]) {
                             byte[] byteVal = (byte[]) value.getValue();
-                            gattCallback.onCharacteristicChanged(byteVal, bluetoothGattCharacteristic);
+                            if (byteVal != null) {
+                                gattCallback.onCharacteristicChanged(byteVal, bluetoothGattCharacteristic);
+                            }
                         } else {
                             logger.error("got VALUE update that is not byte array");
                         }
