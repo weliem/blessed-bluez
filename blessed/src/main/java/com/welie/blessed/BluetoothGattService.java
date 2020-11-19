@@ -11,6 +11,7 @@ import java.util.UUID;
 /**
  * Represents a Bluetooth Gatt service
  */
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public class BluetoothGattService {
 
     /**

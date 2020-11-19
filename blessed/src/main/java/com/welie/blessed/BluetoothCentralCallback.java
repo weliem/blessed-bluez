@@ -20,7 +20,6 @@
  *   SOFTWARE.
  *
  */
-
 package com.welie.blessed;
 
 import org.jetbrains.annotations.NotNull;

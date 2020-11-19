@@ -1,7 +1,8 @@
 package testapp;
 
 import com.welie.blessed.*;
-import com.welie.blessed.internal.Handler;
+import com.welie.blessed.Handler;
+import com.welie.blessed.internal.PoolHandler;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -300,7 +301,15 @@ public class BluetoothHandler {
         logger.info("initializing BluetoothCentral");
         central = new BluetoothCentral(bluetoothCentralCallback, new HashSet<>(Collections.singletonList(SCANOPTION_NO_NULL_NAMES)));
         central.setPinCodeForPeripheral("B0:49:5F:01:20:8F", "635227");
-        startScanning();
+//        startScanning();
+
+        PoolHandler handler = new PoolHandler("test");
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                logger.info("delayed operation");
+            }
+        },5000);
     }
 
     void startScanning() {

@@ -1,4 +1,4 @@
-package com.welie.blessed.internal;
+package com.welie.blessed;
 
 import org.jetbrains.annotations.NotNull;
 import java.util.Objects;

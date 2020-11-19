@@ -1,7 +1,6 @@
 package com.welie.blessed;
 
 import com.welie.blessed.bluez.*;
-import com.welie.blessed.internal.Handler;
 import com.welie.blessed.internal.InternalCallback;
 import org.bluez.Device1;
 import org.bluez.exceptions.*;
@@ -194,9 +193,7 @@ public class BluetoothCentral {
                 removeDevice(peripheral);
             }
 
-            callBackHandler.post(() -> {
-                bluetoothCentralCallback.onDisconnectedPeripheral(peripheral, 0);
-            });
+            callBackHandler.post(() -> bluetoothCentralCallback.onDisconnectedPeripheral(peripheral, 0));
 
             restartScannerIfNeeded();
         }

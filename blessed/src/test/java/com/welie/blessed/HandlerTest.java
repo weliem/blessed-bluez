@@ -1,6 +1,5 @@
 package com.welie.blessed;
 
-import com.welie.blessed.internal.Handler;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;

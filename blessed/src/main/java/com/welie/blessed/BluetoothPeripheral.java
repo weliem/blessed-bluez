@@ -5,7 +5,6 @@ import com.welie.blessed.bluez.BluezGattCharacteristic;
 import com.welie.blessed.bluez.BluezGattDescriptor;
 import com.welie.blessed.bluez.BluezGattService;
 import com.welie.blessed.internal.GattCallback;
-import com.welie.blessed.internal.Handler;
 import com.welie.blessed.internal.InternalCallback;
 import org.bluez.exceptions.*;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;

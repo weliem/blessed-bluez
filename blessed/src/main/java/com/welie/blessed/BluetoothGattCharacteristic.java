@@ -1,6 +1,5 @@
 package com.welie.blessed;
 
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,7 +13,7 @@ import java.util.*;
  * additional information and optional GATT descriptors, {@link BluetoothGattDescriptor}.
  */
 
-// TODO Implement hashCode and equals?
+@SuppressWarnings({"unused", "UnusedReturnValue"})
 public class BluetoothGattCharacteristic {
 
     /**
