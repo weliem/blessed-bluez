@@ -60,87 +60,41 @@ public class BluetoothHandler {
     private final BluetoothPeripheralCallback peripheralCallback = new BluetoothPeripheralCallback() {
         @Override
         public void onServicesDiscovered(@NotNull BluetoothPeripheral peripheral) {
-            // Read manufacturer and model number from the Device Information Service
-            if (peripheral.getService(DIS_SERVICE_UUID) != null) {
-                BluetoothGattCharacteristic manufacturerCharacteristic = peripheral.getCharacteristic(DIS_SERVICE_UUID, MANUFACTURER_NAME_CHARACTERISTIC_UUID);
-                if (manufacturerCharacteristic != null) {
-                    peripheral.readCharacteristic(manufacturerCharacteristic);
-                }
-                BluetoothGattCharacteristic modelCharacteristic = peripheral.getCharacteristic(DIS_SERVICE_UUID, MODEL_NUMBER_CHARACTERISTIC_UUID);
-                if (modelCharacteristic != null) {
-                    peripheral.readCharacteristic(modelCharacteristic);
+            tryRead(peripheral, DIS_SERVICE_UUID, MANUFACTURER_NAME_CHARACTERISTIC_UUID);
+            tryRead(peripheral, DIS_SERVICE_UUID, MODEL_NUMBER_CHARACTERISTIC_UUID);
+
+            BluetoothGattCharacteristic currentTimeCharacteristic = peripheral.getCharacteristic(CTS_SERVICE_UUID, CURRENT_TIME_CHARACTERISTIC_UUID);
+            if (currentTimeCharacteristic != null) {
+                peripheral.setNotify(currentTimeCharacteristic, true);
+
+                // If it has the write property we write the current time
+                if (currentTimeCharacteristic.supportsWritingWithResponse()) {
+                    BluetoothBytesParser parser = new BluetoothBytesParser();
+                    parser.setCurrentTime(Calendar.getInstance());
+                    peripheral.writeCharacteristic(currentTimeCharacteristic, parser.getValue(), WRITE_TYPE_DEFAULT);
                 }
             }
 
-            // Turn on notifications for Current Time Service
-            if (peripheral.getService(CTS_SERVICE_UUID) != null) {
-                BluetoothGattCharacteristic currentTimeCharacteristic = peripheral.getCharacteristic(CTS_SERVICE_UUID, CURRENT_TIME_CHARACTERISTIC_UUID);
-                if (currentTimeCharacteristic != null) {
-                    peripheral.setNotify(currentTimeCharacteristic, true);
+            tryRead(peripheral, BTS_SERVICE_UUID, BATTERY_LEVEL_CHARACTERISTIC_UUID);
+            tryEnableNotifications(peripheral, BLP_SERVICE_UUID, BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID);
+            tryEnableNotifications(peripheral, HTS_SERVICE_UUID, TEMPERATURE_MEASUREMENT_CHARACTERISTIC_UUID);
+            tryEnableNotifications(peripheral, PLX_SERVICE_UUID, PLX_CONTINUOUS_MEASUREMENT_CHAR_UUID);
+            tryEnableNotifications(peripheral, PLX_SERVICE_UUID, PLX_SPOT_MEASUREMENT_CHAR_UUID);
+            tryEnableNotifications(peripheral, HRS_SERVICE_UUID, HEARTRATE_MEASUREMENT_CHARACTERISTIC_UUID);
+            tryEnableNotifications(peripheral, WSS_SERVICE_UUID, WSS_MEASUREMENT_CHAR_UUID);
+        }
 
-                    // If it has the write property we write the current time
-                    if (currentTimeCharacteristic.supportsWritingWithResponse()) {
-                        BluetoothBytesParser parser = new BluetoothBytesParser();
-                        parser.setCurrentTime(Calendar.getInstance());
-                        peripheral.writeCharacteristic(currentTimeCharacteristic, parser.getValue(), WRITE_TYPE_DEFAULT);
-                    }
-                }
+        private void tryEnableNotifications(@NotNull BluetoothPeripheral peripheral, @NotNull UUID serviceUUID, @NotNull UUID characteristicUUID) {
+            BluetoothGattCharacteristic characteristic = peripheral.getCharacteristic(serviceUUID, characteristicUUID);
+            if (characteristic != null) {
+                peripheral.setNotify(characteristic, true);
             }
+        }
 
-            // Turn on notify for battery level or read it
-            if (peripheral.getService(BTS_SERVICE_UUID) != null) {
-                BluetoothGattCharacteristic batteryCharacteristic = peripheral.getCharacteristic(BTS_SERVICE_UUID, BATTERY_LEVEL_CHARACTERISTIC_UUID);
-                if (batteryCharacteristic != null) {
-                    if (batteryCharacteristic.supportsNotifying()) {
-                        peripheral.setNotify(batteryCharacteristic, true);
-                    } else {
-                        peripheral.readCharacteristic(batteryCharacteristic);
-                    }
-                }
-            }
-
-            // Turn on notifications for Blood Pressure Service
-            if (peripheral.getService(BLP_SERVICE_UUID) != null) {
-                BluetoothGattCharacteristic bloodpressureCharacteristic = peripheral.getCharacteristic(BLP_SERVICE_UUID, BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID);
-                if (bloodpressureCharacteristic != null) {
-                    peripheral.setNotify(bloodpressureCharacteristic, true);
-                }
-            }
-
-            // Turn on notification for Health Thermometer Service
-            if (peripheral.getService(HTS_SERVICE_UUID) != null) {
-                BluetoothGattCharacteristic temperatureCharacteristic = peripheral.getCharacteristic(HTS_SERVICE_UUID, TEMPERATURE_MEASUREMENT_CHARACTERISTIC_UUID);
-                if (temperatureCharacteristic != null) {
-                    peripheral.setNotify(temperatureCharacteristic, true);
-                }
-            }
-
-            // Turn on notification for Pulse Oximeter Service
-            if (peripheral.getService(PLX_SERVICE_UUID) != null) {
-                BluetoothGattCharacteristic continuousMeasurement = peripheral.getCharacteristic(PLX_SERVICE_UUID, PLX_CONTINUOUS_MEASUREMENT_CHAR_UUID);
-                if (continuousMeasurement != null) {
-                    peripheral.setNotify(continuousMeasurement, true);
-                }
-                BluetoothGattCharacteristic spotMeasurement = peripheral.getCharacteristic(PLX_SERVICE_UUID, PLX_SPOT_MEASUREMENT_CHAR_UUID);
-                if (spotMeasurement != null) {
-                    peripheral.setNotify(spotMeasurement, true);
-                }
-            }
-
-            // Turn on notification for Heart Rate  Service
-            if (peripheral.getService(HRS_SERVICE_UUID) != null) {
-                BluetoothGattCharacteristic heartrateCharacteristic = peripheral.getCharacteristic(HRS_SERVICE_UUID, HEARTRATE_MEASUREMENT_CHARACTERISTIC_UUID);
-                if (heartrateCharacteristic != null) {
-                    peripheral.setNotify(heartrateCharacteristic, true);
-                }
-            }
-
-            // Turn on notification for Weight Scale Service
-            if (peripheral.getService(WSS_SERVICE_UUID) != null) {
-                BluetoothGattCharacteristic weightCharacteristic = peripheral.getCharacteristic(WSS_SERVICE_UUID, WSS_MEASUREMENT_CHAR_UUID);
-                if (weightCharacteristic != null) {
-                    peripheral.setNotify(weightCharacteristic, true);
-                }
+        private void tryRead(@NotNull BluetoothPeripheral peripheral, @NotNull UUID serviceUUID, @NotNull UUID characteristicUUID) {
+            BluetoothGattCharacteristic characteristic = peripheral.getCharacteristic(serviceUUID, characteristicUUID);
+            if (characteristic != null) {
+                peripheral.readCharacteristic(characteristic);
             }
         }
 
