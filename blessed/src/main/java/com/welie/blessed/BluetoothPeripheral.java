@@ -484,6 +484,27 @@ public final class BluetoothPeripheral {
      *
      * <p>The characteristic must support reading it, otherwise the operation will not be enqueued.
      *
+     * @param serviceUUID the service UUID the characteristic belongs to
+     * @param characteristicUUID the characteristic's UUID
+     * @return true if the operation was enqueued, false if the characteristic does not support reading or the characteristic was not found
+     */
+    @SuppressWarnings("UnusedReturnValue")
+    public boolean readCharacteristic(@NotNull UUID serviceUUID, @NotNull UUID characteristicUUID ) {
+        Objects.requireNonNull(serviceUUID, NO_VALID_SERVICE_UUID_PROVIDED);
+        Objects.requireNonNull(characteristicUUID, NO_VALID_CHARACTERISTIC_PROVIDED);
+
+        BluetoothGattCharacteristic characteristic = getCharacteristic(serviceUUID, characteristicUUID);
+        if (characteristic != null) {
+            return readCharacteristic(characteristic);
+        }
+        return false;
+    }
+
+    /**
+     * Read the value of a characteristic.
+     *
+     * <p>The characteristic must support reading it, otherwise the operation will not be enqueued.
+     *
      * <p>{@link BluetoothPeripheralCallback#onCharacteristicUpdate(BluetoothPeripheral, byte[], BluetoothGattCharacteristic, int)}   will be triggered as a result of this call.
      *
      * @param characteristic Specifies the characteristic to read.
@@ -626,6 +647,26 @@ public final class BluetoothPeripheral {
             logger.error("ERROR: Could not enqueue write characteristic command");
         }
         return result;
+    }
+
+    /**
+     * Set the notification state of a characteristic to 'on' or 'off'. The characteristic must support notifications or indications.
+     *
+     * @param serviceUUID the service UUID the characteristic belongs to
+     * @param characteristicUUID the characteristic's UUID
+     * @param enable true for setting notification on, false for turning it off
+     * @return true if the operation was enqueued, false the characteristic could not be found or does not support notifications
+     */
+    @SuppressWarnings("UnusedReturnValue")
+    public boolean setNotify(@NotNull UUID serviceUUID, @NotNull UUID characteristicUUID, boolean enable) {
+        Objects.requireNonNull(serviceUUID, NO_VALID_SERVICE_UUID_PROVIDED);
+        Objects.requireNonNull(characteristicUUID, NO_VALID_CHARACTERISTIC_PROVIDED);
+
+        BluetoothGattCharacteristic characteristic = getCharacteristic(serviceUUID, characteristicUUID);
+        if (characteristic != null) {
+            return setNotify(characteristic, enable);
+        }
+        return false;
     }
 
     /**

@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 import java.util.concurrent.ScheduledFuture;
 
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,9 +20,11 @@ public class BluetoothHandler {
     private final Logger logger = LoggerFactory.getLogger(TAG);
     private final BluetoothCentral central;
     private final Handler handler = new Handler("testapp.BluetoothHandler");
-    private Runnable timeoutRunnable;
     private boolean justBonded = false;
     private static final List<String> blackList = new ArrayList<>();
+
+    @Nullable
+    private ScheduledFuture<?> timeoutFuture;
 
     // UUIDs for the Blood Pressure service (BLP)
     private static final UUID BLP_SERVICE_UUID = UUID.fromString("00001810-0000-1000-8000-00805f9b34fb");
@@ -60,8 +63,8 @@ public class BluetoothHandler {
     private final BluetoothPeripheralCallback peripheralCallback = new BluetoothPeripheralCallback() {
         @Override
         public void onServicesDiscovered(@NotNull BluetoothPeripheral peripheral) {
-            tryRead(peripheral, DIS_SERVICE_UUID, MANUFACTURER_NAME_CHARACTERISTIC_UUID);
-            tryRead(peripheral, DIS_SERVICE_UUID, MODEL_NUMBER_CHARACTERISTIC_UUID);
+            peripheral.readCharacteristic(DIS_SERVICE_UUID, MANUFACTURER_NAME_CHARACTERISTIC_UUID);
+            peripheral.readCharacteristic(DIS_SERVICE_UUID, MODEL_NUMBER_CHARACTERISTIC_UUID);
 
             BluetoothGattCharacteristic currentTimeCharacteristic = peripheral.getCharacteristic(CTS_SERVICE_UUID, CURRENT_TIME_CHARACTERISTIC_UUID);
             if (currentTimeCharacteristic != null) {
@@ -75,42 +78,26 @@ public class BluetoothHandler {
                 }
             }
 
-            tryRead(peripheral, BTS_SERVICE_UUID, BATTERY_LEVEL_CHARACTERISTIC_UUID);
-            tryEnableNotifications(peripheral, BLP_SERVICE_UUID, BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID);
-            tryEnableNotifications(peripheral, HTS_SERVICE_UUID, TEMPERATURE_MEASUREMENT_CHARACTERISTIC_UUID);
-            tryEnableNotifications(peripheral, PLX_SERVICE_UUID, PLX_CONTINUOUS_MEASUREMENT_CHAR_UUID);
-            tryEnableNotifications(peripheral, PLX_SERVICE_UUID, PLX_SPOT_MEASUREMENT_CHAR_UUID);
-            tryEnableNotifications(peripheral, HRS_SERVICE_UUID, HEARTRATE_MEASUREMENT_CHARACTERISTIC_UUID);
-            tryEnableNotifications(peripheral, WSS_SERVICE_UUID, WSS_MEASUREMENT_CHAR_UUID);
-        }
-
-        private void tryEnableNotifications(@NotNull BluetoothPeripheral peripheral, @NotNull UUID serviceUUID, @NotNull UUID characteristicUUID) {
-            BluetoothGattCharacteristic characteristic = peripheral.getCharacteristic(serviceUUID, characteristicUUID);
-            if (characteristic != null) {
-                peripheral.setNotify(characteristic, true);
-            }
-        }
-
-        private void tryRead(@NotNull BluetoothPeripheral peripheral, @NotNull UUID serviceUUID, @NotNull UUID characteristicUUID) {
-            BluetoothGattCharacteristic characteristic = peripheral.getCharacteristic(serviceUUID, characteristicUUID);
-            if (characteristic != null) {
-                peripheral.readCharacteristic(characteristic);
-            }
+            peripheral.readCharacteristic(BTS_SERVICE_UUID, BATTERY_LEVEL_CHARACTERISTIC_UUID);
+            peripheral.setNotify(BLP_SERVICE_UUID, BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID, true);
+            peripheral.setNotify(HTS_SERVICE_UUID, TEMPERATURE_MEASUREMENT_CHARACTERISTIC_UUID, true);
+            peripheral.setNotify(PLX_SERVICE_UUID, PLX_CONTINUOUS_MEASUREMENT_CHAR_UUID, true);
+            peripheral.setNotify(PLX_SERVICE_UUID, PLX_SPOT_MEASUREMENT_CHAR_UUID, true);
+            peripheral.setNotify(HRS_SERVICE_UUID, HEARTRATE_MEASUREMENT_CHARACTERISTIC_UUID, true);
+            peripheral.setNotify(WSS_SERVICE_UUID, WSS_MEASUREMENT_CHAR_UUID, true);
         }
 
         @Override
         public void onNotificationStateUpdate(@NotNull BluetoothPeripheral peripheral, @NotNull BluetoothGattCharacteristic characteristic, int status) {
             if (status == GATT_SUCCESS) {
-                if (peripheral.isNotifying(characteristic)) {
-                    logger.info(String.format("SUCCESS: Notify set to 'on' for %s", characteristic.getUuid()));
-
+                final boolean isNotifying = peripheral.isNotifying(characteristic);
+                logger.info(String.format("SUCCESS: Notify set to '%s' for %s", isNotifying, characteristic.getUuid()));
+                if (isNotifying) {
                     // If we just bonded wit the A&D 651BLE, issue a disconnect to finish the pairing process
                     if (justBonded && peripheral.getName().contains("651BLE")) {
                         peripheral.cancelConnection();
                         justBonded = false;
                     }
-                } else {
-                    logger.info(String.format("SUCCESS: Notify set to 'off' for %s", characteristic.getUuid()));
                 }
             } else {
                 logger.error(String.format("ERROR: Changing notification state failed for %s", characteristic.getUuid()));
@@ -119,8 +106,8 @@ public class BluetoothHandler {
 
         @Override
         public void onCharacteristicUpdate(@NotNull BluetoothPeripheral peripheral, byte[] value, @NotNull BluetoothGattCharacteristic characteristic, int status) {
-            UUID characteristicUUID = characteristic.getUuid();
-            BluetoothBytesParser parser = new BluetoothBytesParser(value);
+            final UUID characteristicUUID = characteristic.getUuid();
+            final BluetoothBytesParser parser = new BluetoothBytesParser(value);
 
             if (characteristicUUID.equals(MANUFACTURER_NAME_CHARACTERISTIC_UUID)) {
                 String manufacturer = parser.getStringValue(0);
@@ -200,15 +187,13 @@ public class BluetoothHandler {
         }
     };
 
-    private ScheduledFuture<?> timeoutFuture;
-
     public void startDisconnectTimer(final BluetoothPeripheral peripheral) {
         if (timeoutFuture != null) {
             timeoutFuture.cancel(false);
             timeoutFuture = null;
         }
 
-        this.timeoutRunnable = peripheral::cancelConnection;
+        Runnable timeoutRunnable = peripheral::cancelConnection;
         timeoutFuture = handler.postDelayed(timeoutRunnable, 2000L);
     }
 
@@ -239,7 +224,7 @@ public class BluetoothHandler {
         public void onDiscoveredPeripheral(final @NotNull BluetoothPeripheral peripheral, final @NotNull ScanResult scanResult) {
             // See if this device is on the blacklist
             final String peripheralAddress = peripheral.getAddress();
-            boolean blacklisted = blackList.contains(peripheralAddress);
+            final boolean blacklisted = blackList.contains(peripheralAddress);
             if (blacklisted) return;
 
             // Not blacklisted so put it on the blacklist and connect to it
