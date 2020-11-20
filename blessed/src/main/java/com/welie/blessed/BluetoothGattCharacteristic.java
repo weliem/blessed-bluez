@@ -101,17 +101,17 @@ public class BluetoothGattCharacteristic {
     /**
      * Write characteristic, requesting acknowledgement by the remote device
      */
-    public static final int WRITE_TYPE_DEFAULT = 0x02;
+    private static final int WRITE_TYPE_DEFAULT = 0x02;
 
     /**
      * Write characteristic without requiring a response by the remote device
      */
-    public static final int WRITE_TYPE_NO_RESPONSE = 0x01;
+    private static final int WRITE_TYPE_NO_RESPONSE = 0x01;
 
-    /**
-     * Write characteristic including authentication signature
-     */
-    public static final int WRITE_TYPE_SIGNED = 0x04;
+    public enum WriteType {
+        withResponse,
+        withoutResponse
+    }
 
     /**
      * Characteristic value format type uint8
@@ -299,20 +299,17 @@ public class BluetoothGattCharacteristic {
         return (((properties & PROPERTY_NOTIFY) > 0) || ((properties & PROPERTY_INDICATE) > 0));
     }
 
-    public boolean supportsWriteType(int writeType) {
+    public boolean supportsWriteType(WriteType writeType) {
         int writeProperty;
         switch (writeType) {
-            case WRITE_TYPE_DEFAULT:
+            case withResponse:
                 writeProperty = PROPERTY_WRITE;
                 break;
-            case WRITE_TYPE_NO_RESPONSE:
+            case withoutResponse:
                 writeProperty = PROPERTY_WRITE_NO_RESPONSE;
                 break;
-            case WRITE_TYPE_SIGNED:
-                writeProperty = PROPERTY_SIGNED_WRITE;
-                break;
             default:
-                writeProperty = 0;
+                writeProperty = -1;
                 break;
         }
         return (getProperties() & writeProperty) != 0;

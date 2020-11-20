@@ -74,7 +74,7 @@ public class BluetoothHandler {
                 if (currentTimeCharacteristic.supportsWritingWithResponse()) {
                     BluetoothBytesParser parser = new BluetoothBytesParser();
                     parser.setCurrentTime(Calendar.getInstance());
-                    peripheral.writeCharacteristic(currentTimeCharacteristic, parser.getValue(), WRITE_TYPE_DEFAULT);
+                    peripheral.writeCharacteristic(currentTimeCharacteristic, parser.getValue(), WriteType.withResponse);
                 }
             }
 

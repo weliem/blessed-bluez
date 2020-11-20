@@ -585,7 +585,7 @@ public final class BluetoothPeripheral {
      * @return true if a write operation was succesfully enqueued, otherwise false
      */
     @SuppressWarnings({"UnusedReturnValue", "unused"})
-    public boolean writeCharacteristic(@NotNull final BluetoothGattCharacteristic characteristic, @NotNull final byte[] value, final int writeType) {
+    public boolean writeCharacteristic(@NotNull final BluetoothGattCharacteristic characteristic, @NotNull final byte[] value, final WriteType writeType) {
         Objects.requireNonNull(characteristic, NO_VALID_CHARACTERISTIC_PROVIDED);
         Objects.requireNonNull(value, "no valid value provided");
 
@@ -611,7 +611,7 @@ public final class BluetoothPeripheral {
 
         // Check if this characteristic actually supports this writeType
         if (!characteristic.supportsWriteType(writeType)) {
-            logger.error(String.format(Locale.ENGLISH, "characteristic cannot be written with this writeType : %d", writeType));
+            logger.error(String.format(Locale.ENGLISH, "characteristic cannot be written with this writeType : %s", writeType));
             return false;
         }
 
@@ -621,9 +621,9 @@ public final class BluetoothPeripheral {
                 try {
                     // Perform the write
                     currentWriteBytes = bytesToWrite;
-                    logger.info(String.format("writing <%s> to characteristic <%s>", bytes2String(bytesToWrite), nativeCharacteristic.getUuid()));
+                    logger.info(String.format("writing %s <%s> to characteristic <%s>", writeType, bytes2String(bytesToWrite), nativeCharacteristic.getUuid()));
                     HashMap<String, Object> options = new HashMap<>();
-                    options.put("type", writeType == WRITE_TYPE_DEFAULT ? "request" : "command");
+                    options.put("type", writeType == WriteType.withResponse ? "request" : "command");
                     nativeCharacteristic.writeValue(bytesToWrite, options);
 
                     // Since there is no callback nor characteristic update event for when a write is completed, we can consider this command done

@@ -419,7 +419,7 @@ class BluetoothPeripheralTest {
 
         // When
         byte[] value = new byte[]{0x01,0x02,0x03};
-        peripheral.writeCharacteristic(characteristic, value, WRITE_TYPE_DEFAULT);
+        peripheral.writeCharacteristic(characteristic, value, WriteType.withResponse);
 
         // Then
         ArgumentCaptor<Map<String, Object>> mapCaptor = ArgumentCaptor.forClass(Map.class);
@@ -439,7 +439,7 @@ class BluetoothPeripheralTest {
 
         // When
         byte[] value = new byte[]{0x01,0x02,0x03};
-        peripheral.writeCharacteristic(characteristic, value, WRITE_TYPE_NO_RESPONSE);
+        peripheral.writeCharacteristic(characteristic, value, WriteType.withoutResponse);
 
         // Then
         ArgumentCaptor<Map<String, Object>> mapCaptor = ArgumentCaptor.forClass(Map.class);
@@ -457,7 +457,7 @@ class BluetoothPeripheralTest {
         BluezGattCharacteristic bluezGattCharacteristic = mock(BluezGattCharacteristic.class);
 
         // When
-        peripheral.writeCharacteristic(characteristic, new byte[]{0x01,0x02,0x03}, WRITE_TYPE_DEFAULT);
+        peripheral.writeCharacteristic(characteristic, new byte[]{0x01,0x02,0x03}, WriteType.withResponse);
 
         // Then
         verify(bluezGattCharacteristic, timeout(50).times(0)).writeValue(any(), anyMap());
@@ -472,7 +472,7 @@ class BluetoothPeripheralTest {
         peripheral.characteristicMap.put(bluezGattCharacteristic.getDbusPath(), bluezGattCharacteristic);
 
         // When
-        peripheral.writeCharacteristic(characteristic, new byte[]{0x01,0x02,0x03}, WRITE_TYPE_DEFAULT);
+        peripheral.writeCharacteristic(characteristic, new byte[]{0x01,0x02,0x03}, WriteType.withResponse);
 
         // Then
         verify(bluezGattCharacteristic, timeout(50).times(0)).writeValue(any(), anyMap());
@@ -487,7 +487,7 @@ class BluetoothPeripheralTest {
         peripheral.characteristicMap.put(bluezGattCharacteristic.getDbusPath(), bluezGattCharacteristic);
 
         // When
-        peripheral.writeCharacteristic(characteristic, new byte[]{0x01,0x02,0x03}, WRITE_TYPE_DEFAULT);
+        peripheral.writeCharacteristic(characteristic, new byte[]{0x01,0x02,0x03}, WriteType.withResponse);
 
         // Then
         verify(bluezGattCharacteristic, timeout(50).times(0)).writeValue(any(), anyMap());
@@ -506,7 +506,7 @@ class BluetoothPeripheralTest {
 
         // When
         byte[] value = new byte[]{0x01,0x02,0x03};
-        peripheral.writeCharacteristic(characteristic, value, WRITE_TYPE_DEFAULT);
+        peripheral.writeCharacteristic(characteristic, value, WriteType.withResponse);
 
         // Then
         ArgumentCaptor<BluetoothPeripheral> peripheralCaptor = ArgumentCaptor.forClass(BluetoothPeripheral.class);
@@ -531,7 +531,7 @@ class BluetoothPeripheralTest {
 
         // When
         byte[] value = new byte[]{0x01,0x02,0x03};
-        peripheral.writeCharacteristic(characteristic, value, WRITE_TYPE_DEFAULT);
+        peripheral.writeCharacteristic(characteristic, value, WriteType.withResponse);
 
         // Then
         ArgumentCaptor<BluetoothPeripheral> peripheralCaptor = ArgumentCaptor.forClass(BluetoothPeripheral.class);
@@ -556,7 +556,7 @@ class BluetoothPeripheralTest {
 
         // When
         byte[] value = new byte[]{0x01,0x02,0x03};
-        peripheral.writeCharacteristic(characteristic, value, WRITE_TYPE_DEFAULT);
+        peripheral.writeCharacteristic(characteristic, value, WriteType.withResponse);
 
         // Then
         ArgumentCaptor<BluetoothPeripheral> peripheralCaptor = ArgumentCaptor.forClass(BluetoothPeripheral.class);
@@ -754,7 +754,7 @@ class BluetoothPeripheralTest {
         BluetoothGattCharacteristic temperatureCharacteristic = peripheral.getCharacteristic(HTS_SERVICE_UUID, TEMPERATURE_MEASUREMENT_CHARACTERISTIC_UUID);
         assertNotNull(temperatureCharacteristic);
         assertTrue(temperatureCharacteristic.supportsNotifying());
-        assertTrue(temperatureCharacteristic.supportsWriteType(WRITE_TYPE_NO_RESPONSE));
+        assertTrue(temperatureCharacteristic.supportsWriteType(WriteType.withoutResponse));
         assertTrue(temperatureCharacteristic.supportsWritingWithoutResponse());
 
         BluetoothGattDescriptor cccDescriptor = measurementCharacteristic.getDescriptor(UUID.fromString(CCC_DESCRIPTOR_UUID));
