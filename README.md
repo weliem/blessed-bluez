@@ -56,7 +56,7 @@ public void autoConnectPeripheral(BluetoothPeripheral peripheral, BluetoothPerip
 public void autoConnectPeripheralsBatch(Map<BluetoothPeripheral, BluetoothPeripheralCallback> batch) 
 ```
 
-The method `connectPeripheral` will try to immediately connect to a device that has already been found using a scan. This method will time out after 30 seconds or less depending on the device manufacturer. Note that there can be **only 1 outstanding** `connectPeripheral`. So if it is called multiple times only 1 will succeed.
+The method `connectPeripheral` will try to immediately connect to a device that has already been found using a scan. This method will time out after 30-60 seconds or less depending on the device manufacturer. 
 
 The method `autoConnectPeripheral` is for re-connecting to known devices for which you already know the device's mac address. The BLESSED will automatically connect to the device when it sees it in its internal scan. So you can issue the autoConnect command and the device will be connected whenever it is found. 
 
@@ -93,7 +93,7 @@ Reading and writing to characteristics is done using the following methods:
 
 ```java
 public boolean readCharacteristic(BluetoothGattCharacteristic characteristic)
-public boolean writeCharacteristic(BluetoothGattCharacteristic characteristic, byte[] value, int writeType)
+public boolean writeCharacteristic(BluetoothGattCharacteristic characteristic, byte[] value, WriteType writeType)
 ```
 
 Both methods are asynchronous and will be queued up. So you can just issue as many read/write operations as you like without waiting for each of them to complete. You will receive a callback once the result of the operation is available.
@@ -102,7 +102,7 @@ For read operations you will get a callback on:
 ```java
 public void onCharacteristicUpdate(BluetoothPeripheral peripheral, byte[] value, BluetoothGattCharacteristic characteristic)
 ```
-If you want to write to a characteristic, you need to provide a `value` and a `writeType`. The `writeType` is usually `WRITE_TYPE_DEFAULT` or `WRITE_TYPE_NO_RESPONSE`. If the write type you specify is not supported by the characteristic you will see an error in your log. For write operations you will get a callback on:
+If you want to write to a characteristic, you need to provide a `value` and a `writeType`. The `writeType` is either `withResponse` or `withoutResponse`. If the write type you specify is not supported by the characteristic you will see an error in your log. For write operations you will get a callback on:
 ```java
 public void onCharacteristicWrite(BluetoothPeripheral peripheral, byte[] value, BluetoothGattCharacteristic characteristic, final int status)
 
