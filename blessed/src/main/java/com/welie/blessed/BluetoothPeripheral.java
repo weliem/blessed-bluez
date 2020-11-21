@@ -769,21 +769,17 @@ public final class BluetoothPeripheral {
             return;
         }
 
-        // Make sure we start with an empty slate
-        clearMaps();
-
-        // Process all service, characteristics and descriptors
+        // Process all service, characteristics and descriptors to build a shadow gatt tree
         if (device != null) {
-            // Build list of services including the linked characteristics and descriptors
-            services.clear();
+            clearMaps();
             List<BluezGattService> gattServices = device.getGattServices();
             gattServices.forEach(service -> services.add(mapBluezGattServiceToBluetoothGattService(service)));
-
             gattCallback.onServicesDiscovered(services);
         }
     }
 
     private void clearMaps() {
+        services.clear();
         serviceMap.clear();
         characteristicMap.clear();
         descriptorMap.clear();
@@ -823,15 +819,11 @@ public final class BluetoothPeripheral {
                 case PROPERTY_VALUE:
                     if (value.getType() instanceof DBusListType) {
                         if (value.getValue() instanceof byte[]) {
-                            byte[] byteVal = (byte[]) value.getValue();
-                            if (byteVal != null) {
-                                gattCallback.onCharacteristicChanged(byteVal, bluetoothGattCharacteristic);
+                            byte[] byteArray = (byte[]) value.getValue();
+                            if (byteArray != null) {
+                                gattCallback.onCharacteristicChanged(byteArray, bluetoothGattCharacteristic);
                             }
-                        } else {
-                            logger.error("got VALUE update that is not byte array");
                         }
-                    } else {
-                        logger.error("got unknown type for VALUE update");
                     }
                     break;
                 default:
