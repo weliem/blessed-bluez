@@ -102,7 +102,7 @@ For read operations you will get a callback on:
 ```java
 public void onCharacteristicUpdate(BluetoothPeripheral peripheral, byte[] value, BluetoothGattCharacteristic characteristic)
 ```
-If you want to write to a characteristic, you need to provide a `value` and a `writeType`. The `writeType` is usually `WRITE_TYPE_DEFAULT` or `WRITE_TYPE_NO_RESPONSE`. If the write type you specify is not supported by the characteristic you will see an error in your log. For write operations you will get a callback on:
+If you want to write to a characteristic, you need to provide a `value` and a `writeType`. The `writeType` is either `withResponse` or `withoutResponse`. If the write type you specify is not supported by the characteristic you will see an error in your log. For write operations you will get a callback on:
 ```java
 public void onCharacteristicWrite(BluetoothPeripheral peripheral, byte[] value, BluetoothGattCharacteristic characteristic, final int status)
 
