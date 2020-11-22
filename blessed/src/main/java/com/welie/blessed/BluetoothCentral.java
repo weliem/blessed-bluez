@@ -580,7 +580,7 @@ public class BluetoothCentral {
         final String deviceAddress = bluezDevice.getAddress();
         if (deviceAddress == null) return;
 
-        // If if the properties are belonging to a scan
+        // Check if the properties are belonging to a scan
         Set<String> keys = propertiesChanged.keySet();
         if (!(keys.contains(PROPERTY_RSSI) || keys.contains(PROPERTY_MANUFACTURER_DATA) || keys.contains(PROPERTY_SERVICE_DATA))) return;
 
@@ -591,7 +591,15 @@ public class BluetoothCentral {
             scanResultCache.put(deviceAddress, scanResult);
         }
 
+        updateScanResult(propertiesChanged, scanResult);
+
+        final BluetoothPeripheral peripheral = getPeripheral(deviceAddress);
+        onScanResult(peripheral, scanResult);
+    }
+
+    private void updateScanResult(@NotNull Map<String, Variant<?>> propertiesChanged, ScanResult scanResult) {
         // Update the scanResult
+        Set<String> keys = propertiesChanged.keySet();
         if (keys.contains(PROPERTY_RSSI)) {
             scanResult.setRssi((Short) propertiesChanged.get(PROPERTY_RSSI).getValue());
         }
@@ -609,9 +617,6 @@ public class BluetoothCentral {
             sdata.forEach((k, v) -> serviceData.put(k, v.getValue()));
             scanResult.setServiceData(serviceData);
         }
-
-        final BluetoothPeripheral peripheral = getPeripheral(deviceAddress);
-        onScanResult(peripheral, scanResult);
     }
 
     @NotNull

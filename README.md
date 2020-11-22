@@ -159,7 +159,7 @@ In most cases, the peripheral will initiate bonding either at the time of connec
 
 It is also possible to remove a bond by calling `removeBond`. 
 
-Lastly, it is also possible to automatically issue a PIN code when pairing. Use the method `setPinForPeripheral` to register a 6 digit PIN code. Once bonding starts, BLESSED will automatically issue the PIN code and the UI dialog to enter the PIN code will not appear anymore.
+Lastly, it is also possible to automatically issue a PIN code when pairing. Use the method `setPinCodeForPeripheral` to register a 6 digit PIN code. Once bonding starts, BLESSED will automatically issue the PIN code and the UI dialog to enter the PIN code will not appear anymore.
 
 
 ## Example application
