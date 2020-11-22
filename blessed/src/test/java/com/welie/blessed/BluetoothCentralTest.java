@@ -34,6 +34,7 @@ import static org.mockito.Mockito.*;
 // - Test proving that we handle connectionFailed correctly
 // - Test proving that we don't call startDiscovery if we are already discovering
 // - Test proving that we don't call stopDiscovery if we are not discovering
+// - Test proving that only device and adapter signals are handled by central
 
 @ExtendWith(MockitoExtension.class)
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
@@ -124,9 +125,9 @@ class BluetoothCentralTest {
         checkFilters(filterMap);
 
         // Then : Verify that no name, mac addresses or service UUID filters are set
-        assertEquals(0, central.scanServiceUUIDs.length);
-        assertEquals(0, central.scanPeripheralAddresses.length);
-        assertEquals(0, central.scanPeripheralNames.length);
+        assertEquals(0, central.scanServiceUUIDs.size());
+        assertEquals(0, central.scanPeripheralAddresses.size());
+        assertEquals(0, central.scanPeripheralNames.size());
 
         // Then : Verify that scan is really started
         verify(bluezAdapter).startDiscovery();
@@ -231,10 +232,10 @@ class BluetoothCentralTest {
         checkFilters(filterMap);
 
         // Then : Verify that no name, mac addresses or service UUID filters are set
-        assertEquals(1, central.scanServiceUUIDs.length);
-        assertEquals(BLP_SERVICE_UUID, central.scanServiceUUIDs[0]);
-        assertEquals(0, central.scanPeripheralAddresses.length);
-        assertEquals(0, central.scanPeripheralNames.length);
+        assertEquals(1, central.scanServiceUUIDs.size());
+        assertTrue(central.scanServiceUUIDs.contains(BLP_SERVICE_UUID));
+        assertEquals(0, central.scanPeripheralAddresses.size());
+        assertEquals(0, central.scanPeripheralNames.size());
 
         // Then : Verify that startDiscovery is really called
         verify(bluezAdapter).startDiscovery();
@@ -369,10 +370,10 @@ class BluetoothCentralTest {
         checkFilters(filterMap);
 
         // Then : Verify that no name, mac addresses or service UUID filters are set
-        assertEquals(0, central.scanServiceUUIDs.length);
-        assertEquals(1, central.scanPeripheralAddresses.length);
-        assertEquals(DUMMY_MAC_ADDRESS_BLP, central.scanPeripheralAddresses[0]);
-        assertEquals(0, central.scanPeripheralNames.length);
+        assertEquals(0, central.scanServiceUUIDs.size());
+        assertEquals(1, central.scanPeripheralAddresses.size());
+        assertTrue(central.scanPeripheralAddresses.contains(DUMMY_MAC_ADDRESS_BLP));
+        assertEquals(0, central.scanPeripheralNames.size());
 
         // Then : Verify that scan is really started
         verify(bluezAdapter).startDiscovery();
@@ -493,10 +494,10 @@ class BluetoothCentralTest {
         checkFilters(filterMap);
 
         // Then : Verify that no name, mac addresses or service UUID filters are set
-        assertEquals(0, central.scanServiceUUIDs.length);
-        assertEquals(0, central.scanPeripheralAddresses.length);
-        assertEquals(1, central.scanPeripheralNames.length);
-        assertEquals(DUMMY_PERIPHERAL_NAME_BLP, central.scanPeripheralNames[0]);
+        assertEquals(0, central.scanServiceUUIDs.size());
+        assertEquals(0, central.scanPeripheralAddresses.size());
+        assertEquals(1, central.scanPeripheralNames.size());
+        assertTrue(central.scanPeripheralNames.contains(DUMMY_PERIPHERAL_NAME_BLP));
 
         // Then : Verify that scan is really started
         verify(bluezAdapter).startDiscovery();

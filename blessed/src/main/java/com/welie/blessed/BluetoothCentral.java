@@ -91,13 +91,13 @@ public class BluetoothCentral {
     private final Map<String, ScanResult> scanResultCache = new ConcurrentHashMap<>();
 
     @NotNull
-    protected String[] scanPeripheralNames = new String[0];
+    protected Set<String> scanPeripheralNames = new HashSet<>();
 
     @NotNull
-    protected String[] scanPeripheralAddresses = new String[0];
+    protected Set<String> scanPeripheralAddresses = new HashSet<>();
 
     @NotNull
-    protected UUID[] scanServiceUUIDs = new UUID[0];
+    protected Set<UUID> scanServiceUUIDs = new HashSet<>();
 
     @NotNull
     protected final List<String> reconnectPeripheralAddresses = new ArrayList<>();
@@ -316,7 +316,7 @@ public class BluetoothCentral {
 
         // Store serviceUUIDs to scan for and start scan
         resetScanFilters();
-        scanServiceUUIDs = serviceUUIDs;
+        scanServiceUUIDs = new HashSet<>(Arrays.asList(serviceUUIDs));
         normalScanActive = true;
         startScanning();
     }
@@ -342,7 +342,7 @@ public class BluetoothCentral {
 
         // Store peripheral names to scan for and start scan
         resetScanFilters();
-        scanPeripheralNames = peripheralNames;
+        scanPeripheralNames = new HashSet<>(Arrays.asList(peripheralNames));;
         normalScanActive = true;
         startScanning();
     }
@@ -366,7 +366,7 @@ public class BluetoothCentral {
 
         // Store peripheral address to scan for and start scan
         resetScanFilters();
-        scanPeripheralAddresses = peripheralAddresses;
+        scanPeripheralAddresses = new HashSet<>(Arrays.asList(peripheralAddresses));
         normalScanActive = true;
         startScanning();
     }
@@ -380,9 +380,9 @@ public class BluetoothCentral {
     }
 
     private void resetScanFilters() {
-        scanPeripheralNames = new String[0];
-        scanPeripheralAddresses = new String[0];
-        scanServiceUUIDs = new UUID[0];
+        scanPeripheralNames = new HashSet<>();
+        scanPeripheralAddresses = new HashSet<>();
+        scanServiceUUIDs = new HashSet<>();
         scanFilters.clear();
         setBasicFilters();
     }
@@ -394,28 +394,15 @@ public class BluetoothCentral {
     }
 
     private boolean notAllowedByFilter(ScanResult scanResult) {
-        // Check if peripheral name filter is set
-        if (scanPeripheralNames.length > 0) {
-            for (String name : scanPeripheralNames) {
-                if (scanResult.getName() != null && scanResult.getName().contains(name)) {
-                    return false;
-                }
-            }
-            return true;
+        if (!scanPeripheralNames.isEmpty() && scanResult.getName() != null) {
+            return !scanPeripheralNames.contains(scanResult.getName());
         }
 
-        // Check if peripheral address filter is set
-        if (scanPeripheralAddresses.length > 0) {
-            for (String name : scanPeripheralAddresses) {
-                if (scanResult.getAddress().equals(name)) {
-                    return false;
-                }
-            }
-            return true;
+        if (!scanPeripheralAddresses.isEmpty()) {
+            return !scanPeripheralAddresses.contains(scanResult.getAddress());
         }
 
-        // Check if peripheral uuid filter is set
-        if (scanServiceUUIDs.length > 0) {
+        if (!scanServiceUUIDs.isEmpty()) {
             List<UUID> scanResultUUIDs = scanResult.getUuids();
             for (UUID uuid : scanServiceUUIDs) {
                 if (scanResultUUIDs.contains(uuid)) {
