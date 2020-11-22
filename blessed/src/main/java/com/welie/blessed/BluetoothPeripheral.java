@@ -73,12 +73,6 @@ public final class BluetoothPeripheral {
     protected List<@NotNull BluetoothGattService> services = new ArrayList<>();
 
     @Nullable
-    private Handler timeoutHandler;
-
-    @Nullable
-    private Runnable timeoutRunnable;
-
-    @Nullable
     private ScheduledFuture<?> timeoutFuture;
 
     @NotNull
@@ -88,7 +82,7 @@ public final class BluetoothPeripheral {
     private Handler queueHandler;
 
     @Nullable
-    private Handler internalHandler;
+    private Handler signalHandler;
 
     private volatile boolean commandQueueBusy = false;
     private int nrTries;
@@ -391,10 +385,8 @@ public final class BluetoothPeripheral {
             // Cleanup handlers
             queueHandler.shutdown();
             queueHandler = null;
-            timeoutHandler.shutdown();
-            timeoutHandler = null;
-            internalHandler.shutdown();
-            internalHandler = null;
+            signalHandler.shutdown();
+            signalHandler = null;
 
             if (notify) {
                 listener.disconnected(BluetoothPeripheral.this, status);
@@ -427,8 +419,7 @@ public final class BluetoothPeripheral {
         try {
             logger.info(String.format("connecting to '%s' (%s)", deviceName, deviceAddress));
             queueHandler = new Handler(deviceAddress + "-queue");
-            timeoutHandler = new Handler(deviceAddress + "-timeout");
-            internalHandler = new Handler(deviceAddress + "-internal");
+            signalHandler = new Handler(deviceAddress + "-signal");
             BluezSignalHandler.getInstance().addPeripheral(deviceAddress, this);
             connectTimestamp = System.currentTimeMillis();
             device.connect();
@@ -786,8 +777,8 @@ public final class BluetoothPeripheral {
     }
 
     void handleSignal(Properties.PropertiesChanged propertiesChanged) {
-        if (internalHandler != null) {
-            internalHandler.post(() -> propertiesChangedHandler.handle(propertiesChanged));
+        if (signalHandler != null) {
+            signalHandler.post(() -> propertiesChangedHandler.handle(propertiesChanged));
         }
     }
 
@@ -1128,8 +1119,7 @@ public final class BluetoothPeripheral {
         try {
             if (state == STATE_DISCONNECTED) {
                 BluezSignalHandler.getInstance().addPeripheral(deviceAddress, this);
-                queueHandler = new Handler("BLE-" + deviceAddress);
-                timeoutHandler = new Handler(TAG + " serviceDiscovery " + deviceAddress);
+                queueHandler = new Handler(deviceAddress + "-queue");
             }
 
             if (device.isPaired()) {
@@ -1197,15 +1187,17 @@ public final class BluetoothPeripheral {
     private void startServiceDiscoveryTimer() {
         cancelServiceDiscoveryTimer();
 
-        timeoutRunnable = () -> {
-            logger.error(String.format("Service Discovery timeout, disconnecting '%s'", device.getName()));
+        // Disconnecting doesn't work so do it ourselves
+        Runnable timeoutRunnable = () -> {
+            String deviceName = (device != null) ? device.getName() : deviceAddress;
+            logger.error(String.format("Service Discovery timeout, disconnecting '%s'", deviceName));
 
             // Disconnecting doesn't work so do it ourselves
             cancelServiceDiscoveryTimer();
             gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, GATT_ERROR);
         };
-        if (timeoutHandler != null) {
-            timeoutFuture = timeoutHandler.postDelayed(timeoutRunnable, SERVICE_DISCOVERY_TIMEOUT_IN_MS);
+        if (queueHandler != null) {
+            timeoutFuture = queueHandler.postDelayed(timeoutRunnable, SERVICE_DISCOVERY_TIMEOUT_IN_MS);
         }
     }
 

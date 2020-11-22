@@ -42,16 +42,10 @@ public class BluetoothCentral {
     private final Handler callBackHandler = new Handler("Central-callback");
 
     @NotNull
-    private final Handler timeoutHandler = new Handler("Central-timeout");
-
-    @NotNull
     private final Handler queueHandler = new Handler("Central-queue");
 
     @NotNull
     private final Handler signalHandler = new Handler("Central-signal");
-
-    @Nullable
-    private Runnable timeoutRunnable;
 
     @Nullable
     private ScheduledFuture<?> timeoutFuture;
@@ -777,18 +771,11 @@ public class BluetoothCentral {
     private void startScanTimer() {
         cancelTimeoutTimer();
 
-        this.timeoutRunnable = () -> {
+        Runnable timeoutRunnable = () -> {
             stopScanning();
-
-            // Introduce gap between continuous scans
-            try {
-                Thread.sleep(SCAN_INTERVAL - SCAN_WINDOW);
-            } catch (InterruptedException e) {
-                // Ignore
-            }
-            startScanning();
+            queueHandler.postDelayed(this::startScanning, SCAN_INTERVAL - SCAN_WINDOW);
         };
-        timeoutFuture = timeoutHandler.postDelayed(timeoutRunnable, SCAN_WINDOW);
+        timeoutFuture = queueHandler.postDelayed(timeoutRunnable, SCAN_WINDOW);
     }
 
     /**
