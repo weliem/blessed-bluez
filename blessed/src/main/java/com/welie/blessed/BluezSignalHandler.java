@@ -58,6 +58,9 @@ class BluezSignalHandler {
                 }
             }
 
+            // Check if there are any peripherals at all
+            if (peripheralsMap.isEmpty()) return;
+
             // If it came from a device or characteristic, send it to the right peripheral
             if (interfaceName.equals(BLUEZ_DEVICE_INTERFACE) || interfaceName.equals(BLUEZ_CHARACTERISTIC_INTERFACE)) {
                 final String path = propertiesChanged.getPath();
