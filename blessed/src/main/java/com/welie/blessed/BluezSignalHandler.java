@@ -13,8 +13,11 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.welie.blessed.BluetoothCentral.BLUEZ_ADAPTER_INTERFACE;
+import static com.welie.blessed.BluetoothPeripheral.BLUEZ_CHARACTERISTIC_INTERFACE;
 import static com.welie.blessed.BluetoothPeripheral.BLUEZ_DEVICE_INTERFACE;
 
+@SuppressWarnings("UnusedReturnValue")
 class BluezSignalHandler {
     private static final String TAG = BluezSignalHandler.class.getSimpleName();
     private static final Logger logger = LoggerFactory.getLogger(TAG);
@@ -41,29 +44,34 @@ class BluezSignalHandler {
         return instance;
     }
 
-    private final AbstractPropertiesChangedHandler signalHandler = new AbstractPropertiesChangedHandler() {
+    protected final AbstractPropertiesChangedHandler signalHandler = new AbstractPropertiesChangedHandler() {
         @Override
         public void handle(final Properties.PropertiesChanged propertiesChanged) {
             // Make sure the propertiesChanged is not empty. Note that we also get called because of propertiesRemoved.
             if (propertiesChanged.getPropertiesChanged().isEmpty()) return;
 
-            // Send the signal to all centrals
-            for (BluetoothCentral central : centralList) {
-                central.handleSignal(propertiesChanged);
+            // If it came from device or adapter, send it to all centrals
+            String interfaceName = propertiesChanged.getInterfaceName();
+            if (interfaceName.equals(BLUEZ_DEVICE_INTERFACE) || interfaceName.equals(BLUEZ_ADAPTER_INTERFACE)) {
+                for (BluetoothCentral central : centralList) {
+                    central.handleSignal(propertiesChanged);
+                }
             }
 
-            // If it came from a device, send it to the right peripheral
-            final String path = propertiesChanged.getPath();
-            final Set<String> peripherals = peripheralsMap.keySet();
-            for (final String peripheralAddress : peripherals) {
-                if (path.contains(peripheralAddress)) {
-                    peripheralsMap.get(peripheralAddress).handleSignal(propertiesChanged);
+            // If it came from a device or characteristic, send it to the right peripheral
+            if (interfaceName.equals(BLUEZ_DEVICE_INTERFACE) || interfaceName.equals(BLUEZ_CHARACTERISTIC_INTERFACE)) {
+                final String path = propertiesChanged.getPath();
+                final Set<String> peripherals = peripheralsMap.keySet();
+                for (final String peripheralAddress : peripherals) {
+                    if (path.contains(peripheralAddress)) {
+                        peripheralsMap.get(peripheralAddress).handleSignal(propertiesChanged);
+                    }
                 }
             }
         }
     };
 
-    final AbstractInterfacesAddedHandler interfacesAddedHandler = new AbstractInterfacesAddedHandler() {
+    protected final AbstractInterfacesAddedHandler interfacesAddedHandler = new AbstractInterfacesAddedHandler() {
         @Override
         public void handle(final ObjectManager.InterfacesAdded interfacesAdded) {
             final String path = interfacesAdded.getPath();
