@@ -7,9 +7,9 @@ import static com.welie.blessed.BluetoothBytesParser.*;
 
 public class PulseOximeterContinuousMeasurement {
 
-    private int SpO2;
+    private final int SpO2;
 
-    private int pulseRate;
+    private final int pulseRate;
 
     private int SpO2Fast;
 

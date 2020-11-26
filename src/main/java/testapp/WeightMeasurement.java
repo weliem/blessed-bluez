@@ -13,7 +13,7 @@ import static com.welie.blessed.BluetoothBytesParser.FORMAT_UINT8;
 public class WeightMeasurement {
     private final double weight;
     private final WeightUnit unit;
-    private Date timestamp;
+    private final Date timestamp;
     private Integer userID;
     private Integer BMI;
     private Integer height;

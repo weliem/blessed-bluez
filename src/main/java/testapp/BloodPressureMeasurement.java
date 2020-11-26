@@ -11,13 +11,13 @@ import static com.welie.blessed.BluetoothBytesParser.FORMAT_SFLOAT;
 import static com.welie.blessed.BluetoothBytesParser.FORMAT_UINT8;
 
 public class BloodPressureMeasurement implements Serializable {
-    public Integer userID;
-    public Float systolic;
-    public Float diastolic;
-    public Float meanArterialPressure;
-    public Date timestamp;
-    public boolean isMMHG;
-    public Float pulseRate;
+    public final Integer userID;
+    public final Float systolic;
+    public final Float diastolic;
+    public final Float meanArterialPressure;
+    public final Date timestamp;
+    public final boolean isMMHG;
+    public final Float pulseRate;
 
     public BloodPressureMeasurement(byte[] value) {
         BluetoothBytesParser parser = new BluetoothBytesParser(value);
@@ -45,11 +45,15 @@ public class BloodPressureMeasurement implements Serializable {
         // Read pulse rate
         if (pulseRatePresent) {
             pulseRate = parser.getFloatValue(FORMAT_SFLOAT);
+        } else {
+            pulseRate = null;
         }
 
         // Read userId
         if (userIdPresent) {
             userID = parser.getIntValue(FORMAT_UINT8);
+        } else {
+            userID = null;
         }
     }
 
