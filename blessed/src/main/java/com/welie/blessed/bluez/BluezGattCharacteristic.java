@@ -5,6 +5,7 @@ import org.bluez.GattDescriptor1;
 import org.bluez.exceptions.*;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.interfaces.DBusInterface;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -17,7 +18,10 @@ import java.util.Map.Entry;
  */
 public class BluezGattCharacteristic extends AbstractBluetoothObject {
 
+    @NotNull
     private final GattCharacteristic1 gattCharacteristic;
+
+    @NotNull
     private final BluezGattService gattService;
     private UUID uuid;
 
@@ -156,6 +160,7 @@ public class BluezGattCharacteristic extends AbstractBluetoothObject {
      * </p>
      * @return cached characteristics value, maybe null
      */
+    @NotNull
     public byte[] getValue() {
         List<?> typed = getTyped("Value", ArrayList.class);
         if (typed != null) {

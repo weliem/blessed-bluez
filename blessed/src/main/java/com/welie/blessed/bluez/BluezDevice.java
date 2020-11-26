@@ -182,6 +182,7 @@ public class BluezDevice extends AbstractBluetoothObject {
      * </p>
      * @return string array of UUIDs, maybe null
      */
+    @NotNull
     public List<@NotNull UUID> getUuids() {
         List<@NotNull UUID> result = new ArrayList<>();
         try {
@@ -414,16 +415,6 @@ public class BluezDevice extends AbstractBluetoothObject {
      */
     public void connect() throws BluezFailedException, BluezAlreadyConnectedException, BluezNotReadyException, BluezInProgressException {
         rawdevice.Connect();
-//        try {
-//            rawdevice.Connect();
-//        } catch (BluezNotReadyException _ex) {
-//        } catch (BluezFailedException _ex) {
-//        } catch (BluezAlreadyConnectedException _ex) {
-//            return true;
-//        } catch (BluezInProgressException _ex) {
-//            return false;
-//        }
-//        return isConnected();
     }
 
     /**
@@ -443,7 +434,7 @@ public class BluezDevice extends AbstractBluetoothObject {
         try {
             rawdevice.Disconnect();
             return true;
-        } catch (BluezNotConnectedException _ex) {
+        } catch (BluezNotConnectedException ignored) {
         }
         return !isConnected();
     }
@@ -459,9 +450,9 @@ public class BluezDevice extends AbstractBluetoothObject {
      * @param _uuid profile uuid
      * @return true if connected to given profile, false otherwise
      */
-    public boolean connectProfile(String _uuid) {
+    public boolean connectProfile(UUID _uuid) {
         try {
-            rawdevice.ConnectProfile(_uuid);
+            rawdevice.ConnectProfile(_uuid.toString());
             return true;
         } catch (BluezFailedException | BluezInProgressException | BluezInvalidArgumentsException
                 | BluezNotAvailableException | BluezNotReadyException _ex) {
@@ -483,9 +474,9 @@ public class BluezDevice extends AbstractBluetoothObject {
      * @param _uuid profile uuid
      * @return true if profile disconnected, false otherwise
      */
-    public boolean disconnectProfile(String _uuid) {
+    public boolean disconnectProfile(UUID _uuid) {
         try {
-            rawdevice.DisconnectProfile(_uuid);
+            rawdevice.DisconnectProfile(_uuid.toString());
         } catch (BluezFailedException | BluezInProgressException | BluezInvalidArgumentsException
                 | BluezNotSupportedException _ex) {
             return false;
@@ -538,6 +529,4 @@ public class BluezDevice extends AbstractBluetoothObject {
     public String toString() {
         return getClass().getSimpleName() + " [device=" + rawdevice + ", adapter=" + adapter.getDbusPath() + ", getBluetoothType()=" + getBluetoothType().name() + ", getDbusPath()=" + getDbusPath() + "]";
     }
-
-
 }
