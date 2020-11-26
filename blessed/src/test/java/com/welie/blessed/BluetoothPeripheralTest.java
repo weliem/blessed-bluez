@@ -801,12 +801,11 @@ class BluetoothPeripheralTest {
     @NotNull
     private BluetoothGattCharacteristic getBluetoothGattCharacteristic(UUID serviceUUID, UUID characteristicUUID, int properties) {
         BluetoothGattService service = new BluetoothGattService(serviceUUID);
-        BluetoothGattCharacteristic characteristic = new BluetoothGattCharacteristic(characteristicUUID, properties,0 );
+        BluetoothGattCharacteristic characteristic = new BluetoothGattCharacteristic(characteristicUUID, properties);
         characteristic.setService(service);
         service.addCharacteristic(characteristic);
         return characteristic;
     }
-
 
     @NotNull
     private BluetoothPeripheral getConnectedPeripheral() throws InterruptedException, DBusException {

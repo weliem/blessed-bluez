@@ -98,16 +98,6 @@ public class BluetoothGattCharacteristic {
      */
     public static final int PERMISSION_WRITE_SIGNED_MITM = 0x100;
 
-    /**
-     * Write characteristic, requesting acknowledgement by the remote device
-     */
-    private static final int WRITE_TYPE_DEFAULT = 0x02;
-
-    /**
-     * Write characteristic without requiring a response by the remote device
-     */
-    private static final int WRITE_TYPE_NO_RESPONSE = 0x01;
-
     public enum WriteType {
         withResponse,
         withoutResponse
@@ -158,6 +148,7 @@ public class BluetoothGattCharacteristic {
      * The UUID of this characteristic.
      *
      */
+    @NotNull
     protected final UUID uuid;
 
     /**
@@ -167,17 +158,11 @@ public class BluetoothGattCharacteristic {
     protected final int properties;
 
     /**
-     * Characteristic permissions.
-     *
-     */
-    protected final int permissions;
-
-    /**
      * Back-reference to the service this characteristic belongs to.
      *
      */
+    @Nullable
     protected BluetoothGattService service;
-
 
     /**
      * List of descriptors included in this characteristic.
@@ -189,12 +174,10 @@ public class BluetoothGattCharacteristic {
      *
      * @param uuid The UUID for this characteristic
      * @param properties Properties of this characteristic
-     * @param permissions Permissions for this characteristic
      */
-    public BluetoothGattCharacteristic(@NotNull UUID uuid, int properties, int permissions) {
+    public BluetoothGattCharacteristic(@NotNull UUID uuid, int properties) {
         this.uuid = Objects.requireNonNull(uuid, "no valid UUID supplied");
         this.properties = properties;
-        this.permissions = permissions;
     }
 
     /**
@@ -248,21 +231,12 @@ public class BluetoothGattCharacteristic {
     }
 
     /**
-     * Returns the permissions for this characteristic.
-     *
-     * @return Permissions of this characteristic
-     */
-    public int getPermissions() {
-        return permissions;
-    }
-
-    /**
      * Returns a list of descriptors for this characteristic.
      *
      * @return Descriptors for this characteristic
      */
     public @NotNull List<BluetoothGattDescriptor> getDescriptors() {
-        return descriptors;
+        return Collections.unmodifiableList(descriptors);
     }
 
     /**

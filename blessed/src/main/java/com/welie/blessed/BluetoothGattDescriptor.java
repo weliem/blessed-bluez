@@ -72,6 +72,7 @@ public class BluetoothGattDescriptor {
      * The UUID of this descriptor.
      *
      */
+    @NotNull
     protected final UUID uuid;
 
     /**
@@ -84,6 +85,7 @@ public class BluetoothGattDescriptor {
      * Back-reference to the characteristic this descriptor belongs to.
      *
      */
+    @Nullable
     protected BluetoothGattCharacteristic characteristic;
 
     /**

@@ -66,7 +66,7 @@ class BluezSignalHandlerTest {
     }
 
     @Test
-    void When_a_peripheral_registers_then_it_will_receive_propertiesChanged_signals_synchronously() throws DBusException {
+    void When_a_peripheral_registers_then_it_will_receive_propertiesChanged_signals_from_itself_synchronously() throws DBusException {
         // Given
         BluezSignalHandler signalHandler = BluezSignalHandler.createInstance(dBusConnection);
 
@@ -86,6 +86,34 @@ class BluezSignalHandlerTest {
         // When
         signalHandler.addPeripheral(DUMMY_MAC_ADDRESS_BLP, peripheral);
         signalHandler.interfacesAddedHandler.handle(getInterfacesAddedNewBlpDevice());
+
+        // Then
+        verify(peripheral, never()).handleSignal(any());
+    }
+
+    @Test
+    void When_a_peripheral_registers_then_it_will_receive_propertiesChange_signals_from_characteristics_of_the_peripheral() throws DBusException {
+        // Given
+        BluezSignalHandler signalHandler = BluezSignalHandler.createInstance(dBusConnection);
+
+        // When
+        signalHandler.addPeripheral(DUMMY_MAC_ADDRESS_BLP, peripheral);
+        String path = "/org/bluez/hci0/dev_" + DUMMY_MAC_ADDRESS_BLP.replace(":", "_") + "/service0014/char0015";
+        signalHandler.signalHandler.handle(getPropertiesChangedSignalCharacteristicUpdate(path, new byte[]{0x01}));
+
+        // Then
+        verify(peripheral).handleSignal(any());
+    }
+
+    @Test
+    void When_a_peripheral_registers_then_it_will_NOT_receive_propertiesChange_signals_from_characteristics_from_other_peripheral() throws DBusException {
+        // Given
+        BluezSignalHandler signalHandler = BluezSignalHandler.createInstance(dBusConnection);
+
+        // When
+        signalHandler.addPeripheral(DUMMY_MAC_ADDRESS_BLP, peripheral);
+        String path = "/org/bluez/hci0/dev_" + "12:12:12:12:12:12".replace(":", "_") + "/service0014/char0015";
+        signalHandler.signalHandler.handle(getPropertiesChangedSignalCharacteristicUpdate(path, new byte[]{0x01}));
 
         // Then
         verify(peripheral, never()).handleSignal(any());
@@ -140,6 +168,14 @@ class BluezSignalHandlerTest {
         propertiesChanged.put(PROPERTY_SERVICE_DATA, new Variant<>(convertStringHashMapToDBusMap(serviceData), "a{sv}"));
         String dBusPath = DUMMY_MAC_ADDRESS_PATH_BLP;
         return new Properties.PropertiesChanged(dBusPath, BLUEZ_DEVICE_INTERFACE, propertiesChanged,new ArrayList() );
+    }
+
+
+    @NotNull
+    private Properties.PropertiesChanged getPropertiesChangedSignalCharacteristicUpdate(String path, byte[] value) throws DBusException {
+        Map<String, Variant<?>> propertiesChanged = new HashMap<>();
+        propertiesChanged.put(PROPERTY_VALUE, new Variant<>(value, "ay"));
+        return new Properties.PropertiesChanged(path, BLUEZ_CHARACTERISTIC_INTERFACE, propertiesChanged,new ArrayList() );
     }
 
     private DBusMap<String, Variant<?>> convertStringHashMapToDBusMap(Map<String, Variant<?>> source) {

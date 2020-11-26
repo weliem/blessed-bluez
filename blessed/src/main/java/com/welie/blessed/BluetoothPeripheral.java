@@ -1263,7 +1263,7 @@ public final class BluetoothPeripheral {
 
     private BluetoothGattCharacteristic mapBluezGattCharacteristicToBluetoothGattCharacteristic(BluezGattCharacteristic bluezGattCharacteristic) {
         int properties = mapFlagsToProperty(bluezGattCharacteristic.getFlags());
-        BluetoothGattCharacteristic bluetoothGattCharacteristic = new BluetoothGattCharacteristic(UUID.fromString(bluezGattCharacteristic.getUuid()), properties, 0);
+        BluetoothGattCharacteristic bluetoothGattCharacteristic = new BluetoothGattCharacteristic(UUID.fromString(bluezGattCharacteristic.getUuid()), properties);
         // TODO sort our permissions
 
         // Get all descriptors for this characteristic

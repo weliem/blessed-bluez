@@ -3,10 +3,7 @@ package com.welie.blessed;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Represents a Bluetooth Gatt service
@@ -19,12 +16,14 @@ public class BluetoothGattService {
      * This applies to client applications only.
      *
      */
+    @Nullable
     protected BluetoothPeripheral peripheral = null;
 
     /**
      * The UUID of this service.
      *
      */
+    @NotNull
     protected final UUID uuid;
 
 
@@ -85,7 +84,7 @@ public class BluetoothGattService {
      * @return Characteristics included in this service
      */
     public @NotNull List<BluetoothGattCharacteristic> getCharacteristics() {
-        return characteristics;
+        return Collections.unmodifiableList(characteristics);
     }
 
     /**
