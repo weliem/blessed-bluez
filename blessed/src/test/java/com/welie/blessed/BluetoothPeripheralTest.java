@@ -53,7 +53,7 @@ class BluetoothPeripheralTest {
     private static final UUID HTS_SERVICE_UUID = UUID.fromString("00001809-0000-1000-8000-00805f9b34fb");
     private static final UUID BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID = UUID.fromString("00002A35-0000-1000-8000-00805f9b34fb");
     private static final UUID TEMPERATURE_MEASUREMENT_CHARACTERISTIC_UUID = UUID.fromString("00002A1C-0000-1000-8000-00805f9b34fb");
-    private static final String CCC_DESCRIPTOR_UUID = "00002902-0000-1000-8000-00805f9b34fb";
+    private static final UUID CCC_DESCRIPTOR_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
 
     @Test
     void When_creating_a_peripheral_with_null_for_the_central_parameter_then_a_NPE_is_thrown() {
@@ -254,7 +254,7 @@ class BluetoothPeripheralTest {
         peripheral.services.add(characteristic.service);
         BluezGattCharacteristic bluezGattCharacteristic = getBluezGattCharacteristic();
         when(bluezGattCharacteristic.getDbusPath()).thenReturn("/org/bluez/hci0/dev_C0_26_DF_01_F2_72/service0014/char0015");
-        when(bluezGattCharacteristic.getUuid()).thenReturn(BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID.toString());
+        when(bluezGattCharacteristic.getUuid()).thenReturn(BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID);
         peripheral.characteristicMap.put(bluezGattCharacteristic.getDbusPath(), bluezGattCharacteristic);
 
         // When
@@ -650,7 +650,7 @@ class BluetoothPeripheralTest {
         peripheral.services.add(characteristic.getService());
         BluezGattCharacteristic bluezGattCharacteristic = getBluezGattCharacteristic();
         when(bluezGattCharacteristic.getDbusPath()).thenReturn("/org/bluez/hci0/dev_C0_26_DF_01_F2_72/service0014/char0015");
-        when(bluezGattCharacteristic.getUuid()).thenReturn(BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID.toString());
+        when(bluezGattCharacteristic.getUuid()).thenReturn(BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID);
         peripheral.characteristicMap.put(bluezGattCharacteristic.getDbusPath(), bluezGattCharacteristic);
 
         // When
@@ -703,17 +703,17 @@ class BluetoothPeripheralTest {
         BluezDevice bluezDevice = mock(BluezDevice.class);
         peripheral.setDevice(bluezDevice);
         BluezGattService service1 = mock(BluezGattService.class);
-        when(service1.getUuid()).thenReturn(BLP_SERVICE_UUID.toString());
+        when(service1.getUuid()).thenReturn(BLP_SERVICE_UUID);
         when(service1.getDbusPath()).thenReturn("a");
         BluezGattService service2 = mock(BluezGattService.class);
-        when(service2.getUuid()).thenReturn(HTS_SERVICE_UUID.toString());
+        when(service2.getUuid()).thenReturn(HTS_SERVICE_UUID);
         when(service2.getDbusPath()).thenReturn("b");
         List<BluezGattService> serviceList = new ArrayList<>();
         serviceList.add(service1);
         serviceList.add(service2);
 
         BluezGattCharacteristic characteristic1 = mock(BluezGattCharacteristic.class);
-        when(characteristic1.getUuid()).thenReturn(BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID.toString());
+        when(characteristic1.getUuid()).thenReturn(BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID);
         when(characteristic1.getDbusPath()).thenReturn("aa");
         List<String> flags1 = new ArrayList<>();
         flags1.add("read");
@@ -721,7 +721,7 @@ class BluetoothPeripheralTest {
         flags1.add("write");
         when(characteristic1.getFlags()).thenReturn(flags1);
         BluezGattCharacteristic characteristic2 = mock(BluezGattCharacteristic.class);
-        when(characteristic2.getUuid()).thenReturn(TEMPERATURE_MEASUREMENT_CHARACTERISTIC_UUID.toString());
+        when(characteristic2.getUuid()).thenReturn(TEMPERATURE_MEASUREMENT_CHARACTERISTIC_UUID);
         when(characteristic2.getDbusPath()).thenReturn("bb");
         List<String> flags2 = new ArrayList<>();
         flags2.add("indicate");
@@ -757,7 +757,7 @@ class BluetoothPeripheralTest {
         assertTrue(temperatureCharacteristic.supportsWriteType(WriteType.withoutResponse));
         assertTrue(temperatureCharacteristic.supportsWritingWithoutResponse());
 
-        BluetoothGattDescriptor cccDescriptor = measurementCharacteristic.getDescriptor(UUID.fromString(CCC_DESCRIPTOR_UUID));
+        BluetoothGattDescriptor cccDescriptor = measurementCharacteristic.getDescriptor(CCC_DESCRIPTOR_UUID);
         assertNotNull(cccDescriptor);
     }
 
@@ -792,9 +792,9 @@ class BluetoothPeripheralTest {
         BluezGattCharacteristic bluezGattCharacteristic = mock(BluezGattCharacteristic.class);
         BluezGattService bluezGattService = mock(BluezGattService.class);
         when(bluezGattCharacteristic.getDbusPath()).thenReturn("/org/bluez/hci0/characteristic/" + BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID.toString());
-        when(bluezGattCharacteristic.getUuid()).thenReturn(BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID.toString());
+        when(bluezGattCharacteristic.getUuid()).thenReturn(BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID);
         when(bluezGattCharacteristic.getService()).thenReturn(bluezGattService);
-        when(bluezGattService.getUuid()).thenReturn(BLP_SERVICE_UUID.toString());
+        when(bluezGattService.getUuid()).thenReturn(BLP_SERVICE_UUID);
         return bluezGattCharacteristic;
     }
 

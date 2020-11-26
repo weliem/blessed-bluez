@@ -4,11 +4,9 @@ import org.bluez.GattDescriptor1;
 import org.bluez.exceptions.*;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.interfaces.DBusInterface;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Wrapper class which represents a GATT descriptor on a remote device.
@@ -83,8 +81,8 @@ public class BluezGattDescriptor extends AbstractBluetoothObject {
      *
      * @return uuid, maybe null
      */
-    public String getUuid() {
-        return getTyped("UUID", String.class);
+    public UUID getUuid() {
+        return UUID.fromString(getTyped("UUID", String.class));
     }
 
     /**
@@ -113,8 +111,9 @@ public class BluezGattDescriptor extends AbstractBluetoothObject {
      * which a PropertiesChanged signal will be emitted.
      * </p>
      *
-     * @return byte array, maybe null
+     * @return byte array, not null
      */
+    @NotNull
     public byte[] getValue() {
         List<?> typed = getTyped("Value", ArrayList.class);
         if (typed != null) {

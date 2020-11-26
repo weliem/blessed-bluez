@@ -24,7 +24,7 @@ public class BluezDevice extends AbstractBluetoothObject {
     private final Device1 rawdevice;
     private final BluezAdapter adapter;
 
-    private final Map<String, BluezGattService> servicesByUuid = new LinkedHashMap<>();
+    private final Map<UUID, BluezGattService> servicesByUuid = new LinkedHashMap<>();
 
     public BluezDevice(Device1 _device, BluezAdapter _adapter, String _dbusPath, DBusConnection _dbusConnection) {
         super(BluezDeviceType.DEVICE, _dbusConnection, _dbusPath);
@@ -70,14 +70,14 @@ public class BluezDevice extends AbstractBluetoothObject {
 
     /**
      * Get the given {@link BluezGattService} instance by UUID.
-     * @param _uuid uuid
+     * @param uuid uuid
      * @return {@link BluezGattService}, maybe null if not found
      */
-    public BluezGattService getGattServiceByUuid(String _uuid) {
+    public BluezGattService getGattServiceByUuid(UUID uuid) {
         if (servicesByUuid.isEmpty()) {
             refreshGattServices();
         }
-        return servicesByUuid.get(_uuid);
+        return servicesByUuid.get(uuid);
     }
 
     /**

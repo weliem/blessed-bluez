@@ -19,9 +19,9 @@ public class BluezGattCharacteristic extends AbstractBluetoothObject {
 
     private final GattCharacteristic1 gattCharacteristic;
     private final BluezGattService gattService;
-    private String uuid;
+    private UUID uuid;
 
-    private final Map<String, BluezGattDescriptor> descriptorByUuid = new LinkedHashMap<>();
+    private final Map<UUID, BluezGattDescriptor> descriptorByUuid = new LinkedHashMap<>();
 
     public BluezGattCharacteristic(GattCharacteristic1 _gattCharacteristic, BluezGattService _service, String _dbusPath, DBusConnection _dbusConnection) {
         super(BluezDeviceType.GATT_CHARACTERISTIC, _dbusConnection, _dbusPath);
@@ -123,9 +123,9 @@ public class BluezGattCharacteristic extends AbstractBluetoothObject {
      * </p>
      * @return uuid, maybe null
      */
-    public String getUuid() {
+    public UUID getUuid() {
         if(uuid == null) {
-            uuid = getTyped("UUID", String.class);
+            uuid = UUID.fromString(getTyped("UUID", String.class));
         }
         return uuid;
     }

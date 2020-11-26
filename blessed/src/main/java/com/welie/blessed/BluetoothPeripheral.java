@@ -955,8 +955,8 @@ public final class BluetoothPeripheral {
 
         BluezGattCharacteristic characteristic = null;
         for (BluezGattCharacteristic gattCharacteristic : characteristicMap.values()) {
-            if (characteristicUUID.toString().equalsIgnoreCase(gattCharacteristic.getUuid())) {
-                if (gattCharacteristic.getService().getUuid().equalsIgnoreCase(serviceUUID.toString())) {
+            if (characteristicUUID.equals(gattCharacteristic.getUuid())) {
+                if (gattCharacteristic.getService().getUuid().equals(serviceUUID)) {
                     characteristic = gattCharacteristic;
                 }
             }
@@ -967,8 +967,8 @@ public final class BluetoothPeripheral {
     private @Nullable BluetoothGattCharacteristic getBluetoothGattCharacteristic(@NotNull BluezGattCharacteristic bluezGattCharacteristic) {
         Objects.requireNonNull(bluezGattCharacteristic, NO_VALID_CHARACTERISTIC_PROVIDED);
 
-        UUID characteristicUUID = UUID.fromString(bluezGattCharacteristic.getUuid());
-        UUID serviceUUID = UUID.fromString(bluezGattCharacteristic.getService().getUuid());
+        UUID characteristicUUID = bluezGattCharacteristic.getUuid();
+        UUID serviceUUID = bluezGattCharacteristic.getService().getUuid();
         return getCharacteristic(serviceUUID, characteristicUUID);
     }
 
@@ -1210,7 +1210,7 @@ public final class BluetoothPeripheral {
 
     private BluetoothGattDescriptor mapBluezGattDescriptorToHBDescriptor(BluezGattDescriptor descriptor) {
         // TODO What is permission?
-        return new BluetoothGattDescriptor(UUID.fromString(descriptor.getUuid()), 0);
+        return new BluetoothGattDescriptor(descriptor.getUuid(), 0);
     }
 
 
@@ -1263,7 +1263,7 @@ public final class BluetoothPeripheral {
 
     private BluetoothGattCharacteristic mapBluezGattCharacteristicToBluetoothGattCharacteristic(BluezGattCharacteristic bluezGattCharacteristic) {
         int properties = mapFlagsToProperty(bluezGattCharacteristic.getFlags());
-        BluetoothGattCharacteristic bluetoothGattCharacteristic = new BluetoothGattCharacteristic(UUID.fromString(bluezGattCharacteristic.getUuid()), properties);
+        BluetoothGattCharacteristic bluetoothGattCharacteristic = new BluetoothGattCharacteristic(bluezGattCharacteristic.getUuid(), properties);
         // TODO sort our permissions
 
         // Get all descriptors for this characteristic
@@ -1285,7 +1285,7 @@ public final class BluetoothPeripheral {
         serviceMap.put(service.getDbusPath(), service);
 
         // Create BluetoothGattService object
-        BluetoothGattService bluetoothGattService = new BluetoothGattService(UUID.fromString(service.getUuid()));
+        BluetoothGattService bluetoothGattService = new BluetoothGattService(service.getUuid());
         bluetoothGattService.setPeripheral(this);
 
         // Get all characteristics for this service
