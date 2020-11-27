@@ -16,7 +16,7 @@ public enum TemperatureType {
         this.value = value;
     }
 
-    private int value;
+    private final int value;
 
     public int getValue()
     {

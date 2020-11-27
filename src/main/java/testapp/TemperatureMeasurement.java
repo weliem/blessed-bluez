@@ -12,9 +12,9 @@ import static com.welie.blessed.BluetoothBytesParser.FORMAT_FLOAT;
 import static com.welie.blessed.BluetoothBytesParser.FORMAT_UINT8;
 
 public class TemperatureMeasurement implements Serializable {
-    public TemperatureUnit unit;
+    public final TemperatureUnit unit;
     public float temperatureValue;
-    public Date timestamp;
+    public final Date timestamp;
     public TemperatureType type;
 
     public TemperatureMeasurement(byte[] byteArray) {

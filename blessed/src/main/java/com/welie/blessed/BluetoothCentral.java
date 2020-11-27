@@ -881,7 +881,10 @@ public class BluetoothCentral {
 
             // Refresh BluezDevice because it may be old
             scannedBluezDevices.remove(adapter.getPath(peripheral.getAddress()));
-            peripheral.setDevice(getDeviceByAddress(peripheral.getAddress()));
+            BluezDevice bluezDevice = getDeviceByAddress(peripheral.getAddress());
+            if (bluezDevice != null) {
+                peripheral.setDevice(bluezDevice);
+            }
 
             currentDeviceAddress = peripheral.getAddress();
             currentCommand = PROPERTY_CONNECTED;
@@ -1028,7 +1031,7 @@ public class BluetoothCentral {
     public @NotNull BluetoothPeripheral getPeripheral(@NotNull String peripheralAddress) {
         Objects.requireNonNull(peripheralAddress, "no valid peripheral address provided");
 
-        if (!checkBluetoothAddress(peripheralAddress)) {
+        if (!isValidBluetoothAddress(peripheralAddress)) {
             String message = String.format("%s is not a valid address. Make sure all alphabetic characters are uppercase.", peripheralAddress);
             throw new IllegalArgumentException(message);
         }
@@ -1061,12 +1064,12 @@ public class BluetoothCentral {
      * @param pin               the 6 digit PIN code as a string, e.g. "123456"
      * @return true if the pin code and peripheral address are valid and stored internally
      */
-    @SuppressWarnings("unused")
+    @SuppressWarnings("UnusedReturnValue,unused")
     public boolean setPinCodeForPeripheral(@NotNull String peripheralAddress, @NotNull String pin) {
         Objects.requireNonNull(peripheralAddress, "no peripheral address provided");
         Objects.requireNonNull(pin, "no pin provided");
 
-        if (!checkBluetoothAddress(peripheralAddress)) {
+        if (!isValidBluetoothAddress(peripheralAddress)) {
             logger.error(String.format("%s is not a valid address. Make sure all alphabetic characters are uppercase.", peripheralAddress));
             return false;
         }
@@ -1087,7 +1090,7 @@ public class BluetoothCentral {
      * @param address Bluetooth address as string
      * @return true if the address is valid, false otherwise
      */
-    private boolean checkBluetoothAddress(String address) {
+    private boolean isValidBluetoothAddress(String address) {
         if (address == null || address.length() != ADDRESS_LENGTH) {
             return false;
         }
