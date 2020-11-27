@@ -1,9 +1,13 @@
 package com.welie.blessed;
 
-public enum BluetoothError {
+@SuppressWarnings("unused")
+public enum BluetoothCommandStatus {
 
     // Note that most of these error codes correspond to the ATT error codes as defined in the Bluetooth Standard, Volume 3, Part F, 3.4.1 Error handling p1491)
     // See https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=478726,
+
+    // Success
+    COMMAND_SUCCESS(0x00),
 
     // The attribute handle given was not valid on this server.
     INVALID_HANDLE(0x01),
@@ -26,7 +30,7 @@ public enum BluetoothError {
     // Offset specified was past the end of the attribute.
     INVALID_OFFSET(0x07),
 
-    // The attribute requires authorization before it can be read or written.
+    // The attribute requires authorization before it can be read or written. Note, this value is also used as GATT_CONN_TIMEOUT
     INSUFFICIENT_AUTHORIZATION(0x08),
 
     // Too many prepare writes have been queued.
@@ -60,26 +64,46 @@ public enum BluetoothError {
     DATABASE_OUT_OF_SYNC(0x12),
 
     // The attribute parameter value was not allowed
-    VALUE_NOT_ALLOWED(0x13);
+    VALUE_NOT_ALLOWED(0x13),
 
-    // (0x80 – 0x9F) - Application error code defined by a higher layer specification.
-    // (0xE0 – 0xFF) - Common profile and service error codes defined in Core Specification Supplement, Part B.
+    // (0x80 to 0x9F) - Application error code defined by a higher layer specification.
+    // So the following codes are Android specific
+    GATT_NO_RESOURCES(0x80),
+    GATT_INTERNAL_ERROR(0x81),
+    GATT_WRONG_STATE(0x82),
+    GATT_DB_FULL(0x83),
+    GATT_BUSY(0x84),
+    GATT_ERROR(0x85),
+    GATT_CMD_STARTED(0x86),
+    GATT_ILLEGAL_PARAMETER(0x87),
+    GATT_PENDING(0x88),
+    GATT_AUTH_FAIL(0x89),
+    GATT_MORE(0x8a),
+    GATT_INVALID_CFG(0x8b),
+    GATT_SERVICE_STARTED(0x8c),
+    GATT_ENCRYPED_NO_MITM(0x8d),
+    GATT_NOT_ENCRYPTED(0x8e),
+    GATT_CONNECTION_CONGESTED(0x8f),
 
-    BluetoothError(int value)
-    {
+    // (0xE0 to 0xFF) - Common profile and service error codes defined in Core Specification Supplement, Part B.
+
+    // Other errors codes that are Android specific
+    GATT_CONN_CANCEL(0x0100),  /* L2CAP connection cancelled  */
+    GATT_FAILURE(0x101);
+
+    BluetoothCommandStatus(int value) {
         this.value = value;
     }
 
     private final int value;
 
-    public int getValue()
-    {
+    public int getValue() {
         return value;
     }
 
-    public static BluetoothError fromValue(int value) {
-        for(BluetoothError type : values()) {
-            if(type.getValue() == value)
+    public static BluetoothCommandStatus fromValue(int value) {
+        for (BluetoothCommandStatus type : values()) {
+            if (type.getValue() == value)
                 return type;
         }
         return null;

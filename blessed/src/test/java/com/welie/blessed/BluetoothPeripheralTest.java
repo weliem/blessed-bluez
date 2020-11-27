@@ -20,7 +20,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.*;
 
+import static com.welie.blessed.BluetoothCommandStatus.*;
 import static com.welie.blessed.BluetoothGattCharacteristic.*;
+import static com.welie.blessed.BluetoothConnectionStatus.*;
 import static com.welie.blessed.BluetoothPeripheral.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -124,7 +126,7 @@ class BluetoothPeripheralTest {
         peripheral.connect();
 
         // Then
-        verify(internalCallback).connectFailed(peripheral, GATT_ERROR);
+        verify(internalCallback).connectFailed(peripheral, BLUEZ_NOT_READY);
         assertEquals(STATE_DISCONNECTED, peripheral.getState());
     }
 
@@ -142,7 +144,7 @@ class BluetoothPeripheralTest {
         peripheral.connect();
 
         // Then
-        verify(internalCallback).connectFailed(peripheral, GATT_ERROR);
+        verify(internalCallback).connectFailed(peripheral, BLUEZ_OPERATION_IN_PROGRESS);
         assertEquals(STATE_DISCONNECTED, peripheral.getState());
     }
 
@@ -159,7 +161,7 @@ class BluetoothPeripheralTest {
         peripheral.connect();
 
         // Then
-        verify(internalCallback).connectFailed(peripheral, GATT_ERROR);
+        verify(internalCallback).connectFailed(peripheral, CONNECTION_FAILED_ESTABLISHMENT);
         assertEquals(STATE_DISCONNECTED, peripheral.getState());
     }
 
@@ -176,7 +178,7 @@ class BluetoothPeripheralTest {
         peripheral.connect();
 
         // Then
-        verify(internalCallback).connectFailed(peripheral, GATT_ERROR);
+        verify(internalCallback).connectFailed(peripheral, BLUEZ_DBUS_EXCEPTION);
         assertEquals(STATE_DISCONNECTED, peripheral.getState());
     }
 
@@ -227,7 +229,7 @@ class BluetoothPeripheralTest {
         peripheral.handleSignal(getPropertiesChangedSignalDisconnected());
 
         // Then
-        verify(internalCallback, timeout(50)).disconnected(peripheral, GATT_SUCCESS);
+        verify(internalCallback, timeout(50)).disconnected(peripheral, HCI_SUCCESS);
         assertEquals(STATE_DISCONNECTED, peripheral.getState());
     }
 
@@ -264,7 +266,7 @@ class BluetoothPeripheralTest {
         peripheral.handleSignal(getPropertiesChangedSignalCharacteristicUpdate(bluezGattCharacteristic.getDbusPath(), characteristic, value));
 
         // Then
-        verify(peripheralCallback, timeout(100)).onCharacteristicUpdate(peripheral, value, characteristic, GATT_SUCCESS);
+        verify(peripheralCallback, timeout(100)).onCharacteristicUpdate(peripheral, value, characteristic, COMMAND_SUCCESS);
     }
 
     @Test
@@ -358,7 +360,7 @@ class BluetoothPeripheralTest {
         peripheral.readCharacteristic(characteristic);
 
         // Then
-        verify(peripheralCallback, timeout(100)).onCharacteristicUpdate(peripheral,new byte[0], characteristic, GATT_READ_NOT_PERMITTED);
+        verify(peripheralCallback, timeout(100)).onCharacteristicUpdate(peripheral,new byte[0], characteristic, READ_NOT_PERMITTED);
     }
 
     @Test
@@ -374,7 +376,7 @@ class BluetoothPeripheralTest {
         peripheral.readCharacteristic(characteristic);
 
         // Then
-        verify(peripheralCallback, timeout(100)).onCharacteristicUpdate(peripheral,new byte[0], characteristic, GATT_INSUFFICIENT_AUTHENTICATION);
+        verify(peripheralCallback, timeout(100)).onCharacteristicUpdate(peripheral,new byte[0], characteristic, INSUFFICIENT_AUTHENTICATION);
     }
 
     @Test
@@ -390,7 +392,7 @@ class BluetoothPeripheralTest {
         peripheral.readCharacteristic(characteristic);
 
         // Then
-        verify(peripheralCallback, timeout(100)).onCharacteristicUpdate(peripheral,new byte[0], characteristic, GATT_REQUEST_NOT_SUPPORTED);
+        verify(peripheralCallback, timeout(100)).onCharacteristicUpdate(peripheral,new byte[0], characteristic, REQUEST_NOT_SUPPORTED);
     }
 
     @Test
@@ -512,9 +514,9 @@ class BluetoothPeripheralTest {
         ArgumentCaptor<BluetoothPeripheral> peripheralCaptor = ArgumentCaptor.forClass(BluetoothPeripheral.class);
         ArgumentCaptor<byte[]> valueCaptor = ArgumentCaptor.forClass(byte[].class);
         ArgumentCaptor<BluetoothGattCharacteristic> characteristicCaptor = ArgumentCaptor.forClass(BluetoothGattCharacteristic.class);
-        ArgumentCaptor<Integer> statusCaptor = ArgumentCaptor.forClass(Integer.class);
+        ArgumentCaptor<BluetoothCommandStatus> statusCaptor = ArgumentCaptor.forClass(BluetoothCommandStatus.class);
         verify(peripheralCallback, timeout(50)).onCharacteristicWrite(peripheralCaptor.capture(),valueCaptor.capture(), characteristicCaptor.capture(), statusCaptor.capture());
-        assertEquals(GATT_WRITE_NOT_PERMITTED, statusCaptor.getValue());
+        assertEquals(WRITE_NOT_PERMITTED, statusCaptor.getValue());
         assertTrue(Arrays.equals(value, valueCaptor.getValue()));
     }
 
@@ -537,9 +539,9 @@ class BluetoothPeripheralTest {
         ArgumentCaptor<BluetoothPeripheral> peripheralCaptor = ArgumentCaptor.forClass(BluetoothPeripheral.class);
         ArgumentCaptor<byte[]> valueCaptor = ArgumentCaptor.forClass(byte[].class);
         ArgumentCaptor<BluetoothGattCharacteristic> characteristicCaptor = ArgumentCaptor.forClass(BluetoothGattCharacteristic.class);
-        ArgumentCaptor<Integer> statusCaptor = ArgumentCaptor.forClass(Integer.class);
+        ArgumentCaptor<BluetoothCommandStatus> statusCaptor = ArgumentCaptor.forClass(BluetoothCommandStatus.class);
         verify(peripheralCallback, timeout(50)).onCharacteristicWrite(peripheralCaptor.capture(),valueCaptor.capture(), characteristicCaptor.capture(), statusCaptor.capture());
-        assertEquals(GATT_INSUFFICIENT_AUTHENTICATION, statusCaptor.getValue());
+        assertEquals(INSUFFICIENT_AUTHENTICATION, statusCaptor.getValue());
         assertTrue(Arrays.equals(value, valueCaptor.getValue()));
     }
 
@@ -562,7 +564,7 @@ class BluetoothPeripheralTest {
         ArgumentCaptor<BluetoothPeripheral> peripheralCaptor = ArgumentCaptor.forClass(BluetoothPeripheral.class);
         ArgumentCaptor<byte[]> valueCaptor = ArgumentCaptor.forClass(byte[].class);
         ArgumentCaptor<BluetoothGattCharacteristic> characteristicCaptor = ArgumentCaptor.forClass(BluetoothGattCharacteristic.class);
-        ArgumentCaptor<Integer> statusCaptor = ArgumentCaptor.forClass(Integer.class);
+        ArgumentCaptor<BluetoothCommandStatus> statusCaptor = ArgumentCaptor.forClass(BluetoothCommandStatus.class);
         verify(peripheralCallback, timeout(50)).onCharacteristicWrite(peripheralCaptor.capture(),valueCaptor.capture(), characteristicCaptor.capture(), statusCaptor.capture());
         assertEquals(GATT_ERROR, statusCaptor.getValue());
         assertTrue(Arrays.equals(value, valueCaptor.getValue()));
@@ -659,7 +661,7 @@ class BluetoothPeripheralTest {
         peripheral.handleSignal(getPropertiesChangedSignalCharacteristicNotifying("/org/bluez/hci0/dev_C0_26_DF_01_F2_72/service0014/char0015", true));
 
         // Then
-        verify(peripheralCallback, timeout(50)).onNotificationStateUpdate(peripheral, characteristic, GATT_SUCCESS);
+        verify(peripheralCallback, timeout(50)).onNotificationStateUpdate(peripheral, characteristic, COMMAND_SUCCESS);
     }
 
     @Test
@@ -679,7 +681,7 @@ class BluetoothPeripheralTest {
         // Then
         ArgumentCaptor<BluetoothPeripheral> peripheralCaptor = ArgumentCaptor.forClass(BluetoothPeripheral.class);
         ArgumentCaptor<BluetoothGattCharacteristic> characteristicCaptor = ArgumentCaptor.forClass(BluetoothGattCharacteristic.class);
-        ArgumentCaptor<Integer> statusCaptor = ArgumentCaptor.forClass(Integer.class);
+        ArgumentCaptor<BluetoothCommandStatus> statusCaptor = ArgumentCaptor.forClass(BluetoothCommandStatus.class);
         verify(peripheralCallback, timeout(50)).onNotificationStateUpdate(peripheralCaptor.capture(), characteristicCaptor.capture(), statusCaptor.capture());
         assertEquals(GATT_ERROR, statusCaptor.getValue());
     }

@@ -157,7 +157,7 @@ public class BluetoothCentral {
         }
 
         @Override
-        public void connectFailed(@NotNull BluetoothPeripheral peripheral, int status) {
+        public void connectFailed(@NotNull BluetoothPeripheral peripheral, BluetoothConnectionStatus status) {
             final String peripheralAddress = peripheral.getAddress();
             connectedPeripherals.remove(peripheralAddress);
             unconnectedPeripherals.remove(peripheralAddress);
@@ -167,14 +167,14 @@ public class BluetoothCentral {
             completeConnectOrDisconnectCommand(peripheralAddress);
 
             callBackHandler.post(() -> {
-                bluetoothCentralCallback.onConnectionFailed(peripheral, 0);
+                bluetoothCentralCallback.onConnectionFailed(peripheral, status);
             });
 
             restartScannerIfNeeded();
         }
 
         @Override
-        public void disconnected(@NotNull BluetoothPeripheral peripheral, int status) {
+        public void disconnected(@NotNull BluetoothPeripheral peripheral, BluetoothConnectionStatus status) {
             final String peripheralAddress = peripheral.getAddress();
             connectedPeripherals.remove(peripheralAddress);
             unconnectedPeripherals.remove(peripheralAddress);
@@ -187,7 +187,7 @@ public class BluetoothCentral {
                 removeDevice(peripheral);
             }
 
-            callBackHandler.post(() -> bluetoothCentralCallback.onDisconnectedPeripheral(peripheral, 0));
+            callBackHandler.post(() -> bluetoothCentralCallback.onDisconnectedPeripheral(peripheral, status));
 
             restartScannerIfNeeded();
         }
@@ -993,7 +993,7 @@ public class BluetoothCentral {
             reconnectCallbacks.remove(peripheralAddress);
 
             callBackHandler.post(() -> {
-                bluetoothCentralCallback.onDisconnectedPeripheral(peripheral, 0);
+                bluetoothCentralCallback.onDisconnectedPeripheral(peripheral, BluetoothConnectionStatus.HCI_SUCCESS);
             });
         }
     }

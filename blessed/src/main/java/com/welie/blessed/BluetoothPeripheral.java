@@ -23,7 +23,9 @@ import java.util.concurrent.ScheduledFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.welie.blessed.BluetoothCommandStatus.*;
 import static com.welie.blessed.BluetoothGattCharacteristic.*;
+import static com.welie.blessed.BluetoothConnectionStatus.*;
 
 /**
  * Represents a Bluetooth BLE peripheral
@@ -142,56 +144,6 @@ public final class BluetoothPeripheral {
     public static final int STATE_DISCONNECTING = 3;
 
     /**
-     * A GATT operation completed successfully
-     */
-    public static final int GATT_SUCCESS = 0;
-
-    /**
-     * Generic error, could be anything
-     */
-    public static final int GATT_ERROR = 133;
-
-    /**
-     * The connection has timed out
-     */
-    public static final int GATT_CONN_TIMEOUT = 8;
-
-    /**
-     * GATT read operation is not permitted
-     */
-    public static final int GATT_READ_NOT_PERMITTED = 2;
-
-    /**
-     * GATT write operation is not permitted
-     */
-    public static final int GATT_WRITE_NOT_PERMITTED = 3;
-
-    /**
-     * Insufficient authentication for a given operation
-     */
-    public static final int GATT_INSUFFICIENT_AUTHENTICATION = 5;
-
-    /**
-     * The given request is not supported
-     */
-    public static final int GATT_REQUEST_NOT_SUPPORTED = 6;
-
-    /**
-     * Insufficient encryption for a given operation
-     */
-    public static final int GATT_INSUFFICIENT_ENCRYPTION = 15;
-
-    /**
-     * The connection was terminated by the peripheral
-     */
-    public static final int GATT_CONN_TERMINATE_PEER_USER = 19;
-
-    /**
-     * Authentication failed
-     */
-    public static final int GATT_AUTH_FAIL = 137;
-
-    /**
      * Indicates the remote device is not bonded (paired).
      * <p>There is no shared link key with the remote device, so communication
      * (if it is allowed at all) will be unauthenticated and unencrypted.
@@ -221,11 +173,11 @@ public final class BluetoothPeripheral {
     // GattCallback will deal with managing low-level callbacks
     final GattCallback gattCallback = new GattCallback() {
         @Override
-        public void onConnectionStateChanged(int connectionState, int status) {
+        public void onConnectionStateChanged(int connectionState, BluetoothConnectionStatus status) {
             int previousState = state;
             state = connectionState;
 
-            if (status == GATT_SUCCESS) {
+            if (status == HCI_SUCCESS) {
                 switch (connectionState) {
                     case STATE_CONNECTED:
                         successfullyConnected();
@@ -254,7 +206,7 @@ public final class BluetoothPeripheral {
             logger.info(String.format("connected to '%s' (%s) in %.1fs", deviceName, isBonded ? "BONDED" : "BOND_NONE", timePassed / 1000.0f));
         }
 
-        private void successfullyDisconnected(int status, int previousState) {
+        private void successfullyDisconnected(BluetoothConnectionStatus status, int previousState) {
             if (!serviceDiscoveryCompleted) {
 //                            if (isBonded) {
 //                                // Assume we lost the bond
@@ -267,14 +219,14 @@ public final class BluetoothPeripheral {
             completeDisconnect(true, status);
         }
 
-        void connectionStateChangeUnsuccessful(int status, int previousState, int newState) {
+        void connectionStateChangeUnsuccessful(BluetoothConnectionStatus status, int previousState, int newState) {
             if (previousState == STATE_CONNECTING) {
                 completeDisconnect(false, status);
-                logger.error(String.format("connection failed with status %d", status));
+                logger.error(String.format("connection failed with status %s", status));
                 listener.connectFailed(BluetoothPeripheral.this, status);
             } else if (previousState == STATE_CONNECTED && newState == STATE_DISCONNECTED && !serviceDiscoveryCompleted) {
                 completeDisconnect(false, status);
-                logger.error(String.format("connection failed with status %d during service discovery", status));
+                logger.error(String.format("connection failed with status %s during service discovery", status));
                 listener.connectFailed(BluetoothPeripheral.this, status);
             } else {
                 completeDisconnect(true, status);
@@ -282,7 +234,7 @@ public final class BluetoothPeripheral {
         }
 
         @Override
-        public void onNotificationStateUpdate(final @NotNull BluetoothGattCharacteristic characteristic, final int status) {
+        public void onNotificationStateUpdate(final @NotNull BluetoothGattCharacteristic characteristic, final BluetoothCommandStatus status) {
             if (peripheralCallback != null) {
                 callBackHandler.post(() -> peripheralCallback.onNotificationStateUpdate(BluetoothPeripheral.this, characteristic, status));
             }
@@ -290,10 +242,10 @@ public final class BluetoothPeripheral {
         }
 
         @Override
-        public void onDescriptorWrite(final @NotNull BluetoothGattDescriptor descriptor, final int status) {
+        public void onDescriptorWrite(final @NotNull BluetoothGattDescriptor descriptor, final BluetoothCommandStatus status) {
             // Do some checks first
             final BluetoothGattCharacteristic parentCharacteristic = descriptor.getCharacteristic();
-            if (status != GATT_SUCCESS) {
+            if (status != COMMAND_SUCCESS) {
                 logger.info(String.format("ERROR: Write descriptor failed device: %s, characteristic: %s", getAddress(), parentCharacteristic.getUuid()));
             }
 
@@ -304,9 +256,9 @@ public final class BluetoothPeripheral {
         }
 
         @Override
-        public void onCharacteristicRead(final @NotNull BluetoothGattCharacteristic characteristic, final int status) {
-            if (status != GATT_SUCCESS) {
-                logger.error(String.format(Locale.ENGLISH, "read failed for characteristic: %s, status %s", characteristic.getUuid(), statusToString(status)));
+        public void onCharacteristicRead(final @NotNull BluetoothGattCharacteristic characteristic, final BluetoothCommandStatus status) {
+            if (status != COMMAND_SUCCESS) {
+                logger.error(String.format(Locale.ENGLISH, "read failed for characteristic: %s, status %s", characteristic.getUuid(), status));
                 if (peripheralCallback != null) {
                     // Propagate error so it can be handled
                     callBackHandler.post(() -> peripheralCallback.onCharacteristicUpdate(BluetoothPeripheral.this, new byte[0], characteristic, status));
@@ -320,14 +272,14 @@ public final class BluetoothPeripheral {
         @Override
         public void onCharacteristicChanged(@NotNull final byte[] value, @NotNull final BluetoothGattCharacteristic characteristic) {
             if (peripheralCallback != null) {
-                callBackHandler.post(() -> peripheralCallback.onCharacteristicUpdate(BluetoothPeripheral.this, value, characteristic, GATT_SUCCESS));
+                callBackHandler.post(() -> peripheralCallback.onCharacteristicUpdate(BluetoothPeripheral.this, value, characteristic, COMMAND_SUCCESS));
             }
         }
 
         @Override
-        public void onCharacteristicWrite(@NotNull final BluetoothGattCharacteristic characteristic, final int status) {
-            if (status != GATT_SUCCESS) {
-                logger.error(String.format("write failed for characteristic: %s, status %s", characteristic.getUuid(), statusToString(status)));
+        public void onCharacteristicWrite(@NotNull final BluetoothGattCharacteristic characteristic, final BluetoothCommandStatus status) {
+            if (status != COMMAND_SUCCESS) {
+                logger.error(String.format("write failed for characteristic: %s, status %s", characteristic.getUuid(), status));
             }
 
             if (peripheralCallback != null) {
@@ -377,7 +329,7 @@ public final class BluetoothPeripheral {
             listener.servicesDiscovered(BluetoothPeripheral.this);
         }
 
-        private void completeDisconnect(boolean notify, final int status) {
+        private void completeDisconnect(boolean notify, final BluetoothConnectionStatus status) {
             // Empty the queue
             commandQueue.clear();
             commandQueueBusy = false;
@@ -414,7 +366,7 @@ public final class BluetoothPeripheral {
         Objects.requireNonNull(device, "device is null");
 
         // Do the connect
-        gattCallback.onConnectionStateChanged(STATE_CONNECTING, GATT_SUCCESS);
+        gattCallback.onConnectionStateChanged(STATE_CONNECTING, HCI_SUCCESS);
 
         try {
             logger.info(String.format("connecting to '%s' (%s)", deviceName, deviceAddress));
@@ -428,25 +380,25 @@ public final class BluetoothPeripheral {
 
             // Unregister handler only if we are not connected. A connected event may have already been received!
             if (state != STATE_CONNECTED) {
-                gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, GATT_ERROR);
+                gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, BLUEZ_DBUS_EXCEPTION);
             }
         } catch (BluezAlreadyConnectedException e) {
             logger.error("connect exception: already connected");
-            gattCallback.onConnectionStateChanged(STATE_CONNECTED, GATT_SUCCESS);
+            gattCallback.onConnectionStateChanged(STATE_CONNECTED, HCI_SUCCESS);
             serviceDiscoveryCompleted = true;
             listener.connected(BluetoothPeripheral.this);
         } catch (BluezNotReadyException e) {
             logger.error("connect exception: not ready");
             logger.error(e.getMessage());
-            gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, GATT_ERROR);
+            gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, BLUEZ_NOT_READY);
         } catch (BluezFailedException e) {
             logger.error("connect exception: connect failed");
             logger.error(e.getMessage());
-            gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, GATT_ERROR);
+            gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, CONNECTION_FAILED_ESTABLISHMENT);
         } catch (BluezInProgressException e) {
             logger.error("connect exception: in progress");
             logger.error(e.getMessage());
-            gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, GATT_ERROR);
+            gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, BLUEZ_OPERATION_IN_PROGRESS);
         }
     }
 
@@ -464,7 +416,7 @@ public final class BluetoothPeripheral {
      */
     void disconnectBluezDevice() {
         logger.info(String.format("force disconnect '%s' (%s)", getName(), getAddress()));
-        gattCallback.onConnectionStateChanged(STATE_DISCONNECTING, GATT_SUCCESS);
+        gattCallback.onConnectionStateChanged(STATE_DISCONNECTING, HCI_SUCCESS);
         if (device != null) {
             device.disconnect();
         }
@@ -496,7 +448,7 @@ public final class BluetoothPeripheral {
      *
      * <p>The characteristic must support reading it, otherwise the operation will not be enqueued.
      *
-     * <p>{@link BluetoothPeripheralCallback#onCharacteristicUpdate(BluetoothPeripheral, byte[], BluetoothGattCharacteristic, int)}   will be triggered as a result of this call.
+     * <p>{@link BluetoothPeripheralCallback#onCharacteristicUpdate(BluetoothPeripheral, byte[], BluetoothGattCharacteristic, BluetoothCommandStatus)}   will be triggered as a result of this call.
      *
      * @param characteristic Specifies the characteristic to read.
      * @return true if the operation was enqueued, false if the characteristic does not support reading or the characteristic was invalid
@@ -531,18 +483,18 @@ public final class BluetoothPeripheral {
                 try {
                     logger.info(String.format("reading characteristic <%s>", nativeCharacteristic.getUuid()));
                     nativeCharacteristic.readValue(new HashMap<>());
-                    gattCallback.onCharacteristicRead(characteristic, GATT_SUCCESS);
+                    gattCallback.onCharacteristicRead(characteristic, COMMAND_SUCCESS);
                 } catch (BluezFailedException | BluezInvalidOffsetException | BluezInProgressException e) {
                     gattCallback.onCharacteristicRead(characteristic, GATT_ERROR);
                     logger.error(e.toString());
                 } catch (BluezNotPermittedException e) {
-                    gattCallback.onCharacteristicRead(characteristic, GATT_READ_NOT_PERMITTED);
+                    gattCallback.onCharacteristicRead(characteristic, READ_NOT_PERMITTED);
                     logger.error(e.toString());
                 } catch (BluezNotAuthorizedException e) {
-                    gattCallback.onCharacteristicRead(characteristic, GATT_INSUFFICIENT_AUTHENTICATION);
+                    gattCallback.onCharacteristicRead(characteristic, INSUFFICIENT_AUTHENTICATION);
                     logger.error(e.toString());
                 } catch (BluezNotSupportedException e) {
-                    gattCallback.onCharacteristicRead(characteristic, GATT_REQUEST_NOT_SUPPORTED);
+                    gattCallback.onCharacteristicRead(characteristic, REQUEST_NOT_SUPPORTED);
                     logger.error(e.toString());
                 } catch (DBusExecutionException e) {
                     gattCallback.onCharacteristicRead(characteristic, GATT_ERROR);
@@ -568,7 +520,7 @@ public final class BluetoothPeripheral {
      * <p>All parameters must have a valid value in order for the operation
      * to be enqueued. If the characteristic does not support writing with the specified writeType, the operation will not be enqueued.
      *
-     * <p>{@link BluetoothPeripheralCallback#onCharacteristicWrite(BluetoothPeripheral, byte[], BluetoothGattCharacteristic, int)} will be triggered as a result of this call.
+     * <p>{@link BluetoothPeripheralCallback#onCharacteristicWrite(BluetoothPeripheral, byte[], BluetoothGattCharacteristic, BluetoothCommandStatus)} will be triggered as a result of this call.
      *
      * @param characteristic the characteristic to write to
      * @param value          the byte array to write
@@ -618,13 +570,13 @@ public final class BluetoothPeripheral {
                     nativeCharacteristic.writeValue(bytesToWrite, options);
 
                     // Since there is no callback nor characteristic update event for when a write is completed, we can consider this command done
-                    gattCallback.onCharacteristicWrite(characteristic, GATT_SUCCESS);
+                    gattCallback.onCharacteristicWrite(characteristic, COMMAND_SUCCESS);
                 } catch (DBusExecutionException | BluezNotSupportedException | BluezFailedException | BluezInProgressException | BluezInvalidValueLengthException e) {
                     gattCallback.onCharacteristicWrite(characteristic, GATT_ERROR);
                 } catch (BluezNotPermittedException e) {
-                    gattCallback.onCharacteristicWrite(characteristic, GATT_WRITE_NOT_PERMITTED);
+                    gattCallback.onCharacteristicWrite(characteristic, WRITE_NOT_PERMITTED);
                 } catch (BluezNotAuthorizedException e) {
-                    gattCallback.onCharacteristicWrite(characteristic, GATT_INSUFFICIENT_AUTHENTICATION);
+                    gattCallback.onCharacteristicWrite(characteristic, INSUFFICIENT_AUTHENTICATION);
                 } catch (Exception e) {
                     gattCallback.onCharacteristicWrite(characteristic, GATT_ERROR);
                     logger.error(e.getMessage());
@@ -663,7 +615,7 @@ public final class BluetoothPeripheral {
     /**
      * Set the notification state of a characteristic to 'on' or 'off'. The characteristic must support notifications or indications.
      *
-     * <p>{@link BluetoothPeripheralCallback#onNotificationStateUpdate(BluetoothPeripheral, BluetoothGattCharacteristic, int)} will be triggered as a result of this call.
+     * <p>{@link BluetoothPeripheralCallback#onNotificationStateUpdate(BluetoothPeripheral, BluetoothGattCharacteristic, BluetoothCommandStatus)} will be triggered as a result of this call.
      *
      * @param characteristic the characteristic to turn notification on/off for
      * @param enable         true for setting notification on, false for turning it off
@@ -702,7 +654,7 @@ public final class BluetoothPeripheral {
                         if (isNotifying) {
                             // Already notifying, ignoring command
                             logger.info("already notifying");
-                            gattCallback.onNotificationStateUpdate(characteristic, GATT_SUCCESS);
+                            gattCallback.onNotificationStateUpdate(characteristic, COMMAND_SUCCESS);
                         } else {
                             nativeCharacteristic.startNotify();
                         }
@@ -738,7 +690,7 @@ public final class BluetoothPeripheral {
             logger.info(String.format("reading rssi for '%s'", deviceName));
             Short rssi = Objects.requireNonNull(device).getRssi();
             if (peripheralCallback != null && rssi != null) {
-                callBackHandler.post(() -> peripheralCallback.onReadRemoteRssi(BluetoothPeripheral.this, rssi, GATT_SUCCESS));
+                callBackHandler.post(() -> peripheralCallback.onReadRemoteRssi(BluetoothPeripheral.this, rssi, COMMAND_SUCCESS));
             }
             completedCommand();
         } catch (DBusExecutionException e) {
@@ -805,7 +757,7 @@ public final class BluetoothPeripheral {
                 case PROPERTY_NOTIFYING:
                     boolean isNotifying = (Boolean) value.getValue();
                     logger.info(String.format("characteristic '%s' %s", bluetoothGattCharacteristic.getUuid(), isNotifying ? "is notifying" : "stopped notifying"));
-                    gattCallback.onNotificationStateUpdate(bluetoothGattCharacteristic, GATT_SUCCESS);
+                    gattCallback.onNotificationStateUpdate(bluetoothGattCharacteristic, COMMAND_SUCCESS);
                     break;
                 case PROPERTY_VALUE:
                     if (value.getType() instanceof DBusListType) {
@@ -840,7 +792,7 @@ public final class BluetoothPeripheral {
                 case PROPERTY_CONNECTED:
                     if (value.getValue().equals(true)) {
                         // Getting connected can only be GATT_SUCCESS
-                        gattCallback.onConnectionStateChanged(STATE_CONNECTED, GATT_SUCCESS);
+                        gattCallback.onConnectionStateChanged(STATE_CONNECTED, HCI_SUCCESS);
                         startServiceDiscoveryTimer();
                     } else {
                         logger.info(String.format("disconnected '%s' (%s)", deviceName, deviceAddress));
@@ -851,10 +803,10 @@ public final class BluetoothPeripheral {
                         // Determine if this disconnect was intentional or not
                         if (state == STATE_DISCONNECTING) {
                             // We were intentionally disconnecting, so this was expected
-                            gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, GATT_SUCCESS);
+                            gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, HCI_SUCCESS);
                         } else {
                             // The connection was lost for some other reason
-                            gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, GATT_CONN_TERMINATE_PEER_USER);
+                            gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, REMOTE_USER_TERMINATED_CONNECTION);
                         }
                     }
                     break;
@@ -1164,7 +1116,7 @@ public final class BluetoothPeripheral {
         if (device.isConnected()) {
             device.disconnect();
         } else {
-            gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, GATT_AUTH_FAIL);
+            gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, AUTHENTICATION_FAILURE);
         }
 
         return result;
@@ -1194,7 +1146,7 @@ public final class BluetoothPeripheral {
 
             // Disconnecting doesn't work so do it ourselves
             cancelServiceDiscoveryTimer();
-            gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, GATT_ERROR);
+            gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, CONNECTION_FAILED_ESTABLISHMENT);
         };
         if (queueHandler != null) {
             timeoutFuture = queueHandler.postDelayed(timeoutRunnable, SERVICE_DISCOVERY_TIMEOUT_IN_MS);
@@ -1321,25 +1273,6 @@ public final class BluetoothPeripheral {
             sb.append(String.format("%02x", b & 0xff));
         }
         return sb.toString();
-    }
-
-    private static String statusToString(final int error) {
-        switch (error) {
-            case GATT_SUCCESS:
-                return "SUCCESS";
-            case GATT_CONN_TIMEOUT:
-                return "GATT CONN TIMEOUT";  // Connection timed out
-            case GATT_CONN_TERMINATE_PEER_USER:
-                return "GATT CONN TERMINATE PEER USER";
-            case GATT_ERROR:
-                return "GATT ERROR"; // Device not reachable
-            case GATT_AUTH_FAIL:
-                return "GATT AUTH FAIL";  // Device needs to be bonded
-            case GATT_INSUFFICIENT_ENCRYPTION:
-                return "GATT INSUFFICIENT ENCRYPTION";
-            default:
-                return "UNKNOWN (" + error + ")";
-        }
     }
 
     /**
