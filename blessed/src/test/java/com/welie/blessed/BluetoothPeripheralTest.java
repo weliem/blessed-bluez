@@ -22,7 +22,7 @@ import java.util.*;
 
 import static com.welie.blessed.BluetoothCommandStatus.*;
 import static com.welie.blessed.BluetoothGattCharacteristic.*;
-import static com.welie.blessed.BluetoothConnectionStatus.*;
+import static com.welie.blessed.BluetoothConnectionChangeStatus.*;
 import static com.welie.blessed.BluetoothPeripheral.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -229,7 +229,7 @@ class BluetoothPeripheralTest {
         peripheral.handleSignal(getPropertiesChangedSignalDisconnected());
 
         // Then
-        verify(internalCallback, timeout(50)).disconnected(peripheral, HCI_SUCCESS);
+        verify(internalCallback, timeout(50)).disconnected(peripheral, CONNECTION_STATE_CHANGE_SUCCESS);
         assertEquals(STATE_DISCONNECTED, peripheral.getState());
     }
 

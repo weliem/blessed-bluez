@@ -21,7 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.*;
 
 import static com.welie.blessed.BluetoothCentral.*;
-import static com.welie.blessed.BluetoothConnectionStatus.HCI_SUCCESS;
+import static com.welie.blessed.BluetoothConnectionChangeStatus.CONNECTION_STATE_CHANGE_SUCCESS;
 import static com.welie.blessed.BluetoothPeripheral.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -706,7 +706,7 @@ class BluetoothCentralTest {
         peripheral.handleSignal(disconnectedSignal);
 
         // Then
-        verify(callback, timeout(1000)).onDisconnectedPeripheral(peripheral, HCI_SUCCESS);
+        verify(callback, timeout(1000)).onDisconnectedPeripheral(peripheral, CONNECTION_STATE_CHANGE_SUCCESS);
     }
 
     @Test

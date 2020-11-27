@@ -42,7 +42,7 @@ public abstract class BluetoothCentralCallback {
      * @param peripheral the peripheral for which the connection was attempted
      * @param status the status code for the connection failure
      */
-    public void onConnectionFailed(@NotNull final BluetoothPeripheral peripheral, final BluetoothConnectionStatus status) {}
+    public void onConnectionFailed(@NotNull final BluetoothPeripheral peripheral, final BluetoothConnectionChangeStatus status) {}
 
     /**
      * Device disconnected
@@ -50,7 +50,7 @@ public abstract class BluetoothCentralCallback {
      * @param peripheral the peripheral that disconnected.
      * @param status the status code for the disconnection
      */
-    public void onDisconnectedPeripheral(@NotNull final BluetoothPeripheral peripheral, final BluetoothConnectionStatus status) {}
+    public void onDisconnectedPeripheral(@NotNull final BluetoothPeripheral peripheral, final BluetoothConnectionChangeStatus status) {}
 
     /**
      * Discovered a peripheral

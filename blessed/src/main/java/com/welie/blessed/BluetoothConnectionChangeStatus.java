@@ -1,12 +1,12 @@
 package com.welie.blessed;
 
 @SuppressWarnings("unused")
-public enum BluetoothConnectionStatus {
+public enum BluetoothConnectionChangeStatus {
 
     // Note that most of these error codes correspond to the HCI error codes as defined in the Bluetooth Standard, Volume 1, Part F, 1.3 HCI Error Code p364-377)
     // See https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=478726,
 
-    HCI_SUCCESS(0x00),
+    CONNECTION_STATE_CHANGE_SUCCESS(0x00),
     UNKNOWN_COMMAND(0x01),
     UNKNOWN_CONNECTION_IDENTIFIER(0x02),
     HARDWARE_FAILURE(0x03),
@@ -83,7 +83,7 @@ public enum BluetoothConnectionStatus {
     BLUEZ_DBUS_EXCEPTION(0x82)
     ;
 
-    BluetoothConnectionStatus(int value) {
+    BluetoothConnectionChangeStatus(int value) {
         this.value = value;
     }
 
@@ -93,8 +93,8 @@ public enum BluetoothConnectionStatus {
         return value;
     }
 
-    public static BluetoothConnectionStatus fromValue(int value) {
-        for (BluetoothConnectionStatus type : values()) {
+    public static BluetoothConnectionChangeStatus fromValue(int value) {
+        for (BluetoothConnectionChangeStatus type : values()) {
             if (type.getValue() == value)
                 return type;
         }
