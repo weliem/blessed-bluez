@@ -382,7 +382,7 @@ public final class BluetoothPeripheral {
 
             // Unregister handler only if we are not connected. A connected event may have already been received!
             if (state != STATE_CONNECTED) {
-                gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, BLUEZ_DBUS_EXCEPTION);
+                gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, DBUS_EXECUTION_EXCEPTION);
             }
         } catch (BluezAlreadyConnectedException e) {
             logger.error("connect exception: already connected");
@@ -493,7 +493,7 @@ public final class BluetoothPeripheral {
                     gattCallback.onCharacteristicRead(characteristic, INVALID_OFFSET);
                     logger.error(e.toString());
                 } catch (BluezFailedException e) {
-                    gattCallback.onCharacteristicRead(characteristic, OPERATION_FAILED);
+                    gattCallback.onCharacteristicRead(characteristic, BLUEZ_OPERATION_FAILED);
                     logger.error(e.toString());
                 } catch (BluezNotPermittedException e) {
                     gattCallback.onCharacteristicRead(characteristic, READ_NOT_PERMITTED);
@@ -505,10 +505,10 @@ public final class BluetoothPeripheral {
                     gattCallback.onCharacteristicRead(characteristic, REQUEST_NOT_SUPPORTED);
                     logger.error(e.toString());
                 } catch (DBusExecutionException e) {
-                    gattCallback.onCharacteristicRead(characteristic, BLUEZ_DBUS_EXCEPTION);
+                    gattCallback.onCharacteristicRead(characteristic, DBUS_EXECUTION_EXCEPTION);
                     logger.error(e.toString());
                 } catch (Exception e) {
-                    gattCallback.onCharacteristicRead(characteristic, OPERATION_FAILED);
+                    gattCallback.onCharacteristicRead(characteristic, BLUEZ_OPERATION_FAILED);
                     logger.error(e.toString());
                 }
             }
@@ -586,15 +586,15 @@ public final class BluetoothPeripheral {
                 } catch (BluezNotAuthorizedException e) {
                     gattCallback.onCharacteristicWrite(characteristic, INSUFFICIENT_AUTHORIZATION);
                 } catch (DBusExecutionException e) {
-                    gattCallback.onCharacteristicWrite(characteristic, BLUEZ_DBUS_EXCEPTION);
+                    gattCallback.onCharacteristicWrite(characteristic, DBUS_EXECUTION_EXCEPTION);
                 } catch (BluezNotSupportedException e) {
-                    gattCallback.onCharacteristicWrite(characteristic, NOT_SUPPORTED);
+                    gattCallback.onCharacteristicWrite(characteristic, REQUEST_NOT_SUPPORTED);
                 } catch (BluezFailedException e) {
-                    gattCallback.onCharacteristicWrite(characteristic, OPERATION_FAILED);
+                    gattCallback.onCharacteristicWrite(characteristic, BLUEZ_OPERATION_FAILED);
                 } catch (BluezInvalidValueLengthException e) {
                     gattCallback.onCharacteristicWrite(characteristic, INVALID_ATTRIBUTE_VALUE_LENGTH);
                 } catch (Exception e) {
-                    gattCallback.onCharacteristicWrite(characteristic, OPERATION_FAILED);
+                    gattCallback.onCharacteristicWrite(characteristic, BLUEZ_OPERATION_FAILED);
                     logger.error(e.getMessage());
                 }
             }
@@ -682,13 +682,13 @@ public final class BluetoothPeripheral {
                     logger.error(e.getMessage());
                     gattCallback.onNotificationStateUpdate(characteristic, WRITE_NOT_PERMITTED);
                 } catch (BluezFailedException e) {
-                    gattCallback.onNotificationStateUpdate(characteristic, OPERATION_FAILED);
+                    gattCallback.onNotificationStateUpdate(characteristic, BLUEZ_OPERATION_FAILED);
                 } catch (BluezInProgressException e) {
                     gattCallback.onNotificationStateUpdate(characteristic, BLUEZ_OPERATION_IN_PROGRESS);
                 } catch (BluezNotSupportedException e) {
-                    gattCallback.onNotificationStateUpdate(characteristic, NOT_SUPPORTED);
+                    gattCallback.onNotificationStateUpdate(characteristic, REQUEST_NOT_SUPPORTED);
                 } catch (Exception e) {
-                    gattCallback.onNotificationStateUpdate(characteristic, OPERATION_FAILED);
+                    gattCallback.onNotificationStateUpdate(characteristic, BLUEZ_OPERATION_FAILED);
                     logger.error(e.getMessage());
                 }
             }
@@ -1090,6 +1090,7 @@ public final class BluetoothPeripheral {
 
         setPeripheralCallback(peripheralCallback);
         boolean result = false;
+        BluetoothCommandStatus status = COMMAND_SUCCESS;
         try {
             if (state == STATE_DISCONNECTED) {
                 BluezSignalHandler.getInstance().addPeripheral(deviceAddress, this);
@@ -1110,27 +1111,37 @@ public final class BluetoothPeripheral {
             return true;
         } catch (BluezInvalidArgumentsException e) {
             logger.error("Pair exception: invalid argument");
+            status = INVALID_COMMAND_PARAMETERS;
         } catch (BluezFailedException e) {
             logger.error("Pair exception: failed");
+            status = BLUEZ_OPERATION_FAILED;
         } catch (BluezAuthenticationFailedException e) {
             logger.error("Pair exception: authentication failed");
+            status = AUTHENTICATION_FAILURE;
         } catch (BluezAlreadyExistsException e) {
             logger.error("Pair exception: already exists");
+            status = CONNECTION_ALREADY_EXISTS;
         } catch (BluezAuthenticationCanceledException e) {
             logger.error("Pair exception: authentication canceled");
+            status = CONNECTION_REJECTED_SECURITY_REASONS;
         } catch (BluezAuthenticationRejectedException e) {
             logger.error("Pair exception: authentication rejected");
+            status = CONNECTION_REJECTED_SECURITY_REASONS;
         } catch (BluezAuthenticationTimeoutException e) {
             logger.error("Pair exception: authentication timeout");
+            status = CONNECTION_REJECTED_SECURITY_REASONS;
         } catch (BluezConnectionAttemptFailedException e) {
             logger.error("Pair exception: connection attempt failed");
+            status = CONNECTION_FAILED_ESTABLISHMENT;
         } catch (DBusExecutionException e) {
+            status = DBUS_EXECUTION_EXCEPTION;
             if (e.getMessage().equalsIgnoreCase("No reply within specified time")) {
                 logger.error("Pairing timeout");
             } else {
                 logger.error(e.getMessage());
             }
         } catch (BluezInProgressException e) {
+            status = BLUEZ_OPERATION_IN_PROGRESS;
             e.printStackTrace();
         }
 
@@ -1138,7 +1149,7 @@ public final class BluetoothPeripheral {
         if (device.isConnected()) {
             device.disconnect();
         } else {
-            gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, OPERATION_FAILED);
+            gattCallback.onConnectionStateChanged(STATE_DISCONNECTED, status);
         }
 
         return result;

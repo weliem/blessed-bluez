@@ -177,7 +177,7 @@ class BluetoothPeripheralTest {
         peripheral.connect();
 
         // Then
-        verify(internalCallback).connectFailed(peripheral, BLUEZ_DBUS_EXCEPTION);
+        verify(internalCallback).connectFailed(peripheral, DBUS_EXECUTION_EXCEPTION);
         assertEquals(STATE_DISCONNECTED, peripheral.getState());
     }
 
@@ -343,7 +343,7 @@ class BluetoothPeripheralTest {
         peripheral.readCharacteristic(characteristic);
 
         // Then
-        verify(peripheralCallback, timeout(100)).onCharacteristicUpdate(peripheral,new byte[0], characteristic, OPERATION_FAILED);
+        verify(peripheralCallback, timeout(100)).onCharacteristicUpdate(peripheral,new byte[0], characteristic, BLUEZ_OPERATION_FAILED);
     }
 
     @Test
@@ -407,7 +407,7 @@ class BluetoothPeripheralTest {
         peripheral.readCharacteristic(characteristic);
 
         // Then
-        verify(peripheralCallback, timeout(100)).onCharacteristicUpdate(peripheral,new byte[0], characteristic, BLUEZ_DBUS_EXCEPTION);
+        verify(peripheralCallback, timeout(100)).onCharacteristicUpdate(peripheral,new byte[0], characteristic, DBUS_EXECUTION_EXCEPTION);
     }
 
     @Test
@@ -565,7 +565,7 @@ class BluetoothPeripheralTest {
         ArgumentCaptor<BluetoothGattCharacteristic> characteristicCaptor = ArgumentCaptor.forClass(BluetoothGattCharacteristic.class);
         ArgumentCaptor<BluetoothCommandStatus> statusCaptor = ArgumentCaptor.forClass(BluetoothCommandStatus.class);
         verify(peripheralCallback, timeout(50)).onCharacteristicWrite(peripheralCaptor.capture(),valueCaptor.capture(), characteristicCaptor.capture(), statusCaptor.capture());
-        assertEquals(OPERATION_FAILED, statusCaptor.getValue());
+        assertEquals(BLUEZ_OPERATION_FAILED, statusCaptor.getValue());
         assertTrue(Arrays.equals(value, valueCaptor.getValue()));
     }
 
@@ -682,7 +682,7 @@ class BluetoothPeripheralTest {
         ArgumentCaptor<BluetoothGattCharacteristic> characteristicCaptor = ArgumentCaptor.forClass(BluetoothGattCharacteristic.class);
         ArgumentCaptor<BluetoothCommandStatus> statusCaptor = ArgumentCaptor.forClass(BluetoothCommandStatus.class);
         verify(peripheralCallback, timeout(50)).onNotificationStateUpdate(peripheralCaptor.capture(), characteristicCaptor.capture(), statusCaptor.capture());
-        assertEquals(OPERATION_FAILED, statusCaptor.getValue());
+        assertEquals(BLUEZ_OPERATION_FAILED, statusCaptor.getValue());
     }
 
     @Test
