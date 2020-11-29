@@ -237,6 +237,9 @@ public final class BluetoothPeripheral {
 
         @Override
         public void onNotificationStateUpdate(final @NotNull BluetoothGattCharacteristic characteristic, final BluetoothCommandStatus status) {
+            if (status != COMMAND_SUCCESS) {
+                logger.error(String.format("set notify failed with status '%s'", status));
+            }
             if (peripheralCallback != null) {
                 callBackHandler.post(() -> peripheralCallback.onNotificationStateUpdate(BluetoothPeripheral.this, characteristic, status));
             }
@@ -260,7 +263,7 @@ public final class BluetoothPeripheral {
         @Override
         public void onCharacteristicRead(final @NotNull BluetoothGattCharacteristic characteristic, final BluetoothCommandStatus status) {
             if (status != COMMAND_SUCCESS) {
-                logger.error(String.format(Locale.ENGLISH, "read failed for characteristic: %s, status %s", characteristic.getUuid(), status));
+                logger.error(String.format(Locale.ENGLISH, "read failed for characteristic: %s, status '%s'", characteristic.getUuid(), status));
                 if (peripheralCallback != null) {
                     // Propagate error so it can be handled
                     callBackHandler.post(() -> peripheralCallback.onCharacteristicUpdate(BluetoothPeripheral.this, new byte[0], characteristic, status));
@@ -281,7 +284,7 @@ public final class BluetoothPeripheral {
         @Override
         public void onCharacteristicWrite(@NotNull final BluetoothGattCharacteristic characteristic, final BluetoothCommandStatus status) {
             if (status != COMMAND_SUCCESS) {
-                logger.error(String.format("write failed for characteristic: %s, status %s", characteristic.getUuid(), status));
+                logger.error(String.format("write failed for characteristic: %s, status '%s'", characteristic.getUuid(), status));
             }
 
             if (peripheralCallback != null) {
@@ -467,7 +470,7 @@ public final class BluetoothPeripheral {
 
         // Check if this characteristic actually has READ property
         if (!characteristic.supportsReading()) {
-            logger.error("characteristic does not have read property");
+            gattCallback.onCharacteristicRead(characteristic, READ_NOT_PERMITTED);
             return false;
         }
 
@@ -488,22 +491,16 @@ public final class BluetoothPeripheral {
                     gattCallback.onCharacteristicRead(characteristic, COMMAND_SUCCESS);
                 } catch (BluezInProgressException e) {
                     gattCallback.onCharacteristicRead(characteristic, BLUEZ_OPERATION_IN_PROGRESS);
-                    logger.error(e.toString());
                 } catch (BluezInvalidOffsetException e) {
                     gattCallback.onCharacteristicRead(characteristic, INVALID_OFFSET);
-                    logger.error(e.toString());
                 } catch (BluezFailedException e) {
                     gattCallback.onCharacteristicRead(characteristic, BLUEZ_OPERATION_FAILED);
-                    logger.error(e.toString());
                 } catch (BluezNotPermittedException e) {
                     gattCallback.onCharacteristicRead(characteristic, READ_NOT_PERMITTED);
-                    logger.error(e.toString());
                 } catch (BluezNotAuthorizedException e) {
                     gattCallback.onCharacteristicRead(characteristic, INSUFFICIENT_AUTHENTICATION);
-                    logger.error(e.toString());
                 } catch (BluezNotSupportedException e) {
                     gattCallback.onCharacteristicRead(characteristic, REQUEST_NOT_SUPPORTED);
-                    logger.error(e.toString());
                 } catch (DBusExecutionException e) {
                     gattCallback.onCharacteristicRead(characteristic, DBUS_EXECUTION_EXCEPTION);
                     logger.error(e.toString());
@@ -679,7 +676,6 @@ public final class BluetoothPeripheral {
                         nativeCharacteristic.stopNotify();
                     }
                 } catch (BluezNotPermittedException  e) {
-                    logger.error(e.getMessage());
                     gattCallback.onNotificationStateUpdate(characteristic, WRITE_NOT_PERMITTED);
                 } catch (BluezFailedException e) {
                     gattCallback.onNotificationStateUpdate(characteristic, BLUEZ_OPERATION_FAILED);
