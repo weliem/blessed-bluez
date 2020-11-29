@@ -197,14 +197,14 @@ public class BluetoothHandler {
         }
 
         @Override
-        public void onConnectionFailed(@NotNull BluetoothPeripheral peripheral, BluetoothConnectionChangeStatus status) {
+        public void onConnectionFailed(@NotNull BluetoothPeripheral peripheral, BluetoothCommandStatus status) {
             logger.info(String.format("connection failed with status %s",status));
             final String peripheralAddress = peripheral.getAddress();
             handler.postDelayed(() -> blackList.remove(peripheralAddress), 2000L);
         }
 
         @Override
-        public void onDisconnectedPeripheral(@NotNull BluetoothPeripheral peripheral, BluetoothConnectionChangeStatus status) {
+        public void onDisconnectedPeripheral(@NotNull BluetoothPeripheral peripheral, BluetoothCommandStatus status) {
             logger.info("disconnected peripheral");
             final String peripheralAddress = peripheral.getAddress();
             handler.postDelayed(() -> {

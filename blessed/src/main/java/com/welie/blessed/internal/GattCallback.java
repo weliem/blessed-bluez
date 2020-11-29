@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 public abstract class GattCallback {
-    public abstract void onConnectionStateChanged(int connectionState, BluetoothConnectionChangeStatus status);
+    public abstract void onConnectionStateChanged(int connectionState, BluetoothCommandStatus status);
 
     public abstract void onCharacteristicRead(@NotNull BluetoothGattCharacteristic characteristic, BluetoothCommandStatus status);
 

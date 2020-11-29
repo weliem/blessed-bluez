@@ -66,30 +66,19 @@ public enum BluetoothCommandStatus {
     // The attribute parameter value was not allowed
     VALUE_NOT_ALLOWED(0x13),
 
+    CONNECTION_ALREADY_EXISTS(0x88),
+    REMOTE_USER_TERMINATED_CONNECTION(0x87),
+    NOT_SUPPORTED(0x86),
+    OPERATION_FAILED(0x85),
+    NOT_CONNECTED(0x84),
+    BLUEZ_OPERATION_IN_PROGRESS(0x83),
+    CONNECTION_FAILED_ESTABLISHMENT(0x82),
+    BLUEZ_NOT_READY(0x81),
+    BLUEZ_DBUS_EXCEPTION(0x80);
+
+
     // (0x80 to 0x9F) - Application error code defined by a higher layer specification.
-    // So the following codes are Android specific
-    GATT_NO_RESOURCES(0x80),
-    GATT_INTERNAL_ERROR(0x81),
-    GATT_WRONG_STATE(0x82),
-    GATT_DB_FULL(0x83),
-    GATT_BUSY(0x84),
-    GATT_ERROR(0x85),
-    GATT_CMD_STARTED(0x86),
-    GATT_ILLEGAL_PARAMETER(0x87),
-    GATT_PENDING(0x88),
-    GATT_AUTH_FAIL(0x89),
-    GATT_MORE(0x8a),
-    GATT_INVALID_CFG(0x8b),
-    GATT_SERVICE_STARTED(0x8c),
-    GATT_ENCRYPED_NO_MITM(0x8d),
-    GATT_NOT_ENCRYPTED(0x8e),
-    GATT_CONNECTION_CONGESTED(0x8f),
 
-    // (0xE0 to 0xFF) - Common profile and service error codes defined in Core Specification Supplement, Part B.
-
-    // Other errors codes that are Android specific
-    GATT_CONN_CANCEL(0x0100),  /* L2CAP connection cancelled  */
-    GATT_FAILURE(0x101);
 
     BluetoothCommandStatus(int value) {
         this.value = value;
