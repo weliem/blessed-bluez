@@ -7,6 +7,8 @@ import org.freedesktop.dbus.exceptions.DBusException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
@@ -39,6 +41,7 @@ class BluezAdapterProvider {
         Objects.requireNonNull(adapters);
         if (adapters.isEmpty()) return null;
 
+        Collections.sort(adapters, Comparator.comparing(BluezAdapter::getDeviceName));
         return adapters.get(adapters.size() - 1);
     }
 }
