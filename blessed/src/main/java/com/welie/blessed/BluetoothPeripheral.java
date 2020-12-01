@@ -1086,7 +1086,7 @@ public final class BluetoothPeripheral {
 
         setPeripheralCallback(peripheralCallback);
         boolean result = false;
-        BluetoothCommandStatus status = COMMAND_SUCCESS;
+        BluetoothCommandStatus status;
         try {
             if (state == STATE_DISCONNECTED) {
                 BluezSignalHandler.getInstance().addPeripheral(deviceAddress, this);
