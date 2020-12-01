@@ -157,7 +157,7 @@ public class BluetoothCentral {
         }
 
         @Override
-        public void connectFailed(@NotNull BluetoothPeripheral peripheral, BluetoothCommandStatus status) {
+        public void connectFailed(@NotNull BluetoothPeripheral peripheral, @NotNull BluetoothCommandStatus status) {
             final String peripheralAddress = peripheral.getAddress();
             connectedPeripherals.remove(peripheralAddress);
             unconnectedPeripherals.remove(peripheralAddress);
@@ -174,7 +174,7 @@ public class BluetoothCentral {
         }
 
         @Override
-        public void disconnected(@NotNull BluetoothPeripheral peripheral, BluetoothCommandStatus status) {
+        public void disconnected(@NotNull BluetoothPeripheral peripheral, @NotNull BluetoothCommandStatus status) {
             final String peripheralAddress = peripheral.getAddress();
             connectedPeripherals.remove(peripheralAddress);
             unconnectedPeripherals.remove(peripheralAddress);

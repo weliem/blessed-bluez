@@ -29,14 +29,14 @@ public interface InternalCallback {
      *
      * @param peripheral {@link BluetoothPeripheral} of which connect failed.
      */
-    void connectFailed(@NotNull final BluetoothPeripheral peripheral, final BluetoothCommandStatus status);
+    void connectFailed(@NotNull final BluetoothPeripheral peripheral, @NotNull final BluetoothCommandStatus status);
 
     /**
      * {@link BluetoothPeripheral} has disconnected.
      *
      * @param peripheral {@link BluetoothPeripheral} that disconnected.
      */
-    void disconnected(@NotNull final BluetoothPeripheral peripheral, final BluetoothCommandStatus status);
+    void disconnected(@NotNull final BluetoothPeripheral peripheral, @NotNull final BluetoothCommandStatus status);
 
     void servicesDiscovered(@NotNull final BluetoothPeripheral peripheral);
 
