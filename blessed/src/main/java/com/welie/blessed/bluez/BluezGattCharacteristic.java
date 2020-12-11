@@ -6,6 +6,7 @@ import org.bluez.exceptions.*;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.interfaces.DBusInterface;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -61,6 +62,7 @@ public class BluezGattCharacteristic extends AbstractBluetoothObject {
      * Will issue a query if {@link #refreshGattCharacteristics()} wasn't called before.
      * @return List, maybe empty but never null
      */
+    @NotNull
     public List<BluezGattDescriptor> getGattDescriptors() {
         if (descriptorByUuid.isEmpty()) {
             refreshGattCharacteristics();
@@ -73,7 +75,8 @@ public class BluezGattCharacteristic extends AbstractBluetoothObject {
      * @param _uuid uuid
      * @return maybe null if not found
      */
-    public BluezGattDescriptor getGattDescriptorByUuid(String _uuid) {
+    @Nullable
+    public BluezGattDescriptor getGattDescriptorByUuid(UUID _uuid) {
         if (descriptorByUuid.isEmpty()) {
             refreshGattCharacteristics();
         }
@@ -160,7 +163,6 @@ public class BluezGattCharacteristic extends AbstractBluetoothObject {
      * </p>
      * @return cached characteristics value, maybe null
      */
-    @NotNull
     public byte[] getValue() {
         List<?> typed = getTyped("Value", ArrayList.class);
         if (typed != null) {
