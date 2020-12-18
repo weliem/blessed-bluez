@@ -1,6 +1,8 @@
 # BLESSED for Bluez - BLE made easy
 
 [![](https://jitpack.io/v/weliem/blessed-bluez.svg)](https://jitpack.io/#weliem/blessed-bluez)
+[![Total alerts](https://img.shields.io/lgtm/alerts/g/weliem/blessed-bluez.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/weliem/blessed-bluez/alerts/)
+[![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/weliem/blessed-bluez.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/weliem/blessed-bluez/context:java)
 
 BLESSED-for-Bluez is a Bluetooth Low Energy (BLE) library for Bluez 5.50 and higher, that makes working with BLE using Bluez very easy. It completely hides the DBus messaging needed to use Bluez and provides a CoreBluetooth-like object oriented interface. This library uses the [DBus-Java library](https://github.com/hypfvieh/dbus-java) and parts of the [Bluez-DBus library](https://github.com/hypfvieh/bluez-dbus) for the communication with the DBus and Bluez functionality.
 
