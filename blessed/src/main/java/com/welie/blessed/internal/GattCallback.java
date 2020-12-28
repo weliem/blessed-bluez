@@ -6,17 +6,17 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 public abstract class GattCallback {
-    public abstract void onConnectionStateChanged(int connectionState, BluetoothCommandStatus status);
+    public abstract void onConnectionStateChanged(int connectionState, @NotNull BluetoothCommandStatus status);
 
-    public abstract void onCharacteristicRead(@NotNull BluetoothGattCharacteristic characteristic, BluetoothCommandStatus status);
+    public abstract void onCharacteristicRead(@NotNull BluetoothGattCharacteristic characteristic, @NotNull BluetoothCommandStatus status);
 
-    public abstract void onCharacteristicChanged(@NotNull byte[] value, @NotNull BluetoothGattCharacteristic indication);
+    public abstract void onCharacteristicChanged(@NotNull byte[] value, @NotNull BluetoothGattCharacteristic characteristic);
 
-    public abstract void onCharacteristicWrite(@NotNull BluetoothGattCharacteristic characteristic, BluetoothCommandStatus status);
+    public abstract void onCharacteristicWrite(@NotNull BluetoothGattCharacteristic characteristic, @NotNull BluetoothCommandStatus status);
 
-    public abstract void onDescriptorWrite(@NotNull BluetoothGattDescriptor descriptor, BluetoothCommandStatus status);
+    public abstract void onDescriptorWrite(@NotNull BluetoothGattDescriptor descriptor, @NotNull BluetoothCommandStatus status);
 
-    public abstract void onNotificationStateUpdate(@NotNull BluetoothGattCharacteristic characteristic, BluetoothCommandStatus status);
+    public abstract void onNotificationStateUpdate(@NotNull BluetoothGattCharacteristic characteristic, @NotNull BluetoothCommandStatus status);
 
     public abstract void onServicesDiscovered(@NotNull List<@NotNull BluetoothGattService> services);
 

@@ -172,7 +172,7 @@ public final class BluetoothPeripheral {
     // GattCallback will deal with managing low-level callbacks
     final GattCallback gattCallback = new GattCallback() {
         @Override
-        public void onConnectionStateChanged(int connectionState, BluetoothCommandStatus status) {
+        public void onConnectionStateChanged(int connectionState, @NotNull BluetoothCommandStatus status) {
             int previousState = state;
             state = connectionState;
 
@@ -236,7 +236,7 @@ public final class BluetoothPeripheral {
         }
 
         @Override
-        public void onNotificationStateUpdate(final @NotNull BluetoothGattCharacteristic characteristic, final BluetoothCommandStatus status) {
+        public void onNotificationStateUpdate(final @NotNull BluetoothGattCharacteristic characteristic, final @NotNull BluetoothCommandStatus status) {
             if (status != COMMAND_SUCCESS) {
                 logger.error(String.format("set notify failed with status '%s'", status));
             }
@@ -247,7 +247,7 @@ public final class BluetoothPeripheral {
         }
 
         @Override
-        public void onDescriptorWrite(final @NotNull BluetoothGattDescriptor descriptor, final BluetoothCommandStatus status) {
+        public void onDescriptorWrite(final @NotNull BluetoothGattDescriptor descriptor, final @NotNull BluetoothCommandStatus status) {
             // Do some checks first
             final BluetoothGattCharacteristic parentCharacteristic = descriptor.getCharacteristic();
             if (status != COMMAND_SUCCESS) {
@@ -261,7 +261,7 @@ public final class BluetoothPeripheral {
         }
 
         @Override
-        public void onCharacteristicRead(final @NotNull BluetoothGattCharacteristic characteristic, final BluetoothCommandStatus status) {
+        public void onCharacteristicRead(final @NotNull BluetoothGattCharacteristic characteristic, final @NotNull BluetoothCommandStatus status) {
             if (status != COMMAND_SUCCESS) {
                 logger.error(String.format(Locale.ENGLISH, "read failed for characteristic: %s, status '%s'", characteristic.getUuid(), status));
                 if (peripheralCallback != null) {
@@ -282,7 +282,7 @@ public final class BluetoothPeripheral {
         }
 
         @Override
-        public void onCharacteristicWrite(@NotNull final BluetoothGattCharacteristic characteristic, final BluetoothCommandStatus status) {
+        public void onCharacteristicWrite(@NotNull final BluetoothGattCharacteristic characteristic, final @NotNull BluetoothCommandStatus status) {
             if (status != COMMAND_SUCCESS) {
                 logger.error(String.format("write failed for characteristic: %s, status '%s'", characteristic.getUuid(), status));
             }
@@ -1086,7 +1086,7 @@ public final class BluetoothPeripheral {
 
         setPeripheralCallback(peripheralCallback);
         boolean result = false;
-        BluetoothCommandStatus status = COMMAND_SUCCESS;
+        BluetoothCommandStatus status;
         try {
             if (state == STATE_DISCONNECTED) {
                 BluezSignalHandler.getInstance().addPeripheral(deviceAddress, this);
