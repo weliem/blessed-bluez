@@ -166,6 +166,11 @@ public class BluetoothCentral {
             // Complete the 'connect' command if this was the device we were connecting
             completeConnectOrDisconnectCommand(peripheralAddress);
 
+            // Remove unbonded devices from DBus to make setting notifications work on reconnection (Bluez issue)
+            if (!peripheral.isPaired()) {
+                removeDevice(peripheral);
+            }
+
             callBackHandler.post(() -> {
                 bluetoothCentralCallback.onConnectionFailed(peripheral, status);
             });
