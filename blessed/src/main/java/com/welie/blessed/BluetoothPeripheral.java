@@ -34,8 +34,11 @@ public final class BluetoothPeripheral {
     private final Logger logger = LoggerFactory.getLogger(TAG);
 
     public static final String ERROR_NATIVE_CHARACTERISTIC_IS_NULL = "ERROR: Native characteristic is null";
-    public static final String NO_VALID_CHARACTERISTIC_PROVIDED = "no valid characteristic provided";
-    public static final String NO_VALID_SERVICE_UUID_PROVIDED = "no valid service UUID provided";
+    private static final String NO_VALID_SERVICE_UUID_PROVIDED = "no valid service UUID provided";
+    private static final String NO_VALID_CHARACTERISTIC_UUID_PROVIDED = "no valid characteristic UUID provided";
+    private static final String NO_VALID_CHARACTERISTIC_PROVIDED = "no valid characteristic provided";
+    private static final String NO_VALID_WRITE_TYPE_PROVIDED = "no valid writeType provided";
+    private static final String NO_VALID_VALUE_PROVIDED = "no valid value provided";
 
     @NotNull
     private final BluetoothCentral central;
@@ -520,6 +523,31 @@ public final class BluetoothPeripheral {
     }
 
     /**
+     * Read the value of a characteristic.
+     *
+     * <p>The characteristic must support reading it, otherwise the operation will not be enqueued.
+     *
+     * @param serviceUUID the service UUID the characteristic belongs to
+     * @param characteristicUUID the characteristic's UUID
+     * @param value          the byte array to write
+     * @param writeType      the write type to use when writing. Must be WRITE_TYPE_DEFAULT, WRITE_TYPE_NO_RESPONSE or WRITE_TYPE_SIGNED
+     * @return true if a write operation was successfully enqueued, otherwise false
+     */
+    @SuppressWarnings("UnusedReturnValue")
+    public boolean writeCharacteristic(@NotNull UUID serviceUUID, @NotNull UUID characteristicUUID, @NotNull final byte[] value, @NotNull final WriteType writeType ) {
+        Objects.requireNonNull(serviceUUID, NO_VALID_SERVICE_UUID_PROVIDED);
+        Objects.requireNonNull(characteristicUUID, NO_VALID_CHARACTERISTIC_UUID_PROVIDED);
+        Objects.requireNonNull(value, NO_VALID_VALUE_PROVIDED);
+        Objects.requireNonNull(writeType, NO_VALID_WRITE_TYPE_PROVIDED);
+
+        BluetoothGattCharacteristic characteristic = getCharacteristic(serviceUUID, characteristicUUID);
+        if (characteristic != null) {
+            return writeCharacteristic(characteristic, value, writeType);
+        }
+        return false;
+    }
+
+    /**
      * Write a value to a characteristic using the specified write type.
      *
      * <p>All parameters must have a valid value in order for the operation
@@ -530,12 +558,13 @@ public final class BluetoothPeripheral {
      * @param characteristic the characteristic to write to
      * @param value          the byte array to write
      * @param writeType      the write type to use when writing. Must be WRITE_TYPE_DEFAULT, WRITE_TYPE_NO_RESPONSE or WRITE_TYPE_SIGNED
-     * @return true if a write operation was succesfully enqueued, otherwise false
+     * @return true if a write operation was successfully enqueued, otherwise false
      */
     @SuppressWarnings({"UnusedReturnValue", "unused"})
-    public boolean writeCharacteristic(@NotNull final BluetoothGattCharacteristic characteristic, @NotNull final byte[] value, final WriteType writeType) {
+    public boolean writeCharacteristic(@NotNull final BluetoothGattCharacteristic characteristic, @NotNull final byte[] value, @NotNull final WriteType writeType) {
         Objects.requireNonNull(characteristic, NO_VALID_CHARACTERISTIC_PROVIDED);
-        Objects.requireNonNull(value, "no valid value provided");
+        Objects.requireNonNull(value, NO_VALID_VALUE_PROVIDED);
+        Objects.requireNonNull(writeType, NO_VALID_WRITE_TYPE_PROVIDED);
 
         // Make sure we are still connected
         if (state != STATE_CONNECTED) {
