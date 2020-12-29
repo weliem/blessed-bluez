@@ -254,10 +254,9 @@ public class BluetoothCentral {
                 // See if we have a pass code for this device
                 String passCode = pinCodes.get(deviceAddress);
 
-                // If we don't have one try "000000"
+                // If we don't have one, ask the application for a pass code
                 if (passCode == null) {
-                    logger.info("No passcode available for this device, trying 000000");
-                    passCode = "000000";
+                    passCode = bluetoothCentralCallback.onPinRequest(getPeripheral(deviceAddress));
                 }
                 logger.info(String.format("sending passcode %s", passCode));
                 return passCode;
