@@ -111,7 +111,7 @@ public class BluetoothCentral {
     // Scan in intervals. Make sure it is less than 10seconds to avoid issues with Bluez internal scanning
     private static final long SCAN_WINDOW = TimeUnit.SECONDS.toMillis(6);
     private static final long SCAN_INTERVAL = TimeUnit.SECONDS.toMillis(8);
-    protected static final long CONNECT_DELAY = TimeUnit.MILLISECONDS.toMillis(300);
+    protected static final long CONNECT_DELAY = TimeUnit.MILLISECONDS.toMillis(500);
 
     // Null check errors
     private static final String NULL_PERIPHERAL_ERROR = "no valid peripheral specified";
@@ -166,14 +166,9 @@ public class BluetoothCentral {
             // Complete the 'connect' command if this was the device we were connecting
             completeConnectOrDisconnectCommand(peripheralAddress);
 
-            // Remove unbonded devices from DBus to make setting notifications work on reconnection (Bluez issue)
-            if (!peripheral.isPaired()) {
-                removeDevice(peripheral);
-            }
-
-            callBackHandler.post(() -> {
-                bluetoothCentralCallback.onConnectionFailed(peripheral, status);
-            });
+//            callBackHandler.post(() -> {
+//                bluetoothCentralCallback.onConnectionFailed(peripheral, status);
+//            });
 
             restartScannerIfNeeded();
         }
