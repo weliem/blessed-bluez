@@ -111,7 +111,7 @@ public class BluetoothCentral {
     // Scan in intervals. Make sure it is less than 10seconds to avoid issues with Bluez internal scanning
     private static final long SCAN_WINDOW = TimeUnit.SECONDS.toMillis(6);
     private static final long SCAN_INTERVAL = TimeUnit.SECONDS.toMillis(8);
-    protected static final long CONNECT_DELAY = TimeUnit.MILLISECONDS.toMillis(300);
+    protected static final long CONNECT_DELAY = TimeUnit.MILLISECONDS.toMillis(500);
 
     // Null check errors
     private static final String NULL_PERIPHERAL_ERROR = "no valid peripheral specified";
@@ -166,9 +166,9 @@ public class BluetoothCentral {
             // Complete the 'connect' command if this was the device we were connecting
             completeConnectOrDisconnectCommand(peripheralAddress);
 
-            callBackHandler.post(() -> {
-                bluetoothCentralCallback.onConnectionFailed(peripheral, status);
-            });
+//            callBackHandler.post(() -> {
+//                bluetoothCentralCallback.onConnectionFailed(peripheral, status);
+//            });
 
             restartScannerIfNeeded();
         }
@@ -249,10 +249,9 @@ public class BluetoothCentral {
                 // See if we have a pass code for this device
                 String passCode = pinCodes.get(deviceAddress);
 
-                // If we don't have one try "000000"
+                // If we don't have one, ask the application for a pass code
                 if (passCode == null) {
-                    logger.info("No passcode available for this device, trying 000000");
-                    passCode = "000000";
+                    passCode = bluetoothCentralCallback.onPinRequest(getPeripheral(deviceAddress));
                 }
                 logger.info(String.format("sending passcode %s", passCode));
                 return passCode;

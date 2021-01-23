@@ -67,4 +67,6 @@ public abstract class BluetoothCentralCallback {
      */
     public void onScanFailed(final int errorCode) {}
 
+    @NotNull
+    public String onPinRequest(@NotNull final BluetoothPeripheral peripheral) { return "";}
 }
