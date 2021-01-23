@@ -28,15 +28,15 @@ import static java.lang.Thread.sleep;
 /**
  * Represents a Bluetooth Central object
  */
-public class BluetoothCentral {
-    private static final String TAG = BluetoothCentral.class.getSimpleName();
+public class BluetoothCentralManager {
+    private static final String TAG = BluetoothCentralManager.class.getSimpleName();
     private final Logger logger = LoggerFactory.getLogger(TAG);
 
     @NotNull
     private final BluezAdapter adapter;
 
     @NotNull
-    private final BluetoothCentralCallback bluetoothCentralCallback;
+    private final BluetoothCentralManagerCallback bluetoothCentralManagerCallback;
 
     @NotNull
     private final Handler callBackHandler = new Handler("Central-callback");
@@ -139,7 +139,7 @@ public class BluetoothCentral {
             completeConnectOrDisconnectCommand(peripheralAddress);
 
             callBackHandler.post(() -> {
-                bluetoothCentralCallback.onConnectedPeripheral(peripheral);
+                bluetoothCentralManagerCallback.onConnectedPeripheral(peripheral);
             });
         }
 
@@ -187,7 +187,7 @@ public class BluetoothCentral {
                 removeDevice(peripheral);
             }
 
-            callBackHandler.post(() -> bluetoothCentralCallback.onDisconnectedPeripheral(peripheral, status));
+            callBackHandler.post(() -> bluetoothCentralManagerCallback.onDisconnectedPeripheral(peripheral, status));
 
             restartScannerIfNeeded();
         }
@@ -209,18 +209,18 @@ public class BluetoothCentral {
     /**
      * Construct a new BluetoothCentral object
      *
-     * @param bluetoothCentralCallback the callback to call for updates
+     * @param bluetoothCentralManagerCallback the callback to call for updates
      */
-    public BluetoothCentral(@NotNull BluetoothCentralCallback bluetoothCentralCallback) {
-        this(bluetoothCentralCallback, Collections.emptySet());
+    public BluetoothCentralManager(@NotNull BluetoothCentralManagerCallback bluetoothCentralManagerCallback) {
+        this(bluetoothCentralManagerCallback, Collections.emptySet());
     }
 
-    public BluetoothCentral(@NotNull BluetoothCentralCallback bluetoothCentralCallback, @NotNull Set<String> scanOptions) {
-        this(bluetoothCentralCallback, scanOptions, new BluezAdapterProvider().adapter);
+    public BluetoothCentralManager(@NotNull BluetoothCentralManagerCallback bluetoothCentralManagerCallback, @NotNull Set<String> scanOptions) {
+        this(bluetoothCentralManagerCallback, scanOptions, new BluezAdapterProvider().adapter);
     }
 
-    BluetoothCentral(@NotNull BluetoothCentralCallback bluetoothCentralCallback, @NotNull Set<String> scanOptions, @NotNull BluezAdapter bluezAdapter) {
-        this.bluetoothCentralCallback = Objects.requireNonNull(bluetoothCentralCallback, "no valid bluetoothCallback provided");
+    BluetoothCentralManager(@NotNull BluetoothCentralManagerCallback bluetoothCentralManagerCallback, @NotNull Set<String> scanOptions, @NotNull BluezAdapter bluezAdapter) {
+        this.bluetoothCentralManagerCallback = Objects.requireNonNull(bluetoothCentralManagerCallback, "no valid bluetoothCallback provided");
         this.scanOptions = Objects.requireNonNull(scanOptions, "no scanOptions provided");
         this.adapter = Objects.requireNonNull(bluezAdapter, "no bluez adapter provided");
 
@@ -251,7 +251,7 @@ public class BluetoothCentral {
 
                 // If we don't have one, ask the application for a pass code
                 if (passCode == null) {
-                    passCode = bluetoothCentralCallback.onPinRequest(getPeripheral(deviceAddress));
+                    passCode = bluetoothCentralManagerCallback.onPinRequest(getPeripheral(deviceAddress));
                 }
                 logger.info(String.format("sending passcode %s", passCode));
                 return passCode;
@@ -454,7 +454,7 @@ public class BluetoothCentral {
 
             callBackHandler.post(() -> {
                 scanResult.stamp();
-                bluetoothCentralCallback.onDiscoveredPeripheral(peripheral, scanResult);
+                bluetoothCentralManagerCallback.onDiscoveredPeripheral(peripheral, scanResult);
             });
         }
     }
@@ -992,7 +992,7 @@ public class BluetoothCentral {
             reconnectCallbacks.remove(peripheralAddress);
 
             callBackHandler.post(() -> {
-                bluetoothCentralCallback.onDisconnectedPeripheral(peripheral, BluetoothCommandStatus.COMMAND_SUCCESS);
+                bluetoothCentralManagerCallback.onDisconnectedPeripheral(peripheral, BluetoothCommandStatus.COMMAND_SUCCESS);
             });
         }
     }

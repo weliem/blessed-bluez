@@ -30,7 +30,7 @@ public void scanForPeripheralsWithAddresses(String[] peripheralAddresses)
 They all work in the same way and take an array of either service UUIDs, peripheral names or mac addresses. So in order to setup a scan for a device with the Bloodpressure service and connect to it, you do:
 
 ```java
-private final BluetoothCentralCallback bluetoothCentralCallback = new BluetoothCentralCallback() {
+private final BluetoothCentralCallback bluetoothCentralManagerCallback = new BluetoothCentralCallback() {
         @Override
         public void onDiscoveredPeripheral(BluetoothPeripheral peripheral, ScanResult scanResult) {
             central.stopScan();
@@ -39,7 +39,7 @@ private final BluetoothCentralCallback bluetoothCentralCallback = new BluetoothC
 };
 
 // Create BluetoothCentral and receive callbacks on the main thread
-BluetoothCentral central = BluetoothCentral(getApplicationContext(), bluetoothCentralCallback, new Handler(Looper.getMainLooper()));
+BluetoothCentral central = BluetoothCentral(getApplicationContext(), bluetoothCentralManagerCallback, new Handler(Looper.getMainLooper()));
 
 // Define blood pressure service UUID
 UUID BLOODPRESSURE_SERVICE_UUID = UUID.fromString("00001810-0000-1000-8000-00805f9b34fb");

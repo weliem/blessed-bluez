@@ -12,14 +12,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.welie.blessed.BluetoothCommandStatus.COMMAND_SUCCESS;
-import static com.welie.blessed.BluetoothCentral.SCANOPTION_NO_NULL_NAMES;
+import static com.welie.blessed.BluetoothCentralManager.SCANOPTION_NO_NULL_NAMES;
 import static com.welie.blessed.BluetoothGattCharacteristic.*;
 
 
 public class BluetoothHandler {
     private static final String TAG = BluetoothHandler.class.getSimpleName();
     private final Logger logger = LoggerFactory.getLogger(TAG);
-    private final BluetoothCentral central;
+    private final BluetoothCentralManager central;
     private final Handler handler = new Handler("testapp.BluetoothHandler");
     private boolean justBonded = false;
     private static final List<String> blackList = new ArrayList<>();
@@ -190,7 +190,7 @@ public class BluetoothHandler {
         timeoutFuture = handler.postDelayed(timeoutRunnable, 2000L);
     }
 
-    private final BluetoothCentralCallback bluetoothCentralCallback = new BluetoothCentralCallback() {
+    private final BluetoothCentralManagerCallback bluetoothCentralManagerCallback = new BluetoothCentralManagerCallback() {
         @Override
         public void onConnectedPeripheral(@NotNull BluetoothPeripheral peripheral) {
             logger.info("connected peripheral");
@@ -229,7 +229,7 @@ public class BluetoothHandler {
 
     public BluetoothHandler() {
         logger.info("initializing BluetoothCentral");
-        central = new BluetoothCentral(bluetoothCentralCallback, new HashSet<>(Collections.singletonList(SCANOPTION_NO_NULL_NAMES)));
+        central = new BluetoothCentralManager(bluetoothCentralManagerCallback, new HashSet<>(Collections.singletonList(SCANOPTION_NO_NULL_NAMES)));
         central.setPinCodeForPeripheral("B0:49:5F:01:20:8F", "635227");
         startScanning();
     }
