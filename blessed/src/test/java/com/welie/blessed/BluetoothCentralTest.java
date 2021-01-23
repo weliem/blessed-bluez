@@ -854,10 +854,10 @@ class BluetoothCentralTest {
         central.connectPeripheral(peripheral, peripheralCallback);
         Thread.sleep(500);
         peripheral.handleSignal(getPropertiesChangedSignalConnected());
-        Thread.sleep(10);
+        Thread.sleep(50);
         assertEquals(STATE_CONNECTED, peripheral.getState());
         peripheral.handleSignal(getPropertiesChangedSignalServicesResolved());
-        Thread.sleep(10);
+        Thread.sleep(50);
     }
 
     @NotNull
