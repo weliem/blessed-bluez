@@ -852,9 +852,9 @@ class BluetoothCentralTest {
 
     private void connectPeripheral(BluetoothCentral central, BluetoothPeripheral peripheral) throws InterruptedException, DBusException {
         central.connectPeripheral(peripheral, peripheralCallback);
-        Thread.sleep(500);
+        verify(peripheral.getDevice(), timeout(CONNECT_DELAY + 200)).connect();
         peripheral.handleSignal(getPropertiesChangedSignalConnected());
-        Thread.sleep(100);
+        Thread.sleep(50);
         assertEquals(STATE_CONNECTED, peripheral.getState());
         peripheral.handleSignal(getPropertiesChangedSignalServicesResolved());
         Thread.sleep(50);
