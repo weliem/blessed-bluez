@@ -1,0 +1,8 @@
+com.welie.blessed
+com.welie.blessed.bluez
+com.welie.blessed.internal
+org.bluez
+org.bluez.datatypes
+org.bluez.exceptions
+org.bluez.obex
+testapp

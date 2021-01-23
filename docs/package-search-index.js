@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","url":"allpackages-index.html"},{"l":"com.welie.blessed"},{"l":"com.welie.blessed.bluez"},{"l":"com.welie.blessed.internal"},{"l":"org.bluez"},{"l":"org.bluez.datatypes"},{"l":"org.bluez.exceptions"},{"l":"org.bluez.obex"},{"l":"testapp"}]
