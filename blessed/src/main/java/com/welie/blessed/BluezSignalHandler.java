@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.welie.blessed.BluetoothCentral.BLUEZ_ADAPTER_INTERFACE;
+import static com.welie.blessed.BluetoothCentralManager.BLUEZ_ADAPTER_INTERFACE;
 import static com.welie.blessed.BluetoothPeripheral.BLUEZ_CHARACTERISTIC_INTERFACE;
 import static com.welie.blessed.BluetoothPeripheral.BLUEZ_DEVICE_INTERFACE;
 
@@ -26,7 +26,7 @@ class BluezSignalHandler {
     private DBusConnection dbusConnection;
 
     private final Map<String, BluetoothPeripheral> peripheralsMap = new ConcurrentHashMap<>();
-    private final List<BluetoothCentral> centralList = new ArrayList<>();
+    private final List<BluetoothCentralManager> centralList = new ArrayList<>();
 
     static synchronized BluezSignalHandler createInstance(@NotNull DBusConnection dbusConnection) {
         Objects.requireNonNull(dbusConnection, "no valid dbusconnection provided");
@@ -53,7 +53,7 @@ class BluezSignalHandler {
             // If it came from device or adapter, send it to all centrals
             String interfaceName = propertiesChanged.getInterfaceName();
             if (interfaceName.equals(BLUEZ_DEVICE_INTERFACE) || interfaceName.equals(BLUEZ_ADAPTER_INTERFACE)) {
-                for (BluetoothCentral central : centralList) {
+                for (BluetoothCentralManager central : centralList) {
                     central.handleSignal(propertiesChanged);
                 }
             }
@@ -80,7 +80,7 @@ class BluezSignalHandler {
             final String path = interfacesAdded.getPath();
             interfacesAdded.getInterfaces().forEach((key, value) -> {
                 if (key.equalsIgnoreCase(BLUEZ_DEVICE_INTERFACE)) {
-                    for (BluetoothCentral central : centralList) {
+                    for (BluetoothCentralManager central : centralList) {
                         central.handleInterfaceAddedForDevice(path, value);
                     }
                 }
@@ -124,7 +124,7 @@ class BluezSignalHandler {
         peripheralsMap.remove(deviceAddressString);
     }
 
-    void addCentral(@NotNull BluetoothCentral central) {
+    void addCentral(@NotNull BluetoothCentralManager central) {
         Objects.requireNonNull(central, "no valid central provided");
         centralList.add(central);
     }

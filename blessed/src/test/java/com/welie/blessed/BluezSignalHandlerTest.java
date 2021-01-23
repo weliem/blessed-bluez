@@ -29,7 +29,7 @@ class BluezSignalHandlerTest {
     DBusConnection dBusConnection;
 
     @Mock
-    BluetoothCentral central;
+    BluetoothCentralManager central;
 
     @Mock
     BluetoothPeripheral peripheral;

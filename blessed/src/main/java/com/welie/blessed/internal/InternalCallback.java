@@ -5,15 +5,15 @@
 
 package com.welie.blessed.internal;
 
-import com.welie.blessed.BluetoothCentral;
+import com.welie.blessed.BluetoothCentralManager;
 import com.welie.blessed.BluetoothCommandStatus;
 import com.welie.blessed.BluetoothPeripheral;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Interface between {@link BluetoothCentral} and a {@link BluetoothPeripheral}.
+ * Interface between {@link BluetoothCentralManager} and a {@link BluetoothPeripheral}.
  * <p/>
- * The {@link BluetoothPeripheral} sends status updates to {@link BluetoothCentral}.
+ * The {@link BluetoothPeripheral} sends status updates to {@link BluetoothCentralManager}.
  */
 public interface InternalCallback {
 

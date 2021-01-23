@@ -41,7 +41,7 @@ public final class BluetoothPeripheral {
     private static final String NO_VALID_VALUE_PROVIDED = "no valid value provided";
 
     @NotNull
-    private final BluetoothCentral central;
+    private final BluetoothCentralManager central;
 
     @Nullable
     private BluezDevice device;
@@ -356,7 +356,7 @@ public final class BluetoothPeripheral {
         }
     };
 
-    public BluetoothPeripheral(@NotNull BluetoothCentral central, @Nullable BluezDevice bluezDevice, @Nullable String deviceName, @NotNull String deviceAddress, @NotNull InternalCallback listener, @Nullable BluetoothPeripheralCallback peripheralCallback, @NotNull Handler callBackHandler) {
+    public BluetoothPeripheral(@NotNull BluetoothCentralManager central, @Nullable BluezDevice bluezDevice, @Nullable String deviceName, @NotNull String deviceAddress, @NotNull InternalCallback listener, @Nullable BluetoothPeripheralCallback peripheralCallback, @NotNull Handler callBackHandler) {
         this.central = Objects.requireNonNull(central, "no valid central provided");
         this.device = bluezDevice;
         this.deviceName = deviceName;
@@ -974,7 +974,7 @@ public final class BluetoothPeripheral {
 
     /**
      * Get the services supported by the connected bluetooth peripheral.
-     * Only services that are also supported by {@link BluetoothCentral} are included.
+     * Only services that are also supported by {@link BluetoothCentralManager} are included.
      *
      * @return Supported services.
      */

@@ -27,7 +27,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Callbacks for BluetoothCentral operations
  */
-public abstract class BluetoothCentralCallback {
+public abstract class BluetoothCentralManagerCallback {
 
     /**
      * Successfully connected with the device.

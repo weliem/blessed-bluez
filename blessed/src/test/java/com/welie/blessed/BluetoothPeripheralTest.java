@@ -38,7 +38,7 @@ class BluetoothPeripheralTest {
     BluezDevice bluezDevice;
 
     @Mock
-    BluetoothCentral central;
+    BluetoothCentralManager central;
 
     @Mock
     InternalCallback internalCallback;
