@@ -23,6 +23,7 @@ import java.util.concurrent.ScheduledFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.welie.blessed.BluetoothBytesParser.bytes2String;
 import static com.welie.blessed.BluetoothCommandStatus.*;
 import static com.welie.blessed.BluetoothGattCharacteristic.*;
 
@@ -33,7 +34,7 @@ public final class BluetoothPeripheral {
     private static final String TAG = BluetoothPeripheral.class.getSimpleName();
     private final Logger logger = LoggerFactory.getLogger(TAG);
 
-    public static final String ERROR_NATIVE_CHARACTERISTIC_IS_NULL = "ERROR: Native characteristic is null";
+    private static final String ERROR_NATIVE_CHARACTERISTIC_IS_NULL = "ERROR: Native characteristic is null";
     private static final String NO_VALID_SERVICE_UUID_PROVIDED = "no valid service UUID provided";
     private static final String NO_VALID_CHARACTERISTIC_UUID_PROVIDED = "no valid characteristic UUID provided";
     private static final String NO_VALID_CHARACTERISTIC_PROVIDED = "no valid characteristic provided";
@@ -1314,22 +1315,6 @@ public final class BluetoothPeripheral {
         }
 
         return bluetoothGattService;
-    }
-
-    /**
-     * Converts byte array to hex string
-     *
-     * @param bytes the byte array to convert
-     * @return String representing the byte array as a HEX string
-     */
-    @NotNull
-    private static String bytes2String(@Nullable final byte[] bytes) {
-        if (bytes == null) return "";
-        StringBuilder sb = new StringBuilder();
-        for (byte b : bytes) {
-            sb.append(String.format("%02x", b & 0xff));
-        }
-        return sb.toString();
     }
 
     /**
