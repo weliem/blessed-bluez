@@ -8,11 +8,11 @@ BLESSED-for-Bluez is a Bluetooth Low Energy (BLE) library for Bluez 5.50 and hig
 
 
 The library consists of 3 core classes and 2 callback abstract classes:
-1. `BluetoothCentral`, and it companion abstract class `BluetoothCentralCallback`
+1. `BluetoothCentralManager`, and it companion abstract class `BluetoothCentralManagerCallback`
 2. `BluetoothPeripheral`, and it's companion abstract class `BluetoothPeripheralCallback`
 3. `BluetoothBytesParser`
 
-The `BluetoothCentral` class is used to scan for devices and manage connections. The `BluetoothPeripheral` class represent the peripheral and wraps all GATT related peripheral functionality. The `BluetoothBytesParser` class is a utility class that makes parsing byte arrays easy.
+The `BluetoothCentralManager` class is used to scan for devices and manage connections. The `BluetoothPeripheral` class represent the peripheral and wraps all GATT related peripheral functionality. The `BluetoothBytesParser` class is a utility class that makes parsing byte arrays easy.
 
 The BLESSED library was inspired by CoreBluetooth on iOS and provides the same level of abstraction. If you already have developed using CoreBluetooth you can very easily port your code to Linux using this library. It has been tested on Ubuntu 18/19/20 and Raspberry Pi's.
 
@@ -30,7 +30,7 @@ public void scanForPeripheralsWithAddresses(String[] peripheralAddresses)
 They all work in the same way and take an array of either service UUIDs, peripheral names or mac addresses. So in order to setup a scan for a device with the Bloodpressure service and connect to it, you do:
 
 ```java
-private final BluetoothCentralCallback bluetoothCentralManagerCallback = new BluetoothCentralCallback() {
+private final BluetoothCentralManagerCallback bluetoothCentralManagerCallback = new BluetoothCentralManagerCallback() {
         @Override
         public void onDiscoveredPeripheral(BluetoothPeripheral peripheral, ScanResult scanResult) {
             central.stopScan();
@@ -38,8 +38,8 @@ private final BluetoothCentralCallback bluetoothCentralManagerCallback = new Blu
         }
 };
 
-// Create BluetoothCentral and receive callbacks on the main thread
-BluetoothCentral central = BluetoothCentral(getApplicationContext(), bluetoothCentralManagerCallback, new Handler(Looper.getMainLooper()));
+// Create BluetoothCentralManager
+BluetoothCentralManager central = new BluetoothCentralManager(bluetoothCentralManagerCallback);
 
 // Define blood pressure service UUID
 UUID BLOODPRESSURE_SERVICE_UUID = UUID.fromString("00001810-0000-1000-8000-00805f9b34fb");
