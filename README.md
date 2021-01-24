@@ -72,8 +72,8 @@ BluetoothPeripheral peripheral = central.getPeripheral("CF:A9:BA:D9:62:9E");
 After issuing a connect call, you will receive one of the following callbacks:
 ```java
 public void onConnectedPeripheral(BluetoothPeripheral peripheral)
-public void onConnectionFailed(BluetoothPeripheral peripheral, int status)
-public void onDisconnectedPeripheral(BluetoothPeripheral peripheral, int status)
+public void onConnectionFailed(BluetoothPeripheral peripheral, BluetoothCommandStatus status)
+public void onDisconnectedPeripheral(BluetoothPeripheral peripheral, BluetoothCommandStatus status)
 ```
 
 If you want to disconnect a device, or cancel an autoConnect on a device, you call `cancelConnection`.
