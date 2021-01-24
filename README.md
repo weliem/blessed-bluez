@@ -102,11 +102,11 @@ Both methods are asynchronous and will be queued up. So you can just issue as ma
 For read operations you will get a callback on:
 
 ```java
-public void onCharacteristicUpdate(BluetoothPeripheral peripheral, byte[] value, BluetoothGattCharacteristic characteristic)
+public void onCharacteristicUpdate(BluetoothPeripheral peripheral, byte[] value, BluetoothGattCharacteristic characteristic, BluetoothCommandStatus status)
 ```
-If you want to write to a characteristic, you need to provide a `value` and a `writeType`. The `writeType` is either `withResponse` or `withoutResponse`. If the write type you specify is not supported by the characteristic you will see an error in your log. For write operations you will get a callback on:
+If you want to write to a characteristic, you need to provide a `value` and a `WriteType`. The `WriteType` is either `WITH_RESPONSE` or `WITHOUT_RESPONSE`. If the write type you specify is not supported by the characteristic you will see an error in your log. For write operations you will get a callback on:
 ```java
-public void onCharacteristicWrite(BluetoothPeripheral peripheral, byte[] value, BluetoothGattCharacteristic characteristic, final int status)
+public void onCharacteristicWrite(BluetoothPeripheral peripheral, byte[] value, BluetoothGattCharacteristic characteristic, BluetoothCommandStatus status)
 
 ```
 
