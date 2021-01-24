@@ -600,7 +600,7 @@ public final class BluetoothPeripheral {
                     currentWriteBytes = bytesToWrite;
                     logger.info(String.format("writing %s <%s> to characteristic <%s>", writeType, bytes2String(bytesToWrite), nativeCharacteristic.getUuid()));
                     HashMap<String, Object> options = new HashMap<>();
-                    options.put("type", writeType == WriteType.withResponse ? "request" : "command");
+                    options.put("type", writeType == WriteType.WITH_RESPONSE ? "request" : "command");
                     nativeCharacteristic.writeValue(bytesToWrite, options);
 
                     // Since there is no callback nor characteristic update event for when a write is completed, we can consider this command done
