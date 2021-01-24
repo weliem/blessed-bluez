@@ -39,7 +39,7 @@ private final BluetoothCentralManagerCallback bluetoothCentralManagerCallback = 
 };
 
 // Create BluetoothCentralManager
-BluetoothCentralManager central = BluetoothCentralManager(bluetoothCentralManagerCallback);
+BluetoothCentralManager central = new BluetoothCentralManager(bluetoothCentralManagerCallback);
 
 // Define blood pressure service UUID
 UUID BLOODPRESSURE_SERVICE_UUID = UUID.fromString("00001810-0000-1000-8000-00805f9b34fb");
