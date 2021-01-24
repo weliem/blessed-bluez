@@ -1108,6 +1108,7 @@ public final class BluetoothPeripheral {
      * The bonding command will be enqueued and you will
      * receive updates via the {@link BluetoothPeripheralCallback}.
      *
+     * @param peripheralCallback the peripheral callback to use
      * @return true if bonding was started/enqueued, false if not
      */
     public boolean createBond(@NotNull BluetoothPeripheralCallback peripheralCallback) {

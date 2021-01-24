@@ -99,7 +99,14 @@ public class BluetoothGattCharacteristic {
     public static final int PERMISSION_WRITE_SIGNED_MITM = 0x100;
 
     public enum WriteType {
+        /**
+         * Write with response (aka write request)
+         */
         WITH_RESPONSE,
+
+        /**
+         * Write without response (aka write command)
+         */
         WITHOUT_RESPONSE
     }
 

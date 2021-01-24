@@ -10,7 +10,9 @@ import java.util.UUID;
 
 import static com.welie.blessed.BluetoothBytesParser.bytes2String;
 
-
+/**
+ * The ScanResult class captures all the information about a peripheral that was part of the advertisement or what is already known about the peripheral
+ */
 public class ScanResult {
     private long timestampNanos;
     private final String name;
@@ -30,43 +32,75 @@ public class ScanResult {
         stamp();
     }
 
+    /**
+     * Get the timestamp of the ScanResult
+     * @return timestamp on nanoseconds
+     */
     public long getTimestampNanos() {
         return timestampNanos;
     }
 
+    /**
+     * Get name of the peripheral
+     *
+     * @return the name of the peripheral or null if the peripheral does not advertise a name
+     */
     public @Nullable String getName() {
         return name;
     }
 
+    /**
+     * Get address of the peripheral
+     *
+     * @return the address
+     */
     public @NotNull String getAddress() {
         return address;
     }
 
+    /**
+     * Get the RSSI value
+     *
+     * @return the RSSI value
+     */
     public int getRssi() {
         return rssi;
     }
 
+    /**
+     * Get the list of advertised service UUIDs
+     * @return list of service UUIDs
+     */
     public @NotNull List<UUID> getUuids() {
         return uuids;
     }
 
+    /**
+     * Get manufacturer data
+     * @return map of manufacturer data or an empty map
+     */
     public @NotNull Map<Integer, byte[]> getManufacturerData() {
         return manufacturerData;
     }
 
+    /**
+     * Get service data
+     *
+     * @return map of service data or an empty map
+     */
     public @NotNull Map<String, byte[]> getServiceData() {
         return serviceData;
     }
 
-    public void setRssi(int rssi) {
+    void setRssi(int rssi) {
         this.rssi = rssi;
     }
 
-    public void setManufacturerData(@NotNull Map<@NotNull Integer, byte[]> manufacturerData) {
+    void setManufacturerData(@NotNull Map<@NotNull Integer, byte[]> manufacturerData) {
         this.manufacturerData = Objects.requireNonNull(manufacturerData, "no valid manufacturer data supplied");
     }
 
-    public void setServiceData(@NotNull Map<@NotNull String, byte[]> serviceData) {
+    void setServiceData(@NotNull Map<@NotNull String, byte[]> serviceData) {
         this.serviceData = Objects.requireNonNull(serviceData, "no valid service data supplied");
     }
 
@@ -101,7 +135,7 @@ public class ScanResult {
         return result.toString();
     }
 
-    public void stamp() {
+    void stamp() {
         this.timestampNanos = System.nanoTime();
     }
 }

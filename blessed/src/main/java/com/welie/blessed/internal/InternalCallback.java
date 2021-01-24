@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Interface between {@link BluetoothCentralManager} and a {@link BluetoothPeripheral}.
- * <p/>
+ *
  * The {@link BluetoothPeripheral} sends status updates to {@link BluetoothCentralManager}.
  */
 public interface InternalCallback {
@@ -28,6 +28,7 @@ public interface InternalCallback {
      * Connecting with {@link BluetoothPeripheral} has failed.
      *
      * @param peripheral {@link BluetoothPeripheral} of which connect failed.
+     * @param status the status of the operation
      */
     void connectFailed(@NotNull final BluetoothPeripheral peripheral, @NotNull final BluetoothCommandStatus status);
 
@@ -35,6 +36,7 @@ public interface InternalCallback {
      * {@link BluetoothPeripheral} has disconnected.
      *
      * @param peripheral {@link BluetoothPeripheral} that disconnected.
+     * @param status the status of the operation
      */
     void disconnected(@NotNull final BluetoothPeripheral peripheral, @NotNull final BluetoothCommandStatus status);
 
