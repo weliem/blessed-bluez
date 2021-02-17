@@ -44,6 +44,7 @@ public class BluetoothGattService {
     /**
      * Returns the peripheral associated with this service.
      *
+     * @return the peripheral associated with this service
      */
     public @Nullable BluetoothPeripheral getPeripheral() {
         return peripheral;

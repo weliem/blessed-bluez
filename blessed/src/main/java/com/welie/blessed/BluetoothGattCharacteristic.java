@@ -99,8 +99,15 @@ public class BluetoothGattCharacteristic {
     public static final int PERMISSION_WRITE_SIGNED_MITM = 0x100;
 
     public enum WriteType {
-        withResponse,
-        withoutResponse
+        /**
+         * Write with response (aka write request)
+         */
+        WITH_RESPONSE,
+
+        /**
+         * Write without response (aka write command)
+         */
+        WITHOUT_RESPONSE
     }
 
     /**
@@ -276,10 +283,10 @@ public class BluetoothGattCharacteristic {
     public boolean supportsWriteType(WriteType writeType) {
         int writeProperty;
         switch (writeType) {
-            case withResponse:
+            case WITH_RESPONSE:
                 writeProperty = PROPERTY_WRITE;
                 break;
-            case withoutResponse:
+            case WITHOUT_RESPONSE:
                 writeProperty = PROPERTY_WRITE_NO_RESPONSE;
                 break;
             default:

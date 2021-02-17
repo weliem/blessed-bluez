@@ -411,7 +411,6 @@ public class BluezDevice extends AbstractBluetoothObject {
      * connected it will try to connect currently disconnected
      * ones.
      * </p>
-     * @return true if connected, false otherwise
      */
     public void connect() throws BluezFailedException, BluezAlreadyConnectedException, BluezNotReadyException, BluezInProgressException {
         rawdevice.Connect();
@@ -501,7 +500,6 @@ public class BluezDevice extends AbstractBluetoothObject {
      * In case there is no application agent and also<br>
      * no default agent present, this method will fail.
      * </p>
-     * @return true on successful pair, false otherwise
      */
     public void pair() throws BluezInProgressException, BluezInvalidArgumentsException, BluezFailedException, BluezAuthenticationFailedException, BluezAlreadyExistsException, BluezAuthenticationCanceledException, BluezAuthenticationRejectedException, BluezAuthenticationTimeoutException, BluezConnectionAttemptFailedException {
         rawdevice.Pair();

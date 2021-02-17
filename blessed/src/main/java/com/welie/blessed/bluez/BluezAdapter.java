@@ -260,7 +260,6 @@ public class BluezAdapter extends AbstractBluetoothObject {
 
     /**
      * Start a new discovery operation to find any devices nearby.
-     * @return true if discovery is running, false otherwise
      */
     public void startDiscovery() throws BluezFailedException, BluezNotReadyException {
         adapter.StartDiscovery();
@@ -269,7 +268,6 @@ public class BluezAdapter extends AbstractBluetoothObject {
     /**
      * Stops the current discovery operation.
      *
-     * @return true if discovery was stopped, false otherwise
      */
     public void stopDiscovery() throws BluezNotAuthorizedException, BluezFailedException, BluezNotReadyException {
         adapter.StopDiscovery();

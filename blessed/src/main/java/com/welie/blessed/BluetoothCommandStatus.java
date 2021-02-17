@@ -1,5 +1,7 @@
 package com.welie.blessed;
 
+import org.jetbrains.annotations.NotNull;
+
 @SuppressWarnings("unused")
 public enum BluetoothCommandStatus {
 
@@ -138,7 +140,14 @@ public enum BluetoothCommandStatus {
     /**
      * A DBUS execution exception occurred
      */
-    DBUS_EXECUTION_EXCEPTION(0x90);
+    DBUS_EXECUTION_EXCEPTION(0x90),
+
+    /**
+     * Unknown status
+     *
+     * Should not ever happen
+     */
+    UNKNOWN_STATUS(0xFFFF);
 
     BluetoothCommandStatus(int value) {
         this.value = value;
@@ -150,11 +159,12 @@ public enum BluetoothCommandStatus {
         return value;
     }
 
+    @NotNull
     public static BluetoothCommandStatus fromValue(int value) {
         for (BluetoothCommandStatus type : values()) {
             if (type.getValue() == value)
                 return type;
         }
-        return null;
+        return UNKNOWN_STATUS;
     }
 }

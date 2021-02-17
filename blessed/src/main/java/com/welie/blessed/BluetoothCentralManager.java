@@ -1001,6 +1001,7 @@ public class BluetoothCentralManager {
      * Remove bond for a peripheral
      *
      * @param peripheralAddress the address of the peripheral
+     * @return true if bond was removed, otherwise false
      */
     @SuppressWarnings("unused")
     public boolean removeBond(@NotNull String peripheralAddress) {
