@@ -108,4 +108,9 @@ public abstract class BluetoothPeripheralCallback {
      * @param status GATT status code
      */
     public void onReadRemoteRssi(@NotNull final BluetoothPeripheral peripheral, int rssi, @NotNull BluetoothCommandStatus status) {}
+
+    /**
+     * NULL class to deal with nullability
+     */
+    static class NULL extends BluetoothPeripheralCallback { }
 }

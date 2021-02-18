@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.welie.blessed.BluetoothPeripheral.*;
+import static com.welie.blessed.ConnectionState.CONNECTED;
 import static java.lang.Thread.sleep;
 
 /**
@@ -966,7 +967,7 @@ public class BluetoothCentralManager {
     public void cancelConnection(@NotNull final BluetoothPeripheral peripheral) {
         Objects.requireNonNull(peripheral, NULL_PERIPHERAL_ERROR);
 
-        if (peripheral.getState() == STATE_CONNECTED) {
+        if (peripheral.getState() == CONNECTED) {
             // Some adapters have issues with (dis)connecting while scanning, so stop scan first
             stopScanning();
 

@@ -23,6 +23,7 @@ import java.util.*;
 import static com.welie.blessed.BluetoothCommandStatus.*;
 import static com.welie.blessed.BluetoothGattCharacteristic.*;
 import static com.welie.blessed.BluetoothPeripheral.*;
+import static com.welie.blessed.ConnectionState.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -126,7 +127,7 @@ class BluetoothPeripheralTest {
 
         // Then
         verify(internalCallback).connectFailed(peripheral, BLUEZ_NOT_READY);
-        assertEquals(STATE_DISCONNECTED, peripheral.getState());
+        assertEquals(DISCONNECTED, peripheral.getState());
     }
 
     // TODO, consider simply doing nothing when this happens....
@@ -144,7 +145,7 @@ class BluetoothPeripheralTest {
 
         // Then
         verify(internalCallback).connectFailed(peripheral, BLUEZ_OPERATION_IN_PROGRESS);
-        assertEquals(STATE_DISCONNECTED, peripheral.getState());
+        assertEquals(DISCONNECTED, peripheral.getState());
     }
 
     @Test
@@ -161,7 +162,7 @@ class BluetoothPeripheralTest {
 
         // Then
         verify(internalCallback).connectFailed(peripheral, CONNECTION_FAILED_ESTABLISHMENT);
-        assertEquals(STATE_DISCONNECTED, peripheral.getState());
+        assertEquals(DISCONNECTED, peripheral.getState());
     }
 
     @Test
@@ -178,7 +179,7 @@ class BluetoothPeripheralTest {
 
         // Then
         verify(internalCallback).connectFailed(peripheral, DBUS_EXECUTION_EXCEPTION);
-        assertEquals(STATE_DISCONNECTED, peripheral.getState());
+        assertEquals(DISCONNECTED, peripheral.getState());
     }
 
     @Test
@@ -188,7 +189,7 @@ class BluetoothPeripheralTest {
 
         // Then
         verify(internalCallback, never()).connected(peripheral);
-        assertEquals(STATE_CONNECTED, peripheral.getState());
+        assertEquals(CONNECTED, peripheral.getState());
     }
 
     @Test
@@ -201,7 +202,7 @@ class BluetoothPeripheralTest {
 
         // Then
         verify(internalCallback, timeout(50)).connected(peripheral);
-        assertEquals(STATE_CONNECTED, peripheral.getState());
+        assertEquals(CONNECTED, peripheral.getState());
     }
 
     @Test
@@ -214,7 +215,7 @@ class BluetoothPeripheralTest {
 
         // Then
         verify(bluezDevice).disconnect();
-        assertEquals(STATE_DISCONNECTING, peripheral.getState());
+        assertEquals(DISCONNECTING, peripheral.getState());
     }
 
     @Test
@@ -229,7 +230,7 @@ class BluetoothPeripheralTest {
 
         // Then
         verify(internalCallback, timeout(50)).disconnected(peripheral, COMMAND_SUCCESS);
-        assertEquals(STATE_DISCONNECTED, peripheral.getState());
+        assertEquals(DISCONNECTED, peripheral.getState());
     }
 
     @Test

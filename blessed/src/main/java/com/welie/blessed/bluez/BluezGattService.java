@@ -5,6 +5,7 @@ import org.bluez.GattService1;
 import org.bluez.exceptions.BluezNotImplementedException;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.interfaces.DBusInterface;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -54,6 +55,7 @@ public class BluezGattService extends AbstractBluetoothObject {
      * Will issue a query if {@link #refreshGattCharacteristics()} wasn't called before.
      * @return List, maybe empty but never null
      */
+    @NotNull
     public List<BluezGattCharacteristic> getGattCharacteristics() {
         if (characteristicByUuid.isEmpty()) {
             refreshGattCharacteristics();
