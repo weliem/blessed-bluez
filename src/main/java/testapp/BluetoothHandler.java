@@ -96,9 +96,13 @@ public class BluetoothHandler {
                 if (isNotifying) {
                     // If we just bonded wit the A&D 651BLE, issue a disconnect to finish the pairing process
                     String peripheralName = peripheral.getName() == null ? "" : peripheral.getName();
-                    if (justBonded && peripheralName.contains("651BLE")) {
+                    if (justBonded && isANDPeripheral(peripheralName)) {
                         peripheral.cancelConnection();
                         justBonded = false;
+                    }
+
+                    if (isANDPeripheral(peripheralName)) {
+                        startDisconnectTimer(peripheral);
                     }
                 } else {
                     // Apparently we are turning off notifications as part of a controlled disconnect
@@ -184,6 +188,10 @@ public class BluetoothHandler {
             logger.info(String.format("rssi is %d", rssi));
         }
     };
+
+    private boolean isANDPeripheral(String peripheralName) {
+        return peripheralName.contains("352BLE") || peripheralName.contains("651BLE");
+    }
 
     public void startDisconnectTimer(final BluetoothPeripheral peripheral) {
         if (timeoutFuture != null) {
