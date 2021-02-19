@@ -22,6 +22,7 @@ import java.util.*;
 
 import static com.welie.blessed.BluetoothCentralManager.*;
 import static com.welie.blessed.BluetoothPeripheral.*;
+import static com.welie.blessed.ConnectionState.CONNECTED;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -855,7 +856,7 @@ class BluetoothCentralManagerTest {
         verify(peripheral.getDevice(), timeout(CONNECT_DELAY + 200)).connect();
         peripheral.handleSignal(getPropertiesChangedSignalConnected());
         Thread.sleep(50);
-        assertEquals(STATE_CONNECTED, peripheral.getState());
+        assertEquals(CONNECTED, peripheral.getState());
         peripheral.handleSignal(getPropertiesChangedSignalServicesResolved());
         Thread.sleep(50);
     }

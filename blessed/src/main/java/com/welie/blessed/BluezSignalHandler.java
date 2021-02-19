@@ -88,7 +88,7 @@ class BluezSignalHandler {
         }
     };
 
-    private BluezSignalHandler(@NotNull DBusConnection dBusConnection) {
+    private BluezSignalHandler(@NotNull final DBusConnection dBusConnection) {
         Objects.requireNonNull(dBusConnection, "no valid dbusconnection provided");
 
         try {
@@ -101,15 +101,15 @@ class BluezSignalHandler {
         }
     }
 
-    private void registerPropertiesChangedHandler(@NotNull AbstractPropertiesChangedHandler handler) throws DBusException {
+    private void registerPropertiesChangedHandler(@NotNull final AbstractPropertiesChangedHandler handler) throws DBusException {
         dbusConnection.addSigHandler(handler.getImplementationClass(), handler);
     }
 
-    private void registerInterfacesAddedHandler(@NotNull AbstractInterfacesAddedHandler handler) throws DBusException {
+    private void registerInterfacesAddedHandler(@NotNull final AbstractInterfacesAddedHandler handler) throws DBusException {
         dbusConnection.addSigHandler(handler.getImplementationClass(), handler);
     }
 
-    void addPeripheral(@NotNull String peripheralAddress, @NotNull BluetoothPeripheral peripheral) {
+    void addPeripheral(@NotNull final String peripheralAddress, @NotNull final BluetoothPeripheral peripheral) {
         Objects.requireNonNull(peripheralAddress, "no valid address provided");
         Objects.requireNonNull(peripheral, "no valid peripheral provided");
 
@@ -117,14 +117,14 @@ class BluezSignalHandler {
         peripheralsMap.put(deviceAddressString, peripheral);
     }
 
-    void removePeripheral(@NotNull String peripheralAddress) {
+    void removePeripheral(@NotNull final String peripheralAddress) {
         Objects.requireNonNull(peripheralAddress, "no valid address provided");
 
         String deviceAddressString = peripheralAddress.replace(":", "_");
         peripheralsMap.remove(deviceAddressString);
     }
 
-    void addCentral(@NotNull BluetoothCentralManager central) {
+    void addCentral(@NotNull final BluetoothCentralManager central) {
         Objects.requireNonNull(central, "no valid central provided");
         centralList.add(central);
     }

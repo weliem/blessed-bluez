@@ -100,6 +100,11 @@ public class BluetoothHandler {
                         peripheral.cancelConnection();
                         justBonded = false;
                     }
+                } else {
+                    // Apparently we are turning off notifications as part of a controlled disconnect
+                    if (peripheral.getNotifyingCharacteristics().isEmpty()) {
+                        peripheral.cancelConnection();
+                    }
                 }
             } else {
                 logger.error(String.format("ERROR: Changing notification state failed for %s", characteristic.getUuid()));
@@ -186,8 +191,14 @@ public class BluetoothHandler {
             timeoutFuture = null;
         }
 
-        Runnable timeoutRunnable = peripheral::cancelConnection;
+        Runnable timeoutRunnable = () -> turnOffAllNotifications(peripheral);
         timeoutFuture = handler.postDelayed(timeoutRunnable, 2000L);
+    }
+
+    private void turnOffAllNotifications(@NotNull final BluetoothPeripheral peripheral) {
+        // Turn off notifications for all characteristics that are notifying
+        // We do this because Bluez remembers notification state between connections but peripherals don't
+        peripheral.getNotifyingCharacteristics().forEach(characteristic -> peripheral.setNotify(characteristic, false));
     }
 
     private final BluetoothCentralManagerCallback bluetoothCentralManagerCallback = new BluetoothCentralManagerCallback() {
