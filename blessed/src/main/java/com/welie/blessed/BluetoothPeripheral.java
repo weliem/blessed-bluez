@@ -175,7 +175,7 @@ public final class BluetoothPeripheral {
             completeDisconnect(true, status);
         }
 
-        void connectionStateChangeUnsuccessful(@NotNull final BluetoothCommandStatus status,@NotNull final ConnectionState previousState, @NotNull final ConnectionState newState) {
+        void connectionStateChangeUnsuccessful(@NotNull final BluetoothCommandStatus status, @NotNull final ConnectionState previousState, @NotNull final ConnectionState newState) {
             if (previousState == CONNECTING) {
                 completeDisconnect(false, status);
                 logger.error(String.format("connection failed with status '%s'", status));
@@ -193,7 +193,7 @@ public final class BluetoothPeripheral {
         }
 
         @Override
-        public void onNotificationStateUpdate(@NotNull final BluetoothGattCharacteristic characteristic,  @NotNull final BluetoothCommandStatus status) {
+        public void onNotificationStateUpdate(@NotNull final BluetoothGattCharacteristic characteristic, @NotNull final BluetoothCommandStatus status) {
             if (status != COMMAND_SUCCESS) {
                 logger.error(String.format("set notify failed with status '%s'", status));
             }
@@ -203,7 +203,7 @@ public final class BluetoothPeripheral {
         }
 
         @Override
-        public void onDescriptorWrite( @NotNull final BluetoothGattDescriptor descriptor,  @NotNull final BluetoothCommandStatus status) {
+        public void onDescriptorWrite(@NotNull final BluetoothGattDescriptor descriptor, @NotNull final BluetoothCommandStatus status) {
             // Do some checks first
             final BluetoothGattCharacteristic parentCharacteristic = descriptor.getCharacteristic();
             if (status != COMMAND_SUCCESS) {
@@ -374,12 +374,12 @@ public final class BluetoothPeripheral {
      *
      * <p>The characteristic must support reading it, otherwise the operation will not be enqueued.
      *
-     * @param serviceUUID the service UUID the characteristic belongs to
+     * @param serviceUUID        the service UUID the characteristic belongs to
      * @param characteristicUUID the characteristic's UUID
      * @return true if the operation was enqueued, false if the characteristic does not support reading or the characteristic was not found
      */
     @SuppressWarnings("UnusedReturnValue")
-    public boolean readCharacteristic(@NotNull final UUID serviceUUID, @NotNull final UUID characteristicUUID ) {
+    public boolean readCharacteristic(@NotNull final UUID serviceUUID, @NotNull final UUID characteristicUUID) {
         Objects.requireNonNull(serviceUUID, NO_VALID_SERVICE_UUID_PROVIDED);
         Objects.requireNonNull(characteristicUUID, NO_VALID_CHARACTERISTIC_PROVIDED);
 
@@ -466,14 +466,14 @@ public final class BluetoothPeripheral {
      *
      * <p>The characteristic must support reading it, otherwise the operation will not be enqueued.
      *
-     * @param serviceUUID the service UUID the characteristic belongs to
+     * @param serviceUUID        the service UUID the characteristic belongs to
      * @param characteristicUUID the characteristic's UUID
-     * @param value          the byte array to write
-     * @param writeType      the write type to use when writing. Must be WRITE_TYPE_DEFAULT, WRITE_TYPE_NO_RESPONSE or WRITE_TYPE_SIGNED
+     * @param value              the byte array to write
+     * @param writeType          the write type to use when writing. Must be WRITE_TYPE_DEFAULT, WRITE_TYPE_NO_RESPONSE or WRITE_TYPE_SIGNED
      * @return true if a write operation was successfully enqueued, otherwise false
      */
     @SuppressWarnings("UnusedReturnValue")
-    public boolean writeCharacteristic(@NotNull final UUID serviceUUID, @NotNull final UUID characteristicUUID, @NotNull final byte[] value, @NotNull final WriteType writeType ) {
+    public boolean writeCharacteristic(@NotNull final UUID serviceUUID, @NotNull final UUID characteristicUUID, @NotNull final byte[] value, @NotNull final WriteType writeType) {
         Objects.requireNonNull(serviceUUID, NO_VALID_SERVICE_UUID_PROVIDED);
         Objects.requireNonNull(characteristicUUID, NO_VALID_CHARACTERISTIC_UUID_PROVIDED);
         Objects.requireNonNull(value, NO_VALID_VALUE_PROVIDED);
@@ -576,9 +576,9 @@ public final class BluetoothPeripheral {
     /**
      * Set the notification state of a characteristic to 'on' or 'off'. The characteristic must support notifications or indications.
      *
-     * @param serviceUUID the service UUID the characteristic belongs to
+     * @param serviceUUID        the service UUID the characteristic belongs to
      * @param characteristicUUID the characteristic's UUID
-     * @param enable true for setting notification on, false for turning it off
+     * @param enable             true for setting notification on, false for turning it off
      * @return true if the operation was enqueued, false the characteristic could not be found or does not support notifications
      */
     @SuppressWarnings("UnusedReturnValue")
@@ -644,7 +644,7 @@ public final class BluetoothPeripheral {
                         logger.info(String.format("stopNotify for characteristic <%s>", nativeCharacteristic.getUuid()));
                         nativeCharacteristic.stopNotify();
                     }
-                } catch (BluezNotPermittedException  e) {
+                } catch (BluezNotPermittedException e) {
                     gattCallback.onNotificationStateUpdate(characteristic, WRITE_NOT_PERMITTED);
                 } catch (BluezFailedException e) {
                     gattCallback.onNotificationStateUpdate(characteristic, BLUEZ_OPERATION_FAILED);
@@ -739,7 +739,7 @@ public final class BluetoothPeripheral {
             }
         }
 
-        private void handlePropertyChangedForCharacteristic(final BluetoothGattCharacteristic bluetoothGattCharacteristic, final String propertyName, final Variant<?> value) {
+        private void handlePropertyChangedForCharacteristic(@NotNull final BluetoothGattCharacteristic bluetoothGattCharacteristic, @NotNull final String propertyName, @NotNull final Variant<?> value) {
             switch (propertyName) {
                 case PROPERTY_NOTIFYING:
                     final boolean isNotifying = (Boolean) value.getValue();
@@ -766,7 +766,7 @@ public final class BluetoothPeripheral {
             }
         }
 
-        private void handlePropertyChangeForDevice(final String propertyName, final Variant<?> value) {
+        private void handlePropertyChangeForDevice(@NotNull final String propertyName, @NotNull final Variant<?> value) {
             switch (propertyName) {
                 case PROPERTY_SERVICES_RESOLVED:
                     cancelServiceDiscoveryTimer();
@@ -893,7 +893,8 @@ public final class BluetoothPeripheral {
         }
     }
 
-    private @Nullable BluezGattCharacteristic getBluezGattCharacteristic(@NotNull UUID serviceUUID, @NotNull UUID characteristicUUID) {
+    @Nullable
+    private BluezGattCharacteristic getBluezGattCharacteristic(@NotNull final UUID serviceUUID, @NotNull final UUID characteristicUUID) {
         Objects.requireNonNull(serviceUUID, NO_VALID_SERVICE_UUID_PROVIDED);
         Objects.requireNonNull(characteristicUUID, "no valid characteristic UUID provided");
 
@@ -908,7 +909,8 @@ public final class BluetoothPeripheral {
         return characteristic;
     }
 
-    private @Nullable BluetoothGattCharacteristic getBluetoothGattCharacteristic(@NotNull BluezGattCharacteristic bluezGattCharacteristic) {
+    @Nullable
+    private BluetoothGattCharacteristic getBluetoothGattCharacteristic(@NotNull final BluezGattCharacteristic bluezGattCharacteristic) {
         Objects.requireNonNull(bluezGattCharacteristic, NO_VALID_CHARACTERISTIC_PROVIDED);
 
         final UUID characteristicUUID = bluezGattCharacteristic.getUuid();
@@ -923,7 +925,8 @@ public final class BluetoothPeripheral {
      *
      * @return Supported services.
      */
-    public @NotNull List<BluetoothGattService> getServices() {
+    @NotNull
+    public List<BluetoothGattService> getServices() {
         return services;
     }
 
@@ -933,7 +936,8 @@ public final class BluetoothPeripheral {
      * @param serviceUUID the UUID of the service
      * @return the BluetoothGattService object for the service UUID or null if the peripheral does not have a service with the specified UUID
      */
-    public @Nullable BluetoothGattService getService(@NotNull final UUID serviceUUID) {
+    @Nullable
+    public  BluetoothGattService getService(@NotNull final UUID serviceUUID) {
         Objects.requireNonNull(serviceUUID, NO_VALID_SERVICE_UUID_PROVIDED);
 
         for (BluetoothGattService service : services) {
@@ -951,7 +955,8 @@ public final class BluetoothPeripheral {
      * @param characteristicUUID the characteristic UUID
      * @return the BluetoothGattCharacteristic matching the serviceUUID and characteristicUUID
      */
-    public @Nullable BluetoothGattCharacteristic getCharacteristic(@NotNull final UUID serviceUUID, @NotNull final UUID characteristicUUID) {
+    @Nullable
+    public BluetoothGattCharacteristic getCharacteristic(@NotNull final UUID serviceUUID, @NotNull final UUID characteristicUUID) {
         Objects.requireNonNull(serviceUUID, NO_VALID_SERVICE_UUID_PROVIDED);
         Objects.requireNonNull(characteristicUUID, NO_VALID_CHARACTERISTIC_PROVIDED);
 
@@ -968,7 +973,8 @@ public final class BluetoothPeripheral {
      *
      * @return name of the bluetooth peripheral
      */
-    public @Nullable String getName() {
+    @Nullable
+    public String getName() {
         return deviceName;
     }
 
@@ -981,7 +987,8 @@ public final class BluetoothPeripheral {
      *
      * @return Address of the bluetooth peripheral
      */
-    public @NotNull String getAddress() {
+    @NotNull
+    public String getAddress() {
         return deviceAddress;
     }
 

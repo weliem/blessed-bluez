@@ -41,7 +41,7 @@ class BluezAdapterProvider {
         Objects.requireNonNull(adapters);
         if (adapters.isEmpty()) return null;
 
-        Collections.sort(adapters, Comparator.comparing(BluezAdapter::getDeviceName));
+        adapters.sort(Comparator.comparing(BluezAdapter::getDeviceName));
         return adapters.get(adapters.size() - 1);
     }
 }
