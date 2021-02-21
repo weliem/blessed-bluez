@@ -325,10 +325,10 @@ class BluetoothCentralManagerTest {
         // When
         ObjectManager.InterfacesAdded interfacesAdded = getInterfacesAddedNewHtsDevice();
         central.handleInterfaceAddedForDevice(interfacesAdded.getPath(), interfacesAdded.getInterfaces().get(BLUEZ_DEVICE_INTERFACE));
-        Thread.sleep(100);
+        //Thread.sleep(100);
 
         // Then
-        verify(callback, never()).onDiscoveredPeripheral(any(), any());
+        verify(callback, timeout(1000).times(0)).onDiscoveredPeripheral(any(), any());
     }
 
     @Test
@@ -472,10 +472,9 @@ class BluetoothCentralManagerTest {
         // When
         Properties.PropertiesChanged propertiesChanged = getPropertiesChangedSignalWhileScanning();
         central.handleSignal(propertiesChanged);
-        Thread.sleep(100);
 
         // Then
-        verify(callback, never()).onDiscoveredPeripheral(any(), any());
+        verify(callback, timeout(1000).times(0)).onDiscoveredPeripheral(any(), any());
     }
 
     @Test
@@ -909,8 +908,7 @@ class BluetoothCentralManagerTest {
         Map<String, Variant<?>> serviceData = new HashMap<>();
         serviceData.put(BLP_SERVICE_UUID.toString(), new Variant<>(new byte[]{0x44, 0x55}));
         propertiesChanged.put(PROPERTY_SERVICE_DATA, new Variant<>(convertStringHashMapToDBusMap(serviceData), "a{sv}"));
-        String dBusPath = DUMMY_MAC_ADDRESS_PATH_BLP;
-        return new Properties.PropertiesChanged(dBusPath, BLUEZ_DEVICE_INTERFACE, propertiesChanged,new ArrayList() );
+        return new Properties.PropertiesChanged(DUMMY_MAC_ADDRESS_PATH_BLP, BLUEZ_DEVICE_INTERFACE, propertiesChanged,new ArrayList() );
     }
 
     @NotNull
@@ -1022,10 +1020,10 @@ class BluetoothCentralManagerTest {
         when(bluezAdapter.isPowered()).thenReturn(true);
         BluetoothCentralManager central = new BluetoothCentralManager(callback, Collections.emptySet(), bluezAdapter);
         central.scanForPeripheralsWithAddresses(new String[]{peripheralAddress});
-        Thread.sleep(10);
+        Thread.sleep(20);
         Properties.PropertiesChanged propertiesChangedSignal = getPropertiesChangeSignalDiscoveryStarted();
         central.handleSignal(propertiesChangedSignal);
-        Thread.sleep(10);
+        Thread.sleep(20);
         return central;
     }
 

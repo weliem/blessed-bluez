@@ -268,7 +268,7 @@ public final class BluetoothPeripheral {
             // We are now fully connected and service discovery was successful, so let Central know
             listener.connected(BluetoothPeripheral.this);
 
-            callBackHandler.post(() -> peripheralCallback.onServicesDiscovered(BluetoothPeripheral.this));
+            callBackHandler.post(() -> peripheralCallback.onServicesDiscovered(BluetoothPeripheral.this, services));
 
             // Let Central know as well so it can start scanning again if needed
             listener.servicesDiscovered(BluetoothPeripheral.this);
@@ -704,7 +704,7 @@ public final class BluetoothPeripheral {
             clearMaps();
             final List<BluezGattService> gattServices = device.getGattServices();
             gattServices.forEach(service -> services.add(mapBluezGattServiceToBluetoothGattService(service)));
-            gattCallback.onServicesDiscovered(services);
+            gattCallback.onServicesDiscovered(Collections.unmodifiableList(services));
         }
     }
 
@@ -927,7 +927,7 @@ public final class BluetoothPeripheral {
      */
     @NotNull
     public List<BluetoothGattService> getServices() {
-        return services;
+        return Collections.unmodifiableList(services);
     }
 
     /**

@@ -63,7 +63,7 @@ public class BluetoothHandler {
 
     private final BluetoothPeripheralCallback peripheralCallback = new BluetoothPeripheralCallback() {
         @Override
-        public void onServicesDiscovered(@NotNull BluetoothPeripheral peripheral) {
+        public void onServicesDiscovered(@NotNull final BluetoothPeripheral peripheral, @NotNull final List<BluetoothGattService> services) {
             peripheral.readCharacteristic(DIS_SERVICE_UUID, MANUFACTURER_NAME_CHARACTERISTIC_UUID);
             peripheral.readCharacteristic(DIS_SERVICE_UUID, MODEL_NUMBER_CHARACTERISTIC_UUID);
 
@@ -153,6 +153,7 @@ public class BluetoothHandler {
             } else if (characteristicUUID.equals(WSS_MEASUREMENT_CHAR_UUID)) {
                 WeightMeasurement measurement = new WeightMeasurement(value);
                 logger.info(measurement.toString());
+                startDisconnectTimer(peripheral);
             } else if (characteristicUUID.equals(CURRENT_TIME_CHARACTERISTIC_UUID)) {
                 Date currentTime = parser.getDateTime();
                 logger.info(String.format("Received device time: %s", currentTime));

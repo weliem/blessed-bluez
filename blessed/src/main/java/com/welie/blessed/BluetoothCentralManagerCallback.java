@@ -34,7 +34,7 @@ public abstract class BluetoothCentralManagerCallback {
      *
      * @param peripheral the peripheral that was connected.
      */
-    public void onConnectedPeripheral(@NotNull final BluetoothPeripheral peripheral) {}
+    public void onConnectedPeripheral(@NotNull BluetoothPeripheral peripheral) {}
 
     /**
      * Connecting with the device has failed.
@@ -42,7 +42,7 @@ public abstract class BluetoothCentralManagerCallback {
      * @param peripheral the peripheral for which the connection was attempted
      * @param status the status code for the connection failure
      */
-    public void onConnectionFailed(@NotNull final BluetoothPeripheral peripheral, @NotNull final BluetoothCommandStatus status) {}
+    public void onConnectionFailed(@NotNull BluetoothPeripheral peripheral, @NotNull BluetoothCommandStatus status) {}
 
     /**
      * Device disconnected
@@ -50,7 +50,7 @@ public abstract class BluetoothCentralManagerCallback {
      * @param peripheral the peripheral that disconnected.
      * @param status the status code for the disconnection
      */
-    public void onDisconnectedPeripheral(@NotNull final BluetoothPeripheral peripheral, @NotNull final BluetoothCommandStatus status) {}
+    public void onDisconnectedPeripheral(@NotNull BluetoothPeripheral peripheral, @NotNull BluetoothCommandStatus status) {}
 
     /**
      * Discovered a peripheral
@@ -58,15 +58,15 @@ public abstract class BluetoothCentralManagerCallback {
      * @param peripheral the peripheral that was found
      * @param scanResult the scanResult describing the peripheral
      */
-    public void onDiscoveredPeripheral(@NotNull final BluetoothPeripheral peripheral, @NotNull final ScanResult scanResult) {}
+    public void onDiscoveredPeripheral(@NotNull BluetoothPeripheral peripheral, @NotNull ScanResult scanResult) {}
 
     /**
      * Scanning failed
      *
      * @param errorCode the status code for the scanning failure
      */
-    public void onScanFailed(final int errorCode) {}
+    public void onScanFailed(int errorCode) {}
 
     @NotNull
-    public String onPinRequest(@NotNull final BluetoothPeripheral peripheral) { return "";}
+    public String onPinRequest(@NotNull BluetoothPeripheral peripheral) { return "";}
 }

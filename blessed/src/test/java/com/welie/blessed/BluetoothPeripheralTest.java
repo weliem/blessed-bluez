@@ -201,7 +201,7 @@ class BluetoothPeripheralTest {
         peripheral.handleSignal(getPropertiesChangedSignalServicesResolved());
 
         // Then
-        verify(internalCallback, timeout(50)).connected(peripheral);
+        verify(internalCallback, timeout(100)).connected(peripheral);
         assertEquals(CONNECTED, peripheral.getState());
     }
 
@@ -229,7 +229,7 @@ class BluetoothPeripheralTest {
         peripheral.handleSignal(getPropertiesChangedSignalDisconnected());
 
         // Then
-        verify(internalCallback, timeout(50)).disconnected(peripheral, COMMAND_SUCCESS);
+        verify(internalCallback, timeout(100)).disconnected(peripheral, COMMAND_SUCCESS);
         assertEquals(DISCONNECTED, peripheral.getState());
     }
 
@@ -695,7 +695,7 @@ class BluetoothPeripheralTest {
         peripheral.handleSignal(getPropertiesChangedSignalServicesResolved());
 
         // Then
-        verify(peripheralCallback, timeout(50)).onServicesDiscovered(peripheral);
+        verify(peripheralCallback, timeout(50)).onServicesDiscovered(any(), any() );
     }
 
     @Test
@@ -742,7 +742,7 @@ class BluetoothPeripheralTest {
         peripheral.handleSignal(getPropertiesChangedSignalServicesResolved());
 
         // Then
-        verify(peripheralCallback, timeout(50)).onServicesDiscovered(peripheral);
+        verify(peripheralCallback, timeout(50)).onServicesDiscovered(any(), any());
         assertEquals(2, peripheral.services.size());
         assertNotNull(peripheral.getService(BLP_SERVICE_UUID));
         assertNotNull(peripheral.getService(HTS_SERVICE_UUID));
