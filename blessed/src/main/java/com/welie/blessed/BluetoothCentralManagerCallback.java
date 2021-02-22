@@ -61,6 +61,15 @@ public abstract class BluetoothCentralManagerCallback {
     public void onDiscoveredPeripheral(@NotNull BluetoothPeripheral peripheral, @NotNull ScanResult scanResult) {}
 
     /**
+     * A scan has started
+     */
+    public void onScanStarted() {}
+
+    /**
+     * A scan has stopped
+     */
+    public void onScanStopped() {}
+    /**
      * Scanning failed
      *
      * @param errorCode the status code for the scanning failure

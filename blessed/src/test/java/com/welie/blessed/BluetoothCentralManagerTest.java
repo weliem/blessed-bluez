@@ -151,7 +151,6 @@ class BluetoothCentralManagerTest {
     void Given_a_scan_is_active_when_stopScan_is_called_then_the_scan_is_stopped() throws DBusException, InterruptedException {
         // Given
         BluetoothCentralManager central = startUnfilteredScan();
-        Thread.sleep(100);
         when(bluezAdapter.isDiscovering()).thenReturn(true);
 
         // When
@@ -244,8 +243,7 @@ class BluetoothCentralManagerTest {
         // Wait for properties changed to get confirmation the scan is started
         Properties.PropertiesChanged propertiesChangedSignal = getPropertiesChangeSignalDiscoveryStarted();
         central.handleSignal(propertiesChangedSignal);
-        Thread.sleep(100);
-        assertTrue(central.isScanning);
+        verify(callback, timeout(1000)).onScanStarted();
     }
 
     @Test
@@ -325,10 +323,9 @@ class BluetoothCentralManagerTest {
         // When
         ObjectManager.InterfacesAdded interfacesAdded = getInterfacesAddedNewHtsDevice();
         central.handleInterfaceAddedForDevice(interfacesAdded.getPath(), interfacesAdded.getInterfaces().get(BLUEZ_DEVICE_INTERFACE));
-        //Thread.sleep(100);
 
         // Then
-        verify(callback, timeout(1000).times(0)).onDiscoveredPeripheral(any(), any());
+        verify(callback, never()).onDiscoveredPeripheral(any(), any());
     }
 
     @Test
@@ -344,10 +341,11 @@ class BluetoothCentralManagerTest {
         // When
         Properties.PropertiesChanged propertiesChanged = getPropertiesChangedSignalWhileScanning();
         central.handleSignal(propertiesChanged);
+
         Thread.sleep(100);
 
         // Then
-        verify(callback, never()).onDiscoveredPeripheral(any(), any());
+        verify(callback, timeout(1000).times(0)).onDiscoveredPeripheral(any(), any());
     }
 
     @Test
@@ -360,12 +358,9 @@ class BluetoothCentralManagerTest {
         // When
         central.scanForPeripheralsWithAddresses(new String[]{DUMMY_MAC_ADDRESS_BLP});
 
-        // scanForPeripheralsWithServices is async so wait a little bit
-        Thread.sleep(100);
-
         // Then : Verify scan filters
         ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
-        verify(bluezAdapter).setDiscoveryFilter(captor.capture());
+        verify(bluezAdapter, timeout(1000)).setDiscoveryFilter(captor.capture());
 
         Map<String, Variant<?>> filterMap = captor.getValue();
         checkFilters(filterMap);
@@ -453,10 +448,11 @@ class BluetoothCentralManagerTest {
         // When
         ObjectManager.InterfacesAdded interfacesAdded = getInterfacesAddedNewHtsDevice();
         central.handleInterfaceAddedForDevice(interfacesAdded.getPath(), interfacesAdded.getInterfaces().get(BLUEZ_DEVICE_INTERFACE));
+
         Thread.sleep(100);
 
         // Then
-        verify(callback, never()).onDiscoveredPeripheral(any(), any());
+        verify(callback, timeout(1000).times(0)).onDiscoveredPeripheral(any(), any());
     }
 
     @Test
@@ -472,6 +468,8 @@ class BluetoothCentralManagerTest {
         // When
         Properties.PropertiesChanged propertiesChanged = getPropertiesChangedSignalWhileScanning();
         central.handleSignal(propertiesChanged);
+
+        Thread.sleep(100);
 
         // Then
         verify(callback, timeout(1000).times(0)).onDiscoveredPeripheral(any(), any());
@@ -577,10 +575,9 @@ class BluetoothCentralManagerTest {
         // When
         ObjectManager.InterfacesAdded interfacesAdded = getInterfacesAddedNewHtsDevice();
         central.handleInterfaceAddedForDevice(interfacesAdded.getPath(), interfacesAdded.getInterfaces().get(BLUEZ_DEVICE_INTERFACE));
-        Thread.sleep(100);
 
         // Then
-        verify(callback, never()).onDiscoveredPeripheral(any(), any());
+        verify(callback, timeout(1000).times(0)).onDiscoveredPeripheral(any(), any());
     }
 
     @Test
@@ -594,12 +591,12 @@ class BluetoothCentralManagerTest {
         BluetoothCentralManager central = startScanWithNames(DUMMY_PERIPHERAL_NAME_BLP);
 
         // When
-        Properties.PropertiesChanged propertiesChanged = getPropertiesChangedSignalWhileScanning();
-        central.handleSignal(propertiesChanged);
+        central.handleSignal(getPropertiesChangedSignalWhileScanning());
+
         Thread.sleep(100);
 
         // Then
-        verify(callback, never()).onDiscoveredPeripheral(any(), any());
+        verify(callback, timeout(1000).times(0)).onDiscoveredPeripheral(any(), any());
     }
 
     @Test
@@ -608,7 +605,6 @@ class BluetoothCentralManagerTest {
         when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_BLP)).thenReturn(DUMMY_MAC_ADDRESS_PATH_BLP);
         when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH_BLP)).thenReturn(bluezDevice);
         BluetoothCentralManager central = startUnfilteredScan();
-        Thread.sleep(100);
         when(bluezAdapter.isDiscovering()).thenReturn(true);
 
         // When
@@ -633,11 +629,9 @@ class BluetoothCentralManagerTest {
         central.connectPeripheral(peripheral, peripheralCallback);
 
         // Then
-        Thread.sleep(CONNECT_DELAY-50);
-        verify(bluezDevice, never()).connect();
+        verify(bluezDevice, times(0)).connect();
 
-        Thread.sleep(CONNECT_DELAY+50);
-        verify(bluezDevice).connect();
+        verify(bluezDevice, timeout(1000)).connect();
     }
 
     @Test
@@ -700,7 +694,7 @@ class BluetoothCentralManagerTest {
 
         // When
         central.cancelConnection(peripheral);
-        Thread.sleep(100);
+        verify(bluezDevice, timeout(1000)).disconnect();
         Properties.PropertiesChanged disconnectedSignal = getPropertiesChangedSignalDisconnected();
         peripheral.handleSignal(disconnectedSignal);
 
@@ -750,9 +744,9 @@ class BluetoothCentralManagerTest {
         when(bluezDevice.getUuids()).thenReturn(Collections.singletonList(BLP_SERVICE_UUID));
         BluetoothPeripheral peripheral = central.getPeripheral(DUMMY_MAC_ADDRESS_BLP);
         central.autoConnectPeripheral(peripheral, peripheralCallback);
-        Thread.sleep(100);
+        verify(bluezAdapter, timeout(1000)).startDiscovery();
         central.handleSignal(getPropertiesChangeSignalDiscoveryStarted());
-        Thread.sleep(100);
+        verify(callback, timeout(1000)).onScanStarted();
         when(bluezAdapter.isDiscovering()).thenReturn(true);
 
         // When
@@ -843,21 +837,21 @@ class BluetoothCentralManagerTest {
 
     private void startScan(BluetoothCentralManager central) throws InterruptedException, DBusException {
         central.scanForPeripherals();
-        Thread.sleep(10);
+        verify(bluezAdapter, timeout(100)).startDiscovery();
         Properties.PropertiesChanged propertiesChangedSignal = getPropertiesChangeSignalDiscoveryStarted();
         central.handleSignal(propertiesChangedSignal);
-        Thread.sleep(10);
+        verify(callback, timeout(150)).onScanStarted();
         when(bluezAdapter.isDiscovering()).thenReturn(true);
     }
 
     private void connectPeripheral(BluetoothCentralManager central, BluetoothPeripheral peripheral) throws InterruptedException, DBusException {
         central.connectPeripheral(peripheral, peripheralCallback);
-        verify(peripheral.getDevice(), timeout(CONNECT_DELAY + 200)).connect();
+        verify(peripheral.getDevice(), timeout(1000)).connect();
         peripheral.handleSignal(getPropertiesChangedSignalConnected());
-        Thread.sleep(50);
-        assertEquals(CONNECTED, peripheral.getState());
         peripheral.handleSignal(getPropertiesChangedSignalServicesResolved());
-        Thread.sleep(50);
+        verify(callback, timeout(1000)).onConnectedPeripheral(any());
+        assertEquals(CONNECTED, peripheral.getState());
+        verify(peripheralCallback, timeout(1000)).onServicesDiscovered(any(), any());
     }
 
     @NotNull
@@ -996,10 +990,10 @@ class BluetoothCentralManagerTest {
         when(bluezAdapter.isPowered()).thenReturn(true);
         BluetoothCentralManager central = new BluetoothCentralManager(callback, Collections.emptySet(), bluezAdapter);
         central.scanForPeripherals();
-        Thread.sleep(10);
+        verify(bluezAdapter, timeout(100)).startDiscovery();
         Properties.PropertiesChanged propertiesChangedSignal = getPropertiesChangeSignalDiscoveryStarted();
         central.handleSignal(propertiesChangedSignal);
-        Thread.sleep(10);
+        verify(callback, timeout(150)).onScanStarted();
         return central;
     }
 
@@ -1008,10 +1002,10 @@ class BluetoothCentralManagerTest {
         when(bluezAdapter.isPowered()).thenReturn(true);
         BluetoothCentralManager central = new BluetoothCentralManager(callback, Collections.emptySet(), bluezAdapter);
         central.scanForPeripheralsWithServices(new UUID[]{service});
-        Thread.sleep(10);
+        verify(bluezAdapter, timeout(100)).startDiscovery();
         Properties.PropertiesChanged propertiesChangedSignal = getPropertiesChangeSignalDiscoveryStarted();
         central.handleSignal(propertiesChangedSignal);
-        Thread.sleep(10);
+        verify(callback, timeout(150)).onScanStarted();
         return central;
     }
 
@@ -1020,10 +1014,10 @@ class BluetoothCentralManagerTest {
         when(bluezAdapter.isPowered()).thenReturn(true);
         BluetoothCentralManager central = new BluetoothCentralManager(callback, Collections.emptySet(), bluezAdapter);
         central.scanForPeripheralsWithAddresses(new String[]{peripheralAddress});
-        Thread.sleep(20);
+        verify(bluezAdapter, timeout(100)).startDiscovery();
         Properties.PropertiesChanged propertiesChangedSignal = getPropertiesChangeSignalDiscoveryStarted();
         central.handleSignal(propertiesChangedSignal);
-        Thread.sleep(20);
+        verify(callback, timeout(150)).onScanStarted();
         return central;
     }
 
@@ -1032,10 +1026,10 @@ class BluetoothCentralManagerTest {
         when(bluezAdapter.isPowered()).thenReturn(true);
         BluetoothCentralManager central = new BluetoothCentralManager(callback, Collections.emptySet(), bluezAdapter);
         central.scanForPeripheralsWithNames(new String[]{peripheralName});
-        Thread.sleep(10);
+        verify(bluezAdapter, timeout(100)).startDiscovery();
         Properties.PropertiesChanged propertiesChangedSignal = getPropertiesChangeSignalDiscoveryStarted();
         central.handleSignal(propertiesChangedSignal);
-        Thread.sleep(10);
+        verify(callback, timeout(150)).onScanStarted();
         return central;
     }
 }

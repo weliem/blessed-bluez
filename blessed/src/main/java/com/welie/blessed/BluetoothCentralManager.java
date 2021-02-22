@@ -620,15 +620,18 @@ public class BluetoothCentralManager {
         switch (propertyName) {
             case PROPERTY_DISCOVERING:
                 isScanning = (Boolean) value.getValue();
-                if (isScanning) isStoppingScan = false;
                 logger.info(String.format("scan %s", isScanning ? "started" : "stopped"));
 
-                if (!isScanning) {
-                    // Clear the cached BluezDevices, BluetoothPeripherals and ScanResults
+                if (isScanning) {
+                    isStoppingScan = false;
+                    callBackHandler.post(bluetoothCentralManagerCallback::onScanStarted);
+                } else {
                     scannedPeripherals.clear();
                     scannedBluezDevices.clear();
                     scanResultCache.clear();
+                    callBackHandler.post(bluetoothCentralManagerCallback::onScanStopped);
                 }
+
                 if (currentCommand.equalsIgnoreCase(PROPERTY_DISCOVERING)) {
                     callBackHandler.postDelayed(this::completedCommand, 100L);
                 }
