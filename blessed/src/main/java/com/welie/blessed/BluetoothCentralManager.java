@@ -167,9 +167,7 @@ public class BluetoothCentralManager {
             // Complete the 'connect' command if this was the device we were connecting
             completeConnectOrDisconnectCommand(peripheralAddress);
 
-            callBackHandler.post(() -> {
-                bluetoothCentralManagerCallback.onConnectionFailed(peripheral, status);
-            });
+            callBackHandler.post(() -> bluetoothCentralManagerCallback.onConnectionFailed(peripheral, status));
 
             restartScannerIfNeeded();
         }
