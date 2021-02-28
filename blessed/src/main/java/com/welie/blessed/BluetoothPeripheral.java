@@ -412,7 +412,6 @@ public final class BluetoothPeripheral {
 
         // Check if this characteristic actually has READ property
         if (!characteristic.supportsReading()) {
-            gattCallback.onCharacteristicRead(characteristic, READ_NOT_PERMITTED);
             return false;
         }
 
@@ -420,7 +419,6 @@ public final class BluetoothPeripheral {
         final BluezGattCharacteristic nativeCharacteristic = getBluezGattCharacteristic(characteristic.service.getUuid(), characteristic.getUuid());
         if (nativeCharacteristic == null) {
             logger.error(ERROR_NATIVE_CHARACTERISTIC_IS_NULL);
-            gattCallback.onCharacteristicRead(characteristic, INVALID_HANDLE);
             return false;
         }
 
@@ -507,7 +505,6 @@ public final class BluetoothPeripheral {
 
         // Make sure we are still connected
         if (state != CONNECTED) {
-            gattCallback.onCharacteristicWrite(characteristic, NOT_CONNECTED);
             return false;
         }
 
