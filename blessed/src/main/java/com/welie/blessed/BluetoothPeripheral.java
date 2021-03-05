@@ -48,7 +48,7 @@ public final class BluetoothPeripheral {
     @Nullable
     private BluezDevice device;
 
-    @Nullable
+    @NotNull
     private String deviceName;
 
     @NotNull
@@ -296,7 +296,7 @@ public final class BluetoothPeripheral {
     public BluetoothPeripheral(@NotNull final BluetoothCentralManager central, @Nullable final BluezDevice bluezDevice, @Nullable final String deviceName, @NotNull final String deviceAddress, @NotNull final InternalCallback listener, @Nullable final BluetoothPeripheralCallback peripheralCallback, @NotNull final Handler callBackHandler) {
         this.central = Objects.requireNonNull(central, "no valid central provided");
         this.device = bluezDevice;
-        this.deviceName = deviceName;
+        this.deviceName = deviceName == null ? "" : deviceName;
         this.deviceAddress = Objects.requireNonNull(deviceAddress, "no valid address provided");
         this.listener = Objects.requireNonNull(listener, "no valid listener provided");
         if (peripheralCallback != null) {
@@ -970,13 +970,13 @@ public final class BluetoothPeripheral {
      *
      * @return name of the bluetooth peripheral
      */
-    @Nullable
+    @NotNull
     public String getName() {
         return deviceName;
     }
 
     void setName(@Nullable final String name) {
-        deviceName = name;
+        deviceName = name == null ? "" : name;
     }
 
     /**
