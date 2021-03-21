@@ -1002,7 +1002,7 @@ class BluetoothCentralManagerTest {
         when(bluezAdapter.isPowered()).thenReturn(true);
         BluetoothCentralManager central = new BluetoothCentralManager(callback, Collections.emptySet(), bluezAdapter);
         central.scanForPeripheralsWithServices(new UUID[]{service});
-        verify(bluezAdapter, timeout(100)).startDiscovery();
+        verify(bluezAdapter, timeout(150)).startDiscovery();
         Properties.PropertiesChanged propertiesChangedSignal = getPropertiesChangeSignalDiscoveryStarted();
         central.handleSignal(propertiesChangedSignal);
         verify(callback, timeout(150)).onScanStarted();
