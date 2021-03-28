@@ -116,6 +116,7 @@ public class BluetoothCentralManager {
 
     // Null check errors
     private static final String NULL_PERIPHERAL_ERROR = "no valid peripheral specified";
+    private static final String NO_VALID_PERIPHERAL_ADDRESS_PROVIDED = "no valid peripheral address provided";
 
     // Bluez Adapter property strings
     static final String PROPERTY_DISCOVERING = "Discovering";
@@ -241,7 +242,7 @@ public class BluetoothCentralManager {
 
     private void setupPairingAgent() throws BluezInvalidArgumentsException, BluezAlreadyExistsException, BluezDoesNotExistException {
         // Setup pairing agent
-        PairingAgent agent = new PairingAgent("/test/agent", adapter.getDBusConnection(), new PairingDelegate() {
+        final PairingAgent agent = new PairingAgent("/test/agent", adapter.getDBusConnection(), new PairingDelegate() {
             @Override
             public String requestPassCode(@NotNull final String deviceAddress) {
                 logger.info(String.format("received passcode request for %s", deviceAddress));
@@ -264,7 +265,7 @@ public class BluetoothCentralManager {
             }
         });
 
-        BluezAgentManager agentManager = DbusHelper.getBluezAgentManager(adapter.getDBusConnection());
+        final BluezAgentManager agentManager = DbusHelper.getBluezAgentManager(adapter.getDBusConnection());
         if (agentManager != null) {
 //                The capability parameter can have the values
 //                "DisplayOnly", "DisplayYesNo", "KeyboardOnly",
@@ -396,7 +397,7 @@ public class BluetoothCentralManager {
         }
 
         if (!scanServiceUUIDs.isEmpty()) {
-            List<UUID> scanResultUUIDs = scanResult.getUuids();
+            final List<UUID> scanResultUUIDs = scanResult.getUuids();
             for (UUID uuid : scanServiceUUIDs) {
                 if (scanResultUUIDs.contains(uuid)) {
                     return false;
@@ -561,7 +562,7 @@ public class BluetoothCentralManager {
         if (deviceAddress == null) return;
 
         // Check if the properties are belonging to a scan
-        Set<String> keys = propertiesChanged.keySet();
+        final Set<String> keys = propertiesChanged.keySet();
         if (!(keys.contains(PROPERTY_RSSI) || keys.contains(PROPERTY_MANUFACTURER_DATA) || keys.contains(PROPERTY_SERVICE_DATA)))
             return;
 
@@ -580,7 +581,7 @@ public class BluetoothCentralManager {
 
     private void updateScanResult(@NotNull final Map<String, Variant<?>> propertiesChanged, @NotNull final ScanResult scanResult) {
         // Update the scanResult
-        Set<String> keys = propertiesChanged.keySet();
+        final Set<String> keys = propertiesChanged.keySet();
         if (keys.contains(PROPERTY_RSSI)) {
             scanResult.setRssi((Short) propertiesChanged.get(PROPERTY_RSSI).getValue());
         }
@@ -647,7 +648,7 @@ public class BluetoothCentralManager {
     }
 
     private void setScanFilter(@NotNull final Map<DiscoveryFilter, Object> filter) throws BluezInvalidArgumentsException, BluezNotReadyException, BluezNotSupportedException, BluezFailedException {
-        Map<String, Variant<?>> filters = new LinkedHashMap<>();
+        final Map<String, Variant<?>> filters = new LinkedHashMap<>();
         for (Map.Entry<DiscoveryFilter, Object> entry : filter.entrySet()) {
             if (!entry.getKey().getValueClass().isInstance(entry.getValue())) {
                 throw new BluezInvalidArgumentsException("Filter value not of required type " + entry.getKey().getValueClass());
@@ -670,7 +671,6 @@ public class BluetoothCentralManager {
         if (!isPowered) return;
 
         final boolean result = commandQueue.add(() -> {
-
             // Just in case, set isStoppingScan to false
             isStoppingScan = false;
 
@@ -797,7 +797,6 @@ public class BluetoothCentralManager {
     @SuppressWarnings("unused")
     public void adapterOn() {
         final boolean result = commandQueue.add(() -> {
-
             if (!adapter.isPowered()) {
                 logger.info("Turning on adapter");
                 currentCommand = PROPERTY_POWERED;
@@ -884,7 +883,7 @@ public class BluetoothCentralManager {
 
             // Refresh BluezDevice because it may be old
             scannedBluezDevices.remove(adapter.getPath(peripheral.getAddress()));
-            BluezDevice bluezDevice = getDeviceByAddress(peripheral.getAddress());
+            final BluezDevice bluezDevice = getDeviceByAddress(peripheral.getAddress());
             if (bluezDevice != null) {
                 peripheral.setDevice(bluezDevice);
             }
@@ -1009,7 +1008,7 @@ public class BluetoothCentralManager {
      */
     @SuppressWarnings("unused")
     public boolean removeBond(@NotNull final String peripheralAddress) {
-        Objects.requireNonNull(peripheralAddress, "no peripheral address provided");
+        Objects.requireNonNull(peripheralAddress, NO_VALID_PERIPHERAL_ADDRESS_PROVIDED);
 
         final BluezDevice bluezDevice = getDeviceByAddress(peripheralAddress);
         if (bluezDevice == null) return false;
@@ -1035,7 +1034,7 @@ public class BluetoothCentralManager {
      */
     @NotNull
     public BluetoothPeripheral getPeripheral(@NotNull final String peripheralAddress) {
-        Objects.requireNonNull(peripheralAddress, "no valid peripheral address provided");
+        Objects.requireNonNull(peripheralAddress, NO_VALID_PERIPHERAL_ADDRESS_PROVIDED);
 
         if (!isValidBluetoothAddress(peripheralAddress)) {
             String message = String.format("%s is not a valid address. Make sure all alphabetic characters are uppercase.", peripheralAddress);
@@ -1049,8 +1048,8 @@ public class BluetoothCentralManager {
         } else if (unconnectedPeripherals.containsKey(peripheralAddress)) {
             return unconnectedPeripherals.get(peripheralAddress);
         } else {
-            BluezDevice bluezDevice = getDeviceByAddress(peripheralAddress);
-            BluetoothPeripheral bluetoothPeripheral = new BluetoothPeripheral(this, bluezDevice, bluezDevice != null ? bluezDevice.getName() : null, peripheralAddress, internalCallback, null, callBackHandler);
+            final BluezDevice bluezDevice = getDeviceByAddress(peripheralAddress);
+            final BluetoothPeripheral bluetoothPeripheral = new BluetoothPeripheral(this, bluezDevice, bluezDevice != null ? bluezDevice.getName() : null, peripheralAddress, internalCallback, null, callBackHandler);
             scannedPeripherals.put(peripheralAddress, bluetoothPeripheral);
             return bluetoothPeripheral;
         }
@@ -1099,6 +1098,7 @@ public class BluetoothCentralManager {
      */
     private boolean isValidBluetoothAddress(@NotNull final String address) {
         Objects.requireNonNull(address, "address is null");
+
         if (address.length() != ADDRESS_LENGTH) {
             return false;
         }
@@ -1201,7 +1201,7 @@ public class BluetoothCentralManager {
 
     private boolean removeDevice(@NotNull final BluezDevice bluetoothDevice) {
         try {
-            Device1 rawDevice = bluetoothDevice.getRawDevice();
+            final Device1 rawDevice = bluetoothDevice.getRawDevice();
             if (rawDevice != null) {
                 adapter.removeDevice(rawDevice);
                 return true;
