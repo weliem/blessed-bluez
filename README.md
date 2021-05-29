@@ -15,6 +15,22 @@ The library consists of 3 core classes and 2 callback abstract classes:
 The `BluetoothCentralManager` class is used to scan for devices and manage connections. The `BluetoothPeripheral` class represent the peripheral and wraps all GATT related peripheral functionality. The `BluetoothBytesParser` class is a utility class that makes parsing byte arrays easy.
 
 The BLESSED library was inspired by CoreBluetooth on iOS and provides the same level of abstraction. If you already have developed using CoreBluetooth you can very easily port your code to Linux using this library. It has been tested on Ubuntu 18/19/20 and Raspberry Pi's.
+## Installation
+
+The library is avaiable on Jitpack and uses logback for logging:
+
+```groovy
+repositories {
+    mavenCentral()
+    maven { url = uri("https://jitpack.io") }
+}
+
+dependencies {
+    implementation "ch.qos.logback:logback-core:+"
+    implementation "ch.qos.logback:logback-classic:+"
+    implementation "com.github.weliem.blessed-bluez:blessed:0.38"
+}
+```
 
 ## Scanning
 
