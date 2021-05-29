@@ -17,7 +17,7 @@ The `BluetoothCentralManager` class is used to scan for devices and manage conne
 The BLESSED library was inspired by CoreBluetooth on iOS and provides the same level of abstraction. If you already have developed using CoreBluetooth you can very easily port your code to Linux using this library. It has been tested on Ubuntu 18/19/20 and Raspberry Pi's.
 ## Installation
 
-The library is avaiable on Jitpack and uses logback for logging:
+The library is available on Jitpack and uses Logback for logging:
 
 ```groovy
 repositories {
