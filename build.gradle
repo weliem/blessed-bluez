@@ -15,6 +15,7 @@ repositories {
 }
 
 jar {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
     manifest {
         attributes 'Main-Class': 'testapp.Main'
     }
