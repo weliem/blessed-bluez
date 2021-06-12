@@ -40,6 +40,9 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
 class BluetoothCentralManagerTest {
+
+    public static final int TIMEOUT_THRESHOLD = 1000;
+    
     @Mock
     DBusConnection dBusConnection;
 
@@ -94,7 +97,7 @@ class BluetoothCentralManagerTest {
         BluetoothCentralManager central = new BluetoothCentralManager(callback, Collections.emptySet(), bluezAdapter);
 
         // Then
-        verify(bluezAdapter, timeout(1000)).setPowered(true);
+        verify(bluezAdapter, timeout(TIMEOUT_THRESHOLD)).setPowered(true);
     }
 
     @Test
@@ -107,7 +110,7 @@ class BluetoothCentralManagerTest {
         central.adapterOff();
 
         // Then
-        verify(bluezAdapter, timeout(1000)).setPowered(false);
+        verify(bluezAdapter, timeout(TIMEOUT_THRESHOLD)).setPowered(false);
     }
     @Test
     void When_scanForPeripherals_is_called_then_an_unfiltered_scan_is_started() throws InterruptedException, BluezFailedException, BluezNotReadyException, BluezNotSupportedException, BluezInvalidArgumentsException {
@@ -121,7 +124,7 @@ class BluetoothCentralManagerTest {
 
         // Then : Verify scan filters
         ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
-        verify(bluezAdapter, timeout(1000)).setDiscoveryFilter(captor.capture());
+        verify(bluezAdapter, timeout(TIMEOUT_THRESHOLD)).setDiscoveryFilter(captor.capture());
         Map<String, Variant<?>> filterMap = captor.getValue();
         checkFilters(filterMap);
 
@@ -157,7 +160,7 @@ class BluetoothCentralManagerTest {
         central.stopScan();
 
         // Then
-        verify(bluezAdapter, timeout(1000)).stopDiscovery();
+        verify(bluezAdapter, timeout(TIMEOUT_THRESHOLD)).stopDiscovery();
     }
 
     @Test
@@ -174,7 +177,7 @@ class BluetoothCentralManagerTest {
         // Then
         ArgumentCaptor<BluetoothPeripheral> peripheralCaptor = ArgumentCaptor.forClass(BluetoothPeripheral.class);
         ArgumentCaptor<ScanResult> scanResultCaptor = ArgumentCaptor.forClass(ScanResult.class);
-        verify(callback, timeout(1000)).onDiscoveredPeripheral(peripheralCaptor.capture(), scanResultCaptor.capture());
+        verify(callback, timeout(TIMEOUT_THRESHOLD)).onDiscoveredPeripheral(peripheralCaptor.capture(), scanResultCaptor.capture());
 
         // Then : check if the peripheral and scanResult have the right values
         BluetoothPeripheral peripheral = peripheralCaptor.getValue();
@@ -204,7 +207,7 @@ class BluetoothCentralManagerTest {
         // Then
         ArgumentCaptor<BluetoothPeripheral> peripheralCaptor = ArgumentCaptor.forClass(BluetoothPeripheral.class);
         ArgumentCaptor<ScanResult> scanResultCaptor = ArgumentCaptor.forClass(ScanResult.class);
-        verify(callback, timeout(2000)).onDiscoveredPeripheral(peripheralCaptor.capture(), scanResultCaptor.capture());
+        verify(callback, timeout(TIMEOUT_THRESHOLD)).onDiscoveredPeripheral(peripheralCaptor.capture(), scanResultCaptor.capture());
 
         // Then : check if the peripheral and scanResult have the right values
         BluetoothPeripheral peripheral = peripheralCaptor.getValue();
@@ -226,7 +229,7 @@ class BluetoothCentralManagerTest {
 
         // Then : Verify scan filters
         ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
-        verify(bluezAdapter, timeout(1000)).setDiscoveryFilter(captor.capture());
+        verify(bluezAdapter, timeout(TIMEOUT_THRESHOLD)).setDiscoveryFilter(captor.capture());
 
         Map<String, Variant<?>> filterMap = captor.getValue();
         checkFilters(filterMap);
@@ -243,7 +246,7 @@ class BluetoothCentralManagerTest {
         // Wait for properties changed to get confirmation the scan is started
         Properties.PropertiesChanged propertiesChangedSignal = getPropertiesChangeSignalDiscoveryStarted();
         central.handleSignal(propertiesChangedSignal);
-        verify(callback, timeout(1000)).onScanStarted();
+        verify(callback, timeout(TIMEOUT_THRESHOLD)).onScanStarted();
     }
 
     @Test
@@ -273,7 +276,7 @@ class BluetoothCentralManagerTest {
         // Then
         ArgumentCaptor<BluetoothPeripheral> peripheralCaptor = ArgumentCaptor.forClass(BluetoothPeripheral.class);
         ArgumentCaptor<ScanResult> scanResultCaptor = ArgumentCaptor.forClass(ScanResult.class);
-        verify(callback, timeout(1000)).onDiscoveredPeripheral(peripheralCaptor.capture(), scanResultCaptor.capture());
+        verify(callback, timeout(TIMEOUT_THRESHOLD)).onDiscoveredPeripheral(peripheralCaptor.capture(), scanResultCaptor.capture());
 
         // Then : check if the peripheral and scanResult have the right values
         BluetoothPeripheral peripheral = peripheralCaptor.getValue();
@@ -303,7 +306,7 @@ class BluetoothCentralManagerTest {
         // Then
         ArgumentCaptor<BluetoothPeripheral> peripheralCaptor = ArgumentCaptor.forClass(BluetoothPeripheral.class);
         ArgumentCaptor<ScanResult> scanResultCaptor = ArgumentCaptor.forClass(ScanResult.class);
-        verify(callback, timeout(1000)).onDiscoveredPeripheral(peripheralCaptor.capture(), scanResultCaptor.capture());
+        verify(callback, timeout(TIMEOUT_THRESHOLD)).onDiscoveredPeripheral(peripheralCaptor.capture(), scanResultCaptor.capture());
 
         // Then : check if the peripheral and scanResult have the right values
         BluetoothPeripheral peripheral = peripheralCaptor.getValue();
@@ -345,7 +348,7 @@ class BluetoothCentralManagerTest {
         Thread.sleep(100);
 
         // Then
-        verify(callback, timeout(1000).times(0)).onDiscoveredPeripheral(any(), any());
+        verify(callback, timeout(TIMEOUT_THRESHOLD).times(0)).onDiscoveredPeripheral(any(), any());
     }
 
     @Test
@@ -360,7 +363,7 @@ class BluetoothCentralManagerTest {
 
         // Then : Verify scan filters
         ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
-        verify(bluezAdapter, timeout(1000)).setDiscoveryFilter(captor.capture());
+        verify(bluezAdapter, timeout(TIMEOUT_THRESHOLD)).setDiscoveryFilter(captor.capture());
 
         Map<String, Variant<?>> filterMap = captor.getValue();
         checkFilters(filterMap);
@@ -402,7 +405,7 @@ class BluetoothCentralManagerTest {
         // Then
         ArgumentCaptor<BluetoothPeripheral> peripheralCaptor = ArgumentCaptor.forClass(BluetoothPeripheral.class);
         ArgumentCaptor<ScanResult> scanResultCaptor = ArgumentCaptor.forClass(ScanResult.class);
-        verify(callback, timeout(1000)).onDiscoveredPeripheral(peripheralCaptor.capture(), scanResultCaptor.capture());
+        verify(callback, timeout(TIMEOUT_THRESHOLD)).onDiscoveredPeripheral(peripheralCaptor.capture(), scanResultCaptor.capture());
 
         // Then : check if the peripheral and scanResult have the right values
         BluetoothPeripheral peripheral = peripheralCaptor.getValue();
@@ -428,7 +431,7 @@ class BluetoothCentralManagerTest {
         // Then
         ArgumentCaptor<BluetoothPeripheral> peripheralCaptor = ArgumentCaptor.forClass(BluetoothPeripheral.class);
         ArgumentCaptor<ScanResult> scanResultCaptor = ArgumentCaptor.forClass(ScanResult.class);
-        verify(callback, timeout(1000)).onDiscoveredPeripheral(peripheralCaptor.capture(), scanResultCaptor.capture());
+        verify(callback, timeout(TIMEOUT_THRESHOLD)).onDiscoveredPeripheral(peripheralCaptor.capture(), scanResultCaptor.capture());
 
         // Then : check if the peripheral and scanResult have the right values
         BluetoothPeripheral peripheral = peripheralCaptor.getValue();
@@ -452,7 +455,7 @@ class BluetoothCentralManagerTest {
         Thread.sleep(100);
 
         // Then
-        verify(callback, timeout(1000).times(0)).onDiscoveredPeripheral(any(), any());
+        verify(callback, timeout(TIMEOUT_THRESHOLD).times(0)).onDiscoveredPeripheral(any(), any());
     }
 
     @Test
@@ -472,7 +475,7 @@ class BluetoothCentralManagerTest {
         Thread.sleep(100);
 
         // Then
-        verify(callback, timeout(1000).times(0)).onDiscoveredPeripheral(any(), any());
+        verify(callback, timeout(TIMEOUT_THRESHOLD).times(0)).onDiscoveredPeripheral(any(), any());
     }
 
     @Test
@@ -487,7 +490,7 @@ class BluetoothCentralManagerTest {
 
         // Then : Verify scan filters
         ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
-        verify(bluezAdapter, timeout(1000)).setDiscoveryFilter(captor.capture());
+        verify(bluezAdapter, timeout(TIMEOUT_THRESHOLD)).setDiscoveryFilter(captor.capture());
         Map<String, Variant<?>> filterMap = captor.getValue();
         checkFilters(filterMap);
 
@@ -528,7 +531,7 @@ class BluetoothCentralManagerTest {
         // Then
         ArgumentCaptor<BluetoothPeripheral> peripheralCaptor = ArgumentCaptor.forClass(BluetoothPeripheral.class);
         ArgumentCaptor<ScanResult> scanResultCaptor = ArgumentCaptor.forClass(ScanResult.class);
-        verify(callback, timeout(2000)).onDiscoveredPeripheral(peripheralCaptor.capture(), scanResultCaptor.capture());
+        verify(callback, timeout(TIMEOUT_THRESHOLD)).onDiscoveredPeripheral(peripheralCaptor.capture(), scanResultCaptor.capture());
 
         // Then : check if the peripheral and scanResult have the right values
         BluetoothPeripheral peripheral = peripheralCaptor.getValue();
@@ -555,7 +558,7 @@ class BluetoothCentralManagerTest {
         // Then
         ArgumentCaptor<BluetoothPeripheral> peripheralCaptor = ArgumentCaptor.forClass(BluetoothPeripheral.class);
         ArgumentCaptor<ScanResult> scanResultCaptor = ArgumentCaptor.forClass(ScanResult.class);
-        verify(callback, timeout(1000)).onDiscoveredPeripheral(peripheralCaptor.capture(), scanResultCaptor.capture());
+        verify(callback, timeout(TIMEOUT_THRESHOLD)).onDiscoveredPeripheral(peripheralCaptor.capture(), scanResultCaptor.capture());
 
         // Then : check if the peripheral and scanResult have the right values
         BluetoothPeripheral peripheral = peripheralCaptor.getValue();
@@ -577,7 +580,7 @@ class BluetoothCentralManagerTest {
         central.handleInterfaceAddedForDevice(interfacesAdded.getPath(), interfacesAdded.getInterfaces().get(BLUEZ_DEVICE_INTERFACE));
 
         // Then
-        verify(callback, timeout(1000).times(0)).onDiscoveredPeripheral(any(), any());
+        verify(callback, timeout(TIMEOUT_THRESHOLD).times(0)).onDiscoveredPeripheral(any(), any());
     }
 
     @Test
@@ -596,7 +599,7 @@ class BluetoothCentralManagerTest {
         Thread.sleep(100);
 
         // Then
-        verify(callback, timeout(1000).times(0)).onDiscoveredPeripheral(any(), any());
+        verify(callback, timeout(TIMEOUT_THRESHOLD).times(0)).onDiscoveredPeripheral(any(), any());
     }
 
     @Test
@@ -612,7 +615,7 @@ class BluetoothCentralManagerTest {
         central.connectPeripheral(peripheral, peripheralCallback);
 
         // Then
-        verify(bluezAdapter, timeout(1000)).stopDiscovery();
+        verify(bluezAdapter, timeout(TIMEOUT_THRESHOLD)).stopDiscovery();
     }
 
     @Test
@@ -631,7 +634,7 @@ class BluetoothCentralManagerTest {
         // Then
         verify(bluezDevice, times(0)).connect();
 
-        verify(bluezDevice, timeout(1000)).connect();
+        verify(bluezDevice, timeout(TIMEOUT_THRESHOLD)).connect();
     }
 
     @Test
@@ -646,7 +649,7 @@ class BluetoothCentralManagerTest {
         connectPeripheral(central, peripheral);
 
         // Then
-        verify(callback, timeout(1000)).onConnectedPeripheral(peripheral);
+        verify(callback, timeout(TIMEOUT_THRESHOLD)).onConnectedPeripheral(peripheral);
     }
 
     @Test
@@ -664,7 +667,7 @@ class BluetoothCentralManagerTest {
         central.cancelConnection(peripheral);
 
         // Then
-        verify(bluezAdapter, timeout(1000)).stopDiscovery();
+        verify(bluezAdapter, timeout(TIMEOUT_THRESHOLD)).stopDiscovery();
     }
 
     @Test
@@ -680,7 +683,7 @@ class BluetoothCentralManagerTest {
         central.cancelConnection(peripheral);
 
         // Then
-        verify(bluezDevice, timeout(1000)).disconnect();
+        verify(bluezDevice, timeout(TIMEOUT_THRESHOLD)).disconnect();
     }
 
     @Test
@@ -694,12 +697,12 @@ class BluetoothCentralManagerTest {
 
         // When
         central.cancelConnection(peripheral);
-        verify(bluezDevice, timeout(1000)).disconnect();
+        verify(bluezDevice, timeout(TIMEOUT_THRESHOLD)).disconnect();
         Properties.PropertiesChanged disconnectedSignal = getPropertiesChangedSignalDisconnected();
         peripheral.handleSignal(disconnectedSignal);
 
         // Then
-        verify(callback, timeout(1000)).onDisconnectedPeripheral(peripheral, BluetoothCommandStatus.COMMAND_SUCCESS);
+        verify(callback, timeout(TIMEOUT_THRESHOLD)).onDisconnectedPeripheral(peripheral, BluetoothCommandStatus.COMMAND_SUCCESS);
     }
 
     @Test
@@ -730,7 +733,7 @@ class BluetoothCentralManagerTest {
         central.autoConnectPeripheral(peripheral, peripheralCallback);
 
         // Then
-        verify(bluezAdapter, timeout(1000)).startDiscovery();
+        verify(bluezAdapter, timeout(TIMEOUT_THRESHOLD)).startDiscovery();
     }
 
     @Test
@@ -744,21 +747,21 @@ class BluetoothCentralManagerTest {
         when(bluezDevice.getUuids()).thenReturn(Collections.singletonList(BLP_SERVICE_UUID));
         BluetoothPeripheral peripheral = central.getPeripheral(DUMMY_MAC_ADDRESS_BLP);
         central.autoConnectPeripheral(peripheral, peripheralCallback);
-        verify(bluezAdapter, timeout(1000)).startDiscovery();
+        verify(bluezAdapter, timeout(TIMEOUT_THRESHOLD)).startDiscovery();
         central.handleSignal(getPropertiesChangeSignalDiscoveryStarted());
-        verify(callback, timeout(1000)).onScanStarted();
+        verify(callback, timeout(TIMEOUT_THRESHOLD)).onScanStarted();
         when(bluezAdapter.isDiscovering()).thenReturn(true);
 
         // When
         central.handleSignal(getPropertiesChangedSignalWhileScanning());
 
         // Then
-        verify(bluezAdapter, timeout(1000)).stopDiscovery();
+        verify(bluezAdapter, timeout(TIMEOUT_THRESHOLD)).stopDiscovery();
 
         central.handleSignal(getPropertiesChangeSignalDiscoveryStopped());
         when(bluezAdapter.isDiscovering()).thenReturn(false);
 
-        verify(bluezDevice, timeout(1000)).connect();
+        verify(bluezDevice, timeout(TIMEOUT_THRESHOLD)).connect();
 
         assertFalse(central.reconnectPeripheralAddresses.contains(peripheral.getAddress()));
         assertNull(central.reconnectCallbacks.get(peripheral.getAddress()));
@@ -788,7 +791,7 @@ class BluetoothCentralManagerTest {
         assertSame(central.reconnectCallbacks.get(peripheral2.getAddress()), peripheralCallback);
 
         // Then
-        verify(bluezAdapter, timeout(1000)).startDiscovery();
+        verify(bluezAdapter, timeout(TIMEOUT_THRESHOLD)).startDiscovery();
     }
 
     @Test
@@ -837,21 +840,21 @@ class BluetoothCentralManagerTest {
 
     private void startScan(BluetoothCentralManager central) throws InterruptedException, DBusException {
         central.scanForPeripherals();
-        verify(bluezAdapter, timeout(100)).startDiscovery();
+        verify(bluezAdapter, timeout(TIMEOUT_THRESHOLD)).startDiscovery();
         Properties.PropertiesChanged propertiesChangedSignal = getPropertiesChangeSignalDiscoveryStarted();
         central.handleSignal(propertiesChangedSignal);
-        verify(callback, timeout(150)).onScanStarted();
+        verify(callback, timeout(TIMEOUT_THRESHOLD)).onScanStarted();
         when(bluezAdapter.isDiscovering()).thenReturn(true);
     }
 
     private void connectPeripheral(BluetoothCentralManager central, BluetoothPeripheral peripheral) throws InterruptedException, DBusException {
         central.connectPeripheral(peripheral, peripheralCallback);
-        verify(peripheral.getDevice(), timeout(1000)).connect();
+        verify(peripheral.getDevice(), timeout(TIMEOUT_THRESHOLD)).connect();
         peripheral.handleSignal(getPropertiesChangedSignalConnected());
         peripheral.handleSignal(getPropertiesChangedSignalServicesResolved());
-        verify(callback, timeout(1000)).onConnectedPeripheral(any());
+        verify(callback, timeout(TIMEOUT_THRESHOLD)).onConnectedPeripheral(any());
         assertEquals(CONNECTED, peripheral.getState());
-        verify(peripheralCallback, timeout(1000)).onServicesDiscovered(any(), any());
+        verify(peripheralCallback, timeout(TIMEOUT_THRESHOLD)).onServicesDiscovered(any(), any());
     }
 
     @NotNull
@@ -990,10 +993,10 @@ class BluetoothCentralManagerTest {
         when(bluezAdapter.isPowered()).thenReturn(true);
         BluetoothCentralManager central = new BluetoothCentralManager(callback, Collections.emptySet(), bluezAdapter);
         central.scanForPeripherals();
-        verify(bluezAdapter, timeout(100)).startDiscovery();
+        verify(bluezAdapter, timeout(TIMEOUT_THRESHOLD)).startDiscovery();
         Properties.PropertiesChanged propertiesChangedSignal = getPropertiesChangeSignalDiscoveryStarted();
         central.handleSignal(propertiesChangedSignal);
-        verify(callback, timeout(150)).onScanStarted();
+        verify(callback, timeout(TIMEOUT_THRESHOLD)).onScanStarted();
         return central;
     }
 
@@ -1002,10 +1005,10 @@ class BluetoothCentralManagerTest {
         when(bluezAdapter.isPowered()).thenReturn(true);
         BluetoothCentralManager central = new BluetoothCentralManager(callback, Collections.emptySet(), bluezAdapter);
         central.scanForPeripheralsWithServices(new UUID[]{service});
-        verify(bluezAdapter, timeout(150)).startDiscovery();
+        verify(bluezAdapter, timeout(TIMEOUT_THRESHOLD)).startDiscovery();
         Properties.PropertiesChanged propertiesChangedSignal = getPropertiesChangeSignalDiscoveryStarted();
         central.handleSignal(propertiesChangedSignal);
-        verify(callback, timeout(150)).onScanStarted();
+        verify(callback, timeout(TIMEOUT_THRESHOLD)).onScanStarted();
         return central;
     }
 
@@ -1014,10 +1017,10 @@ class BluetoothCentralManagerTest {
         when(bluezAdapter.isPowered()).thenReturn(true);
         BluetoothCentralManager central = new BluetoothCentralManager(callback, Collections.emptySet(), bluezAdapter);
         central.scanForPeripheralsWithAddresses(new String[]{peripheralAddress});
-        verify(bluezAdapter, timeout(100)).startDiscovery();
+        verify(bluezAdapter, timeout(TIMEOUT_THRESHOLD)).startDiscovery();
         Properties.PropertiesChanged propertiesChangedSignal = getPropertiesChangeSignalDiscoveryStarted();
         central.handleSignal(propertiesChangedSignal);
-        verify(callback, timeout(150)).onScanStarted();
+        verify(callback, timeout(TIMEOUT_THRESHOLD)).onScanStarted();
         return central;
     }
 
@@ -1026,10 +1029,10 @@ class BluetoothCentralManagerTest {
         when(bluezAdapter.isPowered()).thenReturn(true);
         BluetoothCentralManager central = new BluetoothCentralManager(callback, Collections.emptySet(), bluezAdapter);
         central.scanForPeripheralsWithNames(new String[]{peripheralName});
-        verify(bluezAdapter, timeout(100)).startDiscovery();
+        verify(bluezAdapter, timeout(TIMEOUT_THRESHOLD)).startDiscovery();
         Properties.PropertiesChanged propertiesChangedSignal = getPropertiesChangeSignalDiscoveryStarted();
         central.handleSignal(propertiesChangedSignal);
-        verify(callback, timeout(150)).onScanStarted();
+        verify(callback, timeout(TIMEOUT_THRESHOLD)).onScanStarted();
         return central;
     }
 }

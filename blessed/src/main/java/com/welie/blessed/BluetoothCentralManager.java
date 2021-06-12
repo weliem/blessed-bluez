@@ -558,6 +558,7 @@ public class BluetoothCentralManager {
     private void handlePropertiesChangedForDeviceWhenScanning(@NotNull final BluezDevice bluezDevice, @NotNull final Map<String, Variant<?>> propertiesChanged) {
         Objects.requireNonNull(bluezDevice, "no valid bluezDevice supplied");
         Objects.requireNonNull(propertiesChanged, "no valid propertieschanged supplied");
+
         final String deviceAddress = bluezDevice.getAddress();
         if (deviceAddress == null) return;
 
@@ -1072,7 +1073,7 @@ public class BluetoothCentralManager {
      */
     @SuppressWarnings("UnusedReturnValue,unused")
     public boolean setPinCodeForPeripheral(@NotNull final String peripheralAddress, @NotNull final String pin) {
-        Objects.requireNonNull(peripheralAddress, "no peripheral address provided");
+        Objects.requireNonNull(peripheralAddress, NO_VALID_PERIPHERAL_ADDRESS_PROVIDED);
         Objects.requireNonNull(pin, "no pin provided");
 
         if (!isValidBluetoothAddress(peripheralAddress)) {
@@ -1097,7 +1098,7 @@ public class BluetoothCentralManager {
      * @return true if the address is valid, false otherwise
      */
     private boolean isValidBluetoothAddress(@NotNull final String address) {
-        Objects.requireNonNull(address, "address is null");
+        Objects.requireNonNull(address, NO_VALID_PERIPHERAL_ADDRESS_PROVIDED);
 
         if (address.length() != ADDRESS_LENGTH) {
             return false;
@@ -1157,8 +1158,8 @@ public class BluetoothCentralManager {
                     try {
                         bluetoothCommand.run();
                     } catch (Exception ex) {
-                        logger.warn("ERROR: Command exception for central");
-                        logger.warn(ex.getMessage());
+                        logger.error("command exception for central");
+                        logger.error(ex.getMessage());
                         completedCommand();
                     }
                 });
@@ -1182,7 +1183,7 @@ public class BluetoothCentralManager {
 
     @Nullable
     private BluezDevice getDeviceByAddress(@NotNull final String deviceAddress) {
-        Objects.requireNonNull(deviceAddress, "device address is null");
+        Objects.requireNonNull(deviceAddress, NO_VALID_PERIPHERAL_ADDRESS_PROVIDED);
 
         return getDeviceByPath(adapter.getPath(deviceAddress));
     }
@@ -1200,6 +1201,8 @@ public class BluetoothCentralManager {
     }
 
     private boolean removeDevice(@NotNull final BluezDevice bluetoothDevice) {
+        Objects.requireNonNull(bluetoothDevice, "no valid device provided");
+
         try {
             final Device1 rawDevice = bluetoothDevice.getRawDevice();
             if (rawDevice != null) {
