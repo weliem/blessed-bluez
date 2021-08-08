@@ -30,10 +30,19 @@ import static java.lang.Thread.sleep;
  * Represents a Bluetooth Central object
  */
 public class BluetoothCentralManager {
+
+    /**
+     * Possible manager states
+     */
+    public enum State {
+        Unsupported,
+        PoweredOff,
+        Ready
+    }
+
     private static final String TAG = BluetoothCentralManager.class.getSimpleName();
     private final Logger logger = LoggerFactory.getLogger(TAG);
 
-    @NotNull
     private final BluezAdapter adapter;
 
     @NotNull
@@ -219,10 +228,15 @@ public class BluetoothCentralManager {
         this(bluetoothCentralManagerCallback, scanOptions, new BluezAdapterProvider().adapter);
     }
 
-    BluetoothCentralManager(@NotNull final BluetoothCentralManagerCallback bluetoothCentralManagerCallback, @NotNull final Set<String> scanOptions, @NotNull final BluezAdapter bluezAdapter) {
+    BluetoothCentralManager(@NotNull final BluetoothCentralManagerCallback bluetoothCentralManagerCallback, @NotNull final Set<String> scanOptions, final BluezAdapter bluezAdapter) {
         this.bluetoothCentralManagerCallback = Objects.requireNonNull(bluetoothCentralManagerCallback, "no valid bluetoothCallback provided");
         this.scanOptions = Objects.requireNonNull(scanOptions, "no scanOptions provided");
-        this.adapter = Objects.requireNonNull(bluezAdapter, "no bluez adapter provided");
+        this.adapter = bluezAdapter;
+
+        if(this.adapter == null) {
+            logger.info("Adapter is null - Bluetooth unsupported");
+            return;
+        }
 
         logger.info(String.format("using adapter %s", adapter.getDeviceName()));
 
@@ -275,6 +289,18 @@ public class BluetoothCentralManager {
             agentManager.registerAgent(agent, "KeyboardOnly");
             agentManager.requestDefaultAgent(agent);
         }
+    }
+
+    /**
+     * Get the state of the manager.
+     */
+
+    public State getState() {
+        if(adapter == null)
+            return State.Unsupported;
+        if(!adapter.isPowered())
+            return State.PoweredOff;
+        return State.Ready;
     }
 
     /**
@@ -1026,6 +1052,17 @@ public class BluetoothCentralManager {
     public List<BluetoothPeripheral> getConnectedPeripherals() {
         return new ArrayList<>(connectedPeripherals.values());
     }
+
+    /**
+     * Is the peripheral represented by the given address currently connected?
+     * @param address The peripheral address
+     * @return True if the peripheral is connected
+     */
+
+    public boolean isPeripheralConnected(String address) {
+        return connectedPeripherals.containsKey(address);
+    }
+
 
     /**
      * Get a peripheral object matching the specified mac address.
