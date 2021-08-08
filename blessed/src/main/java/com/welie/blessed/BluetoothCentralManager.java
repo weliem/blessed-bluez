@@ -12,15 +12,14 @@ import org.freedesktop.dbus.types.UInt16;
 import org.freedesktop.dbus.types.Variant;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static com.welie.blessed.BluetoothPeripheral.*;
 import static com.welie.blessed.ConnectionState.CONNECTED;
@@ -116,7 +115,7 @@ public class BluetoothCentralManager {
     private final Set<String> scanOptions;
 
     private static final int ADDRESS_LENGTH = 17;
-    static final short DISCOVERY_RSSI_THRESHOLD = -80;
+    private short discoveryRssiThreshold = -80;
 
     // Scan in intervals. Make sure it is less than 10seconds to avoid issues with Bluez internal scanning
     private static final long SCAN_WINDOW = TimeUnit.SECONDS.toMillis(6);
@@ -233,7 +232,7 @@ public class BluetoothCentralManager {
         this.scanOptions = Objects.requireNonNull(scanOptions, "no scanOptions provided");
         this.adapter = bluezAdapter;
 
-        if(this.adapter == null) {
+        if (this.adapter == null) {
             logger.info("Adapter is null - Bluetooth unsupported");
             return;
         }
@@ -296,9 +295,9 @@ public class BluetoothCentralManager {
      */
 
     public State getState() {
-        if(adapter == null)
+        if (adapter == null)
             return State.Unsupported;
-        if(!adapter.isPowered())
+        if (!adapter.isPowered())
             return State.PoweredOff;
         return State.Ready;
     }
@@ -409,7 +408,7 @@ public class BluetoothCentralManager {
 
     private void setBasicFilters() {
         scanFilters.put(DiscoveryFilter.Transport, DiscoveryTransport.LE);
-        scanFilters.put(DiscoveryFilter.RSSI, DISCOVERY_RSSI_THRESHOLD);
+        scanFilters.put(DiscoveryFilter.RSSI, discoveryRssiThreshold);
         scanFilters.put(DiscoveryFilter.DuplicateData, true);
     }
 
@@ -523,7 +522,7 @@ public class BluetoothCentralManager {
         if ((value.get(PROPERTY_RSSI) != null) && (value.get(PROPERTY_RSSI).getValue() instanceof Short)) {
             rssi = (Short) value.get(PROPERTY_RSSI).getValue();
         } else {
-            rssi = DISCOVERY_RSSI_THRESHOLD;
+            rssi = discoveryRssiThreshold;
         }
 
         // Convert the service UUIDs
@@ -636,7 +635,7 @@ public class BluetoothCentralManager {
         final String deviceAddress = bluezDevice.getAddress();
         final List<@NotNull UUID> uuids = bluezDevice.getUuids();
         final Short rssi = bluezDevice.getRssi();
-        final int rssiInt = rssi == null ? DISCOVERY_RSSI_THRESHOLD : rssi;
+        final int rssiInt = rssi == null ? discoveryRssiThreshold : rssi;
         final Map<@NotNull Integer, byte[]> manufacturerData = bluezDevice.getManufacturerData();
         final Map<@NotNull String, byte[]> serviceData = bluezDevice.getServiceData();
         return new ScanResult(deviceName, deviceAddress, uuids, rssiInt, manufacturerData, serviceData);
@@ -1055,6 +1054,7 @@ public class BluetoothCentralManager {
 
     /**
      * Is the peripheral represented by the given address currently connected?
+     *
      * @param address The peripheral address
      * @return True if the peripheral is connected
      */
@@ -1125,6 +1125,29 @@ public class BluetoothCentralManager {
 
         pinCodes.put(peripheralAddress, pin);
         return true;
+    }
+
+    /**
+     * Set the minimum RSSI value for discovery. Scan results with RSSI below this will be filtered out.
+     * Must not be called while a scan operation is in progress.
+     *
+     * @param threshold The minimum value for RSSI, must be in the range -200 to +20
+     */
+
+    public void setDiscoveryRssiThreshold(int threshold) throws IllegalArgumentException, IllegalStateException {
+        if (threshold > 20 || threshold < -200)
+            throw new IllegalArgumentException("RSSI threshold value outside range (-200 to +20");
+        if (isScanning)
+            throw new IllegalStateException("Can't change RSSI threshold while scanning");
+        discoveryRssiThreshold = (short) threshold;
+    }
+
+    /**
+     * Get the current RSSI threshold.
+     */
+
+    public int getDiscoveryRssiThreshold() {
+        return discoveryRssiThreshold;
     }
 
     /**
