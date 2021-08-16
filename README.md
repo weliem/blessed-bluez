@@ -1,6 +1,7 @@
 # BLESSED for Bluez - BLE made easy
 
 [![](https://jitpack.io/v/weliem/blessed-bluez.svg)](https://jitpack.io/#weliem/blessed-bluez)
+[![Downloads](https://jitpack.io/v/weliem/blessed-bluez/month.svg)](https://jitpack.io/#weliem/blessed-bluez)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/weliem/blessed-bluez.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/weliem/blessed-bluez/alerts/)
 [![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/weliem/blessed-bluez.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/weliem/blessed-bluez/context:java)
 
