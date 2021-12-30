@@ -107,7 +107,7 @@ public class BluetoothCentralManager {
     private final Set<String> scanOptions;
 
     private static final int ADDRESS_LENGTH = 17;
-    static final short DISCOVERY_RSSI_THRESHOLD = -80;
+    private short discoveryRssiThreshold = -80;
 
     // Scan in intervals. Make sure it is less than 10seconds to avoid issues with Bluez internal scanning
     private static final long SCAN_WINDOW = TimeUnit.SECONDS.toMillis(6);
@@ -373,6 +373,17 @@ public class BluetoothCentralManager {
         stopScanning();
     }
 
+    public void setRssiThreshold(final short threshold) {
+        if (threshold > 20 || threshold < -200) {
+            throw new IllegalArgumentException("RSSI threshold value outside range (-200 to +20");
+        }
+        this.discoveryRssiThreshold = threshold;
+    }
+
+    public short getRssiThreshold() {
+        return this.discoveryRssiThreshold;
+    }
+
     private void resetScanFilters() {
         scanPeripheralNames = new HashSet<>();
         scanPeripheralAddresses = new HashSet<>();
@@ -383,7 +394,7 @@ public class BluetoothCentralManager {
 
     private void setBasicFilters() {
         scanFilters.put(DiscoveryFilter.Transport, DiscoveryTransport.LE);
-        scanFilters.put(DiscoveryFilter.RSSI, DISCOVERY_RSSI_THRESHOLD);
+        scanFilters.put(DiscoveryFilter.RSSI, discoveryRssiThreshold);
         scanFilters.put(DiscoveryFilter.DuplicateData, true);
     }
 
@@ -497,7 +508,7 @@ public class BluetoothCentralManager {
         if ((value.get(PROPERTY_RSSI) != null) && (value.get(PROPERTY_RSSI).getValue() instanceof Short)) {
             rssi = (Short) value.get(PROPERTY_RSSI).getValue();
         } else {
-            rssi = DISCOVERY_RSSI_THRESHOLD;
+            rssi = discoveryRssiThreshold;
         }
 
         // Convert the service UUIDs
@@ -610,7 +621,7 @@ public class BluetoothCentralManager {
         final String deviceAddress = bluezDevice.getAddress();
         final List<@NotNull UUID> uuids = bluezDevice.getUuids();
         final Short rssi = bluezDevice.getRssi();
-        final int rssiInt = rssi == null ? DISCOVERY_RSSI_THRESHOLD : rssi;
+        final int rssiInt = rssi == null ? discoveryRssiThreshold : rssi;
         final Map<@NotNull Integer, byte[]> manufacturerData = bluezDevice.getManufacturerData();
         final Map<@NotNull String, byte[]> serviceData = bluezDevice.getServiceData();
         return new ScanResult(deviceName, deviceAddress, uuids, rssiInt, manufacturerData, serviceData);
