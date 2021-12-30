@@ -606,22 +606,6 @@ class BluetoothCentralManagerTest {
     }
 
     @Test
-    void Given_a_scan_is_running_when_connectionPeripheral_is_called_then_the_scan_is_stopped() throws DBusException, InterruptedException {
-        // Given
-        when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_BLP)).thenReturn(DUMMY_MAC_ADDRESS_PATH_BLP);
-        when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH_BLP)).thenReturn(bluezDevice);
-        BluetoothCentralManager central = startUnfilteredScan();
-        when(bluezAdapter.isDiscovering()).thenReturn(true);
-
-        // When
-        BluetoothPeripheral peripheral = central.getPeripheral(DUMMY_MAC_ADDRESS_BLP);
-        central.connectPeripheral(peripheral, peripheralCallback);
-
-        // Then
-        verify(bluezAdapter, timeout(TIMEOUT_THRESHOLD)).stopDiscovery();
-    }
-
-    @Test
     void When_connectPeripheral_is_called_then_a_connection_attempt_is_done_after_a_delay() throws BluezFailedException, BluezAlreadyConnectedException, BluezNotReadyException, BluezInProgressException, InterruptedException {
         // Given
         when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_BLP)).thenReturn(DUMMY_MAC_ADDRESS_PATH_BLP);
@@ -654,25 +638,7 @@ class BluetoothCentralManagerTest {
         // Then
         verify(callback, timeout(TIMEOUT_THRESHOLD)).onConnectedPeripheral(peripheral);
     }
-
-    @Test
-    void Given_a_connected_peripheral_and_scanning_when_cancelPeripheralConnection_is_called_then_the_scan_is_stopped() throws DBusException, InterruptedException {
-        // Given
-        BluetoothCentralManager central = getCentral();
-
-        when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_BLP)).thenReturn(DUMMY_MAC_ADDRESS_PATH_BLP);
-        when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH_BLP)).thenReturn(bluezDevice);
-        BluetoothPeripheral peripheral = central.getPeripheral(DUMMY_MAC_ADDRESS_BLP);
-        connectPeripheral(central, peripheral);
-        startScan(central);
-
-        // When
-        central.cancelConnection(peripheral);
-
-        // Then
-        verify(bluezAdapter, timeout(TIMEOUT_THRESHOLD)).stopDiscovery();
-    }
-
+    
     @Test
     void Given_a_connected_peripheral_when_cancelPeripheralConnection_is_called_then_the_peripheral_is_disconnected() throws DBusException, InterruptedException {
         // Given
@@ -754,19 +720,12 @@ class BluetoothCentralManagerTest {
         verify(bluezAdapter, timeout(TIMEOUT_THRESHOLD)).startDiscovery();
         central.handleSignal(getPropertiesChangeSignalDiscoveryStarted());
         verify(callback, timeout(TIMEOUT_THRESHOLD)).onScanStarted();
-        when(bluezAdapter.isDiscovering()).thenReturn(true);
 
         // When
         central.handleSignal(getPropertiesChangedSignalWhileScanning());
 
         // Then
-        verify(bluezAdapter, timeout(TIMEOUT_THRESHOLD)).stopDiscovery();
-
-        central.handleSignal(getPropertiesChangeSignalDiscoveryStopped());
-        when(bluezAdapter.isDiscovering()).thenReturn(false);
-
         verify(bluezDevice, timeout(TIMEOUT_THRESHOLD)).connect();
-
         assertFalse(central.reconnectPeripheralAddresses.contains(peripheral.getAddress()));
         assertNull(central.reconnectCallbacks.get(peripheral.getAddress()));
     }

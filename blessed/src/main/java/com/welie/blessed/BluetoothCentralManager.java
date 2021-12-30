@@ -147,7 +147,7 @@ public class BluetoothCentralManager {
 
         @Override
         public void servicesDiscovered(@NotNull final BluetoothPeripheral peripheral) {
-            restartScannerIfNeeded();
+            //restartScannerIfNeeded();
         }
 
         @Override
@@ -170,7 +170,7 @@ public class BluetoothCentralManager {
 
             callBackHandler.post(() -> bluetoothCentralManagerCallback.onConnectionFailed(peripheral, status));
 
-            restartScannerIfNeeded();
+//            restartScannerIfNeeded();
         }
 
         @Override
@@ -189,14 +189,14 @@ public class BluetoothCentralManager {
 
             callBackHandler.post(() -> bluetoothCentralManagerCallback.onDisconnectedPeripheral(peripheral, status));
 
-            restartScannerIfNeeded();
+//            restartScannerIfNeeded();
         }
 
-        private void restartScannerIfNeeded() {
-            if (autoScanActive || normalScanActive) {
-                startScanning();
-            }
-        }
+//        private void restartScannerIfNeeded() {
+//            if (autoScanActive || normalScanActive) {
+//                startScanning();
+//            }
+//        }
 
         private void completeConnectOrDisconnectCommand(@NotNull final String deviceAddress) {
             // Complete the 'connect' command if this was the device we were connecting
@@ -427,8 +427,6 @@ public class BluetoothCentralManager {
 
         logger.info(String.format("found peripheral to autoconnect '%s'", peripheralAddress));
         autoScanActive = false;
-        stopScanning();
-
         reconnectPeripheralAddresses.remove(peripheralAddress);
         reconnectCallbacks.remove(peripheralAddress);
         unconnectedPeripherals.remove(peripheralAddress);
@@ -892,17 +890,8 @@ public class BluetoothCentralManager {
             return;
         }
 
-        // Some adapters have issues with (dis)connecting while scanning, so stop scan first
-        stopScanning();
-
         unconnectedPeripherals.put(peripheral.getAddress(), peripheral);
         final boolean result = commandQueue.add(() -> {
-            try {
-                sleep(CONNECT_DELAY);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
             // Refresh BluezDevice because it may be old
             scannedBluezDevices.remove(adapter.getPath(peripheral.getAddress()));
             final BluezDevice bluezDevice = getDeviceByAddress(peripheral.getAddress());
@@ -992,9 +981,6 @@ public class BluetoothCentralManager {
         Objects.requireNonNull(peripheral, NULL_PERIPHERAL_ERROR);
 
         if (peripheral.getState() == CONNECTED) {
-            // Some adapters have issues with (dis)connecting while scanning, so stop scan first
-            stopScanning();
-
             // Queue the low level disconnect
             final boolean result = commandQueue.add(() -> {
                 currentDeviceAddress = peripheral.getAddress();
