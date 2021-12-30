@@ -71,6 +71,8 @@ class BluetoothCentralManagerTest {
     private static final String DUMMY_MAC_ADDRESS_PATH_HTS = "/org/bluez/hci0/dev_" + DUMMY_MAC_ADDRESS_HTS.replace(":", "_");
     private static final String DUMMY_PERIPHERAL_NAME_HTS = "Taidoc 1241";
 
+    private static final String PUBLIC_ADDRESS = "public";
+
     @BeforeEach
     void setup() {
     }
@@ -196,6 +198,7 @@ class BluetoothCentralManagerTest {
         when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_BLP)).thenReturn(DUMMY_MAC_ADDRESS_PATH_BLP);
         when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH_BLP)).thenReturn(bluezDevice);
         when(bluezDevice.getAddress()).thenReturn(DUMMY_MAC_ADDRESS_BLP);
+        when(bluezDevice.getAddressType()).thenReturn(PUBLIC_ADDRESS);
         when(bluezDevice.getName()).thenReturn(DUMMY_PERIPHERAL_NAME_BLP);
         when(bluezDevice.getUuids()).thenReturn(Collections.singletonList(BLP_SERVICE_UUID));
         BluetoothCentralManager central = startUnfilteredScan();
@@ -295,6 +298,7 @@ class BluetoothCentralManagerTest {
         when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_BLP)).thenReturn(DUMMY_MAC_ADDRESS_PATH_BLP);
         when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH_BLP)).thenReturn(bluezDevice);
         when(bluezDevice.getAddress()).thenReturn(DUMMY_MAC_ADDRESS_BLP);
+        when(bluezDevice.getAddressType()).thenReturn(PUBLIC_ADDRESS);
         when(bluezDevice.getName()).thenReturn(DUMMY_PERIPHERAL_NAME_BLP);
         when(bluezDevice.getUuids()).thenReturn(Collections.singletonList(BLP_SERVICE_UUID));
         BluetoothCentralManager central = startScanWithServices(BLP_SERVICE_UUID);
@@ -334,7 +338,6 @@ class BluetoothCentralManagerTest {
     @Test
     void When_scanning_for_service_and_a_non_matching_PropertiesChanged_signal_comes_in_then_onDiscoveredPeripheral_is_not_called() throws InterruptedException, DBusException {
         // Given
-        when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_BLP)).thenReturn(DUMMY_MAC_ADDRESS_PATH_BLP);
         when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH_BLP)).thenReturn(bluezDevice);
         when(bluezDevice.getAddress()).thenReturn(DUMMY_MAC_ADDRESS_BLP);
         when(bluezDevice.getName()).thenReturn(DUMMY_PERIPHERAL_NAME_BLP);
@@ -420,6 +423,7 @@ class BluetoothCentralManagerTest {
         when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_BLP)).thenReturn(DUMMY_MAC_ADDRESS_PATH_BLP);
         when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH_BLP)).thenReturn(bluezDevice);
         when(bluezDevice.getAddress()).thenReturn(DUMMY_MAC_ADDRESS_BLP);
+        when(bluezDevice.getAddressType()).thenReturn(PUBLIC_ADDRESS);
         when(bluezDevice.getName()).thenReturn(DUMMY_PERIPHERAL_NAME_BLP);
         when(bluezDevice.getUuids()).thenReturn(Collections.singletonList(BLP_SERVICE_UUID));
         BluetoothCentralManager central = startScanWithAddress(DUMMY_MAC_ADDRESS_BLP);
@@ -461,7 +465,6 @@ class BluetoothCentralManagerTest {
     @Test
     void When_scanning_for_address_and_a_non_matching_PropertiesChanged_signal_comes_in_then_onDiscoveredPeripheral_is_not_called() throws InterruptedException, DBusException {
         // Given
-        when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_BLP)).thenReturn(DUMMY_MAC_ADDRESS_PATH_BLP);
         when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH_BLP)).thenReturn(bluezDevice);
         when(bluezDevice.getAddress()).thenReturn(DUMMY_MAC_ADDRESS_BLP);
         when(bluezDevice.getName()).thenReturn(DUMMY_PERIPHERAL_NAME_BLP);
@@ -547,6 +550,7 @@ class BluetoothCentralManagerTest {
         when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_BLP)).thenReturn(DUMMY_MAC_ADDRESS_PATH_BLP);
         when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH_BLP)).thenReturn(bluezDevice);
         when(bluezDevice.getAddress()).thenReturn(DUMMY_MAC_ADDRESS_BLP);
+        when(bluezDevice.getAddressType()).thenReturn(PUBLIC_ADDRESS);
         when(bluezDevice.getName()).thenReturn(DUMMY_PERIPHERAL_NAME_BLP);
         when(bluezDevice.getUuids()).thenReturn(Collections.singletonList(BLP_SERVICE_UUID));
         BluetoothCentralManager central = startScanWithNames(DUMMY_PERIPHERAL_NAME_BLP);
@@ -572,7 +576,6 @@ class BluetoothCentralManagerTest {
     void When_scanning_for_names_and_non_matching_InterfaceAdded_signal_comes_in_then_onDiscoveredPeripheral_is_not_called() throws InterruptedException, DBusException {
         // Given
         when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_HTS)).thenReturn(DUMMY_MAC_ADDRESS_PATH_HTS);
-        when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH_HTS)).thenReturn(bluezDeviceHts);
         BluetoothCentralManager central = startScanWithNames(DUMMY_PERIPHERAL_NAME_BLP);
 
         // When
@@ -586,7 +589,7 @@ class BluetoothCentralManagerTest {
     @Test
     void When_scanning_for_names_and_a_non_matching_PropertiesChanged_signal_comes_in_then_onDiscoveredPeripheral_is_not_called() throws InterruptedException, DBusException {
         // Given
-        when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_BLP)).thenReturn(DUMMY_MAC_ADDRESS_PATH_BLP);
+//        when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_BLP)).thenReturn(DUMMY_MAC_ADDRESS_PATH_BLP);
         when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH_BLP)).thenReturn(bluezDevice);
         when(bluezDevice.getAddress()).thenReturn(DUMMY_MAC_ADDRESS_BLP);
         when(bluezDevice.getName()).thenReturn("Something else");
@@ -743,6 +746,7 @@ class BluetoothCentralManagerTest {
         when(bluezAdapter.getPath(DUMMY_MAC_ADDRESS_BLP)).thenReturn(DUMMY_MAC_ADDRESS_PATH_BLP);
         when(bluezAdapter.getBluezDeviceByPath(DUMMY_MAC_ADDRESS_PATH_BLP)).thenReturn(bluezDevice);
         when(bluezDevice.getAddress()).thenReturn(DUMMY_MAC_ADDRESS_BLP);
+        when(bluezDevice.getAddressType()).thenReturn(PUBLIC_ADDRESS);
         when(bluezDevice.getName()).thenReturn("Something else");
         when(bluezDevice.getUuids()).thenReturn(Collections.singletonList(BLP_SERVICE_UUID));
         BluetoothPeripheral peripheral = central.getPeripheral(DUMMY_MAC_ADDRESS_BLP);
@@ -916,6 +920,7 @@ class BluetoothCentralManagerTest {
         Map<String, Variant<?>> interfaceMap = new HashMap<>();
 
         interfaceMap.put(PROPERTY_ADDRESS, new Variant<>(DUMMY_MAC_ADDRESS_BLP));
+        interfaceMap.put(PROPERTY_ADDRESS_TYPE, new Variant<>(PUBLIC_ADDRESS));
         interfaceMap.put(PROPERTY_NAME, new Variant<>(DUMMY_PERIPHERAL_NAME_BLP));
         interfaceMap.put(PROPERTY_CONNECTED, new Variant<>(false));
         interfaceMap.put(PROPERTY_SERVICES_RESOLVED, new Variant<>(false));
@@ -950,6 +955,7 @@ class BluetoothCentralManagerTest {
         Map<String, Variant<?>> interfaceMap = new HashMap<>();
 
         interfaceMap.put(PROPERTY_ADDRESS, new Variant<>(DUMMY_MAC_ADDRESS_HTS));
+        interfaceMap.put(PROPERTY_ADDRESS_TYPE, new Variant<>(PUBLIC_ADDRESS));
         interfaceMap.put(PROPERTY_NAME, new Variant<>(DUMMY_PERIPHERAL_NAME_HTS));
         interfaceMap.put(PROPERTY_CONNECTED, new Variant<>(false));
         interfaceMap.put(PROPERTY_SERVICES_RESOLVED, new Variant<>(false));
