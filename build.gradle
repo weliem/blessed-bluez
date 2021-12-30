@@ -26,8 +26,8 @@ jar {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation 'org.jetbrains:annotations:16.0.2'
-    implementation 'ch.qos.logback:logback-core:+'
-    implementation 'ch.qos.logback:logback-classic:+'
+    implementation 'org.jetbrains:annotations:22.0.0'
+    implementation 'ch.qos.logback:logback-core:1.2.10'
+    implementation 'ch.qos.logback:logback-classic:1.2.10'
     implementation project(':blessed')
 }
