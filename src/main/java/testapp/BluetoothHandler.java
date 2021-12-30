@@ -251,6 +251,7 @@ public class BluetoothHandler {
         logger.info("initializing BluetoothCentral");
         central = new BluetoothCentralManager(bluetoothCentralManagerCallback, new HashSet<>(Collections.singletonList(SCANOPTION_NO_NULL_NAMES)));
         central.setPinCodeForPeripheral("B0:49:5F:01:20:8F", "635227");
+        central.setRssiThreshold(-120);
         startScanning();
     }
 

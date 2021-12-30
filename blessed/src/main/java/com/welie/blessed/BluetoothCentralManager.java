@@ -373,13 +373,25 @@ public class BluetoothCentralManager {
         stopScanning();
     }
 
-    public void setRssiThreshold(final short threshold) {
-        if (threshold > 20 || threshold < -200) {
-            throw new IllegalArgumentException("RSSI threshold value outside range (-200 to +20");
+    /**
+     * Set the RSSI threshold while scanning.
+     *
+     * The new value will be used when a new scan is started
+     *
+     * @param threshold must be between -127 and +20
+     */
+    public void setRssiThreshold(final int threshold) {
+        if (threshold > 20 || threshold < -127) {
+            throw new IllegalArgumentException("RSSI threshold value outside range (-127 to +20");
         }
-        this.discoveryRssiThreshold = threshold;
+        this.discoveryRssiThreshold = (short) threshold;
     }
 
+    /**
+     * Get the currently set RSSI threshold for scanning
+     *
+     * @return the current stored RSSI threshold
+     */
     public short getRssiThreshold() {
         return this.discoveryRssiThreshold;
     }
