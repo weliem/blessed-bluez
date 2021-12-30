@@ -473,6 +473,7 @@ public class BluetoothCentralManager {
 
     void handleInterfaceAddedForDevice(@NotNull final String path, @NotNull final Map<String, Variant<?>> value) {
         final String deviceAddress;
+        final String addressType;
         final String deviceName;
         final int rssi;
         ArrayList<@NotNull String> serviceUUIDs = null;
@@ -482,6 +483,14 @@ public class BluetoothCentralManager {
             deviceAddress = (String) value.get(PROPERTY_ADDRESS).getValue();
         } else {
             // There MUST be an address, so if not bail out...
+            return;
+        }
+
+        // Grab address type
+        if ((value.get(PROPERTY_ADDRESS_TYPE) != null) && (value.get(PROPERTY_ADDRESS_TYPE).getValue() instanceof String)) {
+            addressType = (String) value.get(PROPERTY_ADDRESS_TYPE).getValue();
+        } else {
+            // There MUST be an address type, so if not bail out...
             return;
         }
 
@@ -532,7 +541,7 @@ public class BluetoothCentralManager {
         }
 
         // Create ScanResult
-        final ScanResult scanResult = new ScanResult(deviceName, deviceAddress, finalServiceUUIDs, rssi, manufacturerData, serviceData);
+        final ScanResult scanResult = new ScanResult(deviceName, deviceAddress, addressType, finalServiceUUIDs, rssi, manufacturerData, serviceData);
         final BluetoothPeripheral peripheral = getPeripheral(deviceAddress);
         scanResultCache.put(deviceAddress, scanResult);
         onScanResult(peripheral, scanResult);
@@ -619,12 +628,13 @@ public class BluetoothCentralManager {
 
         final String deviceName = bluezDevice.getName();
         final String deviceAddress = bluezDevice.getAddress();
+        final String addressType = bluezDevice.getAddressType();
         final List<@NotNull UUID> uuids = bluezDevice.getUuids();
         final Short rssi = bluezDevice.getRssi();
         final int rssiInt = rssi == null ? discoveryRssiThreshold : rssi;
         final Map<@NotNull Integer, byte[]> manufacturerData = bluezDevice.getManufacturerData();
         final Map<@NotNull String, byte[]> serviceData = bluezDevice.getServiceData();
-        return new ScanResult(deviceName, deviceAddress, uuids, rssiInt, manufacturerData, serviceData);
+        return new ScanResult(deviceName, deviceAddress, addressType, uuids, rssiInt, manufacturerData, serviceData);
     }
 
     private void handlePropertiesChangedForAdapter(@NotNull final String propertyName, @NotNull final Variant<?> value) {

@@ -17,14 +17,16 @@ public class ScanResult {
     private long timestampNanos;
     private final String name;
     private final String address;
+    private final String addressType;
     private final @NotNull List<UUID> uuids;
     private int rssi;
     private Map<@NotNull Integer, byte[]> manufacturerData;
     private Map<@NotNull String, byte[]> serviceData;
 
-    public ScanResult(@Nullable String deviceName, @NotNull String deviceAddress, @NotNull List<@NotNull UUID> uuids, int rssi, @NotNull Map<@NotNull Integer, byte[]> manufacturerData, @NotNull Map<@NotNull String, byte[]> serviceData) {
+    public ScanResult(@Nullable String deviceName, @NotNull String deviceAddress, @NotNull String addressType, @NotNull List<@NotNull UUID> uuids, int rssi, @NotNull Map<@NotNull Integer, byte[]> manufacturerData, @NotNull Map<@NotNull String, byte[]> serviceData) {
         this.name = deviceName;
         this.address = Objects.requireNonNull(deviceAddress, "no valid address supplied");
+        this.addressType = Objects.requireNonNull(addressType, "no valid address type supplied");
         this.uuids = Objects.requireNonNull(uuids, "no valid uuids supplied");
         this.rssi = rssi;
         setManufacturerData(manufacturerData);
@@ -110,6 +112,7 @@ public class ScanResult {
                 "timestampNanos=" + timestampNanos +
                 ", name='" + name + '\'' +
                 ", address='" + address + '\'' +
+                ", addressType='" + addressType + '\'' +
                 ", uuids=" + uuids +
                 ", rssi=" + rssi +
                 ", manufacturerData=" + manufacturerDataToString() +

@@ -122,6 +122,7 @@ public final class BluetoothPeripheral {
     static final String PROPERTY_SERVICE_UUIDS = "UUIDs";
     static final String PROPERTY_NAME = "Name";
     static final String PROPERTY_ADDRESS = "Address";
+    static final String PROPERTY_ADDRESS_TYPE = "AddressType";
     static final String PROPERTY_RSSI = "RSSI";
     static final String PROPERTY_MANUFACTURER_DATA = "ManufacturerData";
     static final String PROPERTY_SERVICE_DATA = "ServiceData";

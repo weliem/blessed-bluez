@@ -328,6 +328,19 @@ public class BluezDevice extends AbstractBluetoothObject {
     }
 
     /**
+     * Returns address type (public/random) of the remote devices
+     * @return address type, maybe null
+     */
+    public String getAddressType() {
+        String addressType = null;
+        try {
+            addressType = getTyped("AddressType", String.class);
+        } catch (DBusExecutionException ignored) {
+        }
+        return addressType;
+    }
+
+    /**
      * <b>From bluez Documentation:</b>
      * <p>
      * Proposed icon name according to the freedesktop.org
