@@ -188,15 +188,7 @@ public class BluetoothCentralManager {
             }
 
             callBackHandler.post(() -> bluetoothCentralManagerCallback.onDisconnectedPeripheral(peripheral, status));
-
-//            restartScannerIfNeeded();
         }
-
-//        private void restartScannerIfNeeded() {
-//            if (autoScanActive || normalScanActive) {
-//                startScanning();
-//            }
-//        }
 
         private void completeConnectOrDisconnectCommand(@NotNull final String deviceAddress) {
             // Complete the 'connect' command if this was the device we were connecting
@@ -282,7 +274,6 @@ public class BluetoothCentralManager {
      */
     public void scanForPeripherals() {
         // Stop the current scan if it is active
-        isScanning = adapter.isDiscovering();
         if (isScanning) stopScan();
 
         // Start unfiltered BLE scan
@@ -305,7 +296,6 @@ public class BluetoothCentralManager {
         }
 
         // Stop the current scan if it is active
-        isScanning = adapter.isDiscovering();
         if (isScanning) stopScan();
 
         // Store serviceUUIDs to scan for and start scan
@@ -331,7 +321,6 @@ public class BluetoothCentralManager {
         }
 
         // Stop the current scan if it is active
-        isScanning = adapter.isDiscovering();
         if (isScanning) stopScan();
 
         // Store peripheral names to scan for and start scan
@@ -355,7 +344,6 @@ public class BluetoothCentralManager {
         }
 
         // Stop the current scan if it is active
-        isScanning = adapter.isDiscovering();
         if (isScanning) stopScan();
 
         // Store peripheral address to scan for and start scan
@@ -375,7 +363,7 @@ public class BluetoothCentralManager {
 
     /**
      * Set the RSSI threshold while scanning.
-     *
+     * <p>
      * The new value will be used when a new scan is started
      *
      * @param threshold must be between -127 and +20
@@ -650,22 +638,7 @@ public class BluetoothCentralManager {
     private void handlePropertiesChangedForAdapter(@NotNull final String propertyName, @NotNull final Variant<?> value) {
         switch (propertyName) {
             case PROPERTY_DISCOVERING:
-                isScanning = (Boolean) value.getValue();
-                logger.info(String.format("scan %s", isScanning ? "started" : "stopped"));
-
-                if (isScanning) {
-                    isStoppingScan = false;
-                    callBackHandler.post(bluetoothCentralManagerCallback::onScanStarted);
-                } else {
-                    scannedPeripherals.clear();
-                    scannedBluezDevices.clear();
-                    scanResultCache.clear();
-                    callBackHandler.post(bluetoothCentralManagerCallback::onScanStopped);
-                }
-
-                if (currentCommand.equalsIgnoreCase(PROPERTY_DISCOVERING)) {
-                    callBackHandler.postDelayed(this::completedCommand, 100L);
-                }
+                logger.debug(String.format("adapter discovery %s", (Boolean) value.getValue() ? "started" : "stopped"));
                 break;
             case PROPERTY_POWERED:
                 isPowered = (Boolean) value.getValue();
@@ -698,16 +671,14 @@ public class BluetoothCentralManager {
      * Start a continuous scan with scan filters set to find all devices.
      * This will try to start a scan even if one is running already
      */
-    private void startScanning() {
+    private boolean startScanning() {
         // Make sure the adapter is on
-        if (!isPowered) return;
+        if (!isPowered) return false;
 
-        final boolean result = commandQueue.add(() -> {
+        return enqueue(() -> {
             // Just in case, set isStoppingScan to false
             isStoppingScan = false;
 
-            // If we are already scanning then complete the command immediately
-            isScanning = adapter.isDiscovering();
             if (isScanning) {
                 completedCommand();
                 return;
@@ -723,44 +694,38 @@ public class BluetoothCentralManager {
 
             // Start the discovery
             try {
-                currentCommand = PROPERTY_DISCOVERING;
+                //currentCommand = PROPERTY_DISCOVERING;
                 adapter.startDiscovery();
+                isScanning = true;
+                logger.debug("scan started");
+                callBackHandler.post(bluetoothCentralManagerCallback::onScanStarted);
                 startScanTimer();
             } catch (BluezFailedException e) {
                 logger.error("Could not start discovery (failed)");
-                completedCommand();
+                logger.error(e.getMessage());
             } catch (BluezNotReadyException e) {
                 logger.error("Could not start discovery (not ready)");
-                completedCommand();
+                logger.error(e.getMessage());
             } catch (DBusExecutionException e) {
                 // Still need to see what this could be
                 logger.error("Error starting scanner");
                 logger.error(e.getMessage());
-                completedCommand();
             }
+            completedCommand();
         });
-
-        if (result) {
-            nextCommand();
-        } else {
-            logger.error(ENQUEUE_ERROR);
-        }
-
     }
 
     /*
      * Stop the scanner
      */
-    private void stopScanning() {
+    private boolean stopScanning() {
         // Make sure the adapter is on
-        if (!isPowered) return;
+        if (!isPowered) return false;
 
         // Set flag to true in order to stop sending scan results
         isStoppingScan = true;
 
-        final boolean result = commandQueue.add(() -> {
-            // Check if we are scanning
-            isScanning = adapter.isDiscovering();
+        return enqueue(() -> {
             if (!isScanning) {
                 isStoppingScan = false;
                 completedCommand();
@@ -769,18 +734,20 @@ public class BluetoothCentralManager {
 
             // Stop the discovery
             try {
-                currentCommand = PROPERTY_DISCOVERING;
                 cancelTimeoutTimer();
                 adapter.stopDiscovery();
+                isScanning = false;
+                scannedPeripherals.clear();
+                scannedBluezDevices.clear();
+                scanResultCache.clear();
+                logger.debug("scan stopped");
+                callBackHandler.post(bluetoothCentralManagerCallback::onScanStopped);
             } catch (BluezNotReadyException e) {
                 logger.error("Could not stop discovery (not ready)");
-                completedCommand();
             } catch (BluezFailedException e) {
                 logger.error("Could not stop discovery (failed)");
-                completedCommand();
             } catch (BluezNotAuthorizedException e) {
                 logger.error("Could not stop discovery (not authorized)");
-                completedCommand();
             } catch (DBusExecutionException e) {
                 // Usually this is the exception "No discovery started"
                 logger.error(e.getMessage());
@@ -791,15 +758,9 @@ public class BluetoothCentralManager {
                 } else if (e.getMessage().equalsIgnoreCase("Operation already in progress")) {
                     logger.error("a stopDiscovery is in progress");
                 }
-                completedCommand();
             }
+            completedCommand();
         });
-
-        if (result) {
-            nextCommand();
-        } else {
-            logger.error(ENQUEUE_ERROR);
-        }
     }
 
 
@@ -828,7 +789,7 @@ public class BluetoothCentralManager {
      */
     @SuppressWarnings("unused")
     public void adapterOn() {
-        final boolean result = commandQueue.add(() -> {
+        enqueue(() -> {
             if (!adapter.isPowered()) {
                 logger.info("Turning on adapter");
                 currentCommand = PROPERTY_POWERED;
@@ -839,12 +800,6 @@ public class BluetoothCentralManager {
                 completedCommand();
             }
         });
-
-        if (result) {
-            nextCommand();
-        } else {
-            logger.error(ENQUEUE_ERROR);
-        }
     }
 
 
@@ -853,7 +808,7 @@ public class BluetoothCentralManager {
      */
     @SuppressWarnings("unused")
     public void adapterOff() {
-        final boolean result = commandQueue.add(() -> {
+        enqueue(() -> {
             if (adapter.isPowered()) {
                 logger.info("Turning off adapter");
                 currentCommand = PROPERTY_POWERED;
@@ -864,12 +819,6 @@ public class BluetoothCentralManager {
                 completedCommand();
             }
         });
-
-        if (result) {
-            nextCommand();
-        } else {
-            logger.error(ENQUEUE_ERROR);
-        }
     }
 
     /**
@@ -903,7 +852,7 @@ public class BluetoothCentralManager {
         }
 
         unconnectedPeripherals.put(peripheral.getAddress(), peripheral);
-        final boolean result = commandQueue.add(() -> {
+        enqueue(() -> {
             // Refresh BluezDevice because it may be old
             scannedBluezDevices.remove(adapter.getPath(peripheral.getAddress()));
             final BluezDevice bluezDevice = getDeviceByAddress(peripheral.getAddress());
@@ -920,12 +869,6 @@ public class BluetoothCentralManager {
                 completedCommand();
             }
         });
-
-        if (result) {
-            nextCommand();
-        } else {
-            logger.error(ENQUEUE_ERROR);
-        }
     }
 
     /**
@@ -994,17 +937,11 @@ public class BluetoothCentralManager {
 
         if (peripheral.getState() == CONNECTED) {
             // Queue the low level disconnect
-            final boolean result = commandQueue.add(() -> {
+            enqueue(() -> {
                 currentDeviceAddress = peripheral.getAddress();
                 currentCommand = PROPERTY_CONNECTED;
                 peripheral.disconnectBluezDevice();
             });
-
-            if (result) {
-                nextCommand();
-            } else {
-                logger.error(ENQUEUE_ERROR);
-            }
             return;
         }
 
@@ -1145,6 +1082,21 @@ public class BluetoothCentralManager {
         return true;
     }
 
+    /**
+     * Enqueue a runnable to the command queue
+     *
+     * @param command a Runnable containing a command
+     * @return true if the command was successfully enqueued, otherwise false
+     */
+    private boolean enqueue(Runnable command) {
+        final boolean result = commandQueue.add(command);
+        if (result) {
+            nextCommand();
+        } else {
+            logger.error(ENQUEUE_ERROR);
+        }
+        return result;
+    }
 
     /**
      * The current command has been completed, move to the next command in the queue (if any)

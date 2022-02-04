@@ -117,7 +117,6 @@ class BluetoothCentralManagerTest {
     @Test
     void When_scanForPeripherals_is_called_then_an_unfiltered_scan_is_started() throws InterruptedException, BluezFailedException, BluezNotReadyException, BluezNotSupportedException, BluezInvalidArgumentsException {
         // Given
-        when(bluezAdapter.isDiscovering()).thenReturn(false);
         when(bluezAdapter.isPowered()).thenReturn(true);
         BluetoothCentralManager central = new BluetoothCentralManager(callback, Collections.emptySet(), bluezAdapter);
 
@@ -156,7 +155,6 @@ class BluetoothCentralManagerTest {
     void Given_a_scan_is_active_when_stopScan_is_called_then_the_scan_is_stopped() throws DBusException, InterruptedException {
         // Given
         BluetoothCentralManager central = startUnfilteredScan();
-        when(bluezAdapter.isDiscovering()).thenReturn(true);
 
         // When
         central.stopScan();
@@ -223,7 +221,6 @@ class BluetoothCentralManagerTest {
     @Test
     void When_scanForPeripheralsWithServices_is_called_then_a_filtered_scan_is_started() throws InterruptedException, DBusException {
         // Given
-        when(bluezAdapter.isDiscovering()).thenReturn(false);
         when(bluezAdapter.isPowered()).thenReturn(true);
         BluetoothCentralManager central = new BluetoothCentralManager(callback, Collections.emptySet(), bluezAdapter);
 
@@ -357,7 +354,6 @@ class BluetoothCentralManagerTest {
     @Test
     void When_scanForPeripheralsWithAddresses_is_called_then_a_filtered_scan_is_started() throws InterruptedException, BluezFailedException, BluezNotReadyException, BluezNotSupportedException, BluezInvalidArgumentsException {
         // Given
-        when(bluezAdapter.isDiscovering()).thenReturn(false);
         when(bluezAdapter.isPowered()).thenReturn(true);
         BluetoothCentralManager central = new BluetoothCentralManager(callback, Collections.emptySet(), bluezAdapter);
 
@@ -484,7 +480,6 @@ class BluetoothCentralManagerTest {
     @Test
     void When_scanForPeripheralsWithNames_is_called_then_a_filtered_scan_is_started() throws InterruptedException, BluezFailedException, BluezNotReadyException, BluezNotSupportedException, BluezInvalidArgumentsException {
         // Given
-        when(bluezAdapter.isDiscovering()).thenReturn(false);
         when(bluezAdapter.isPowered()).thenReturn(true);
         BluetoothCentralManager central = new BluetoothCentralManager(callback, Collections.emptySet(), bluezAdapter);
 
@@ -954,7 +949,6 @@ class BluetoothCentralManagerTest {
     }
 
     private BluetoothCentralManager startUnfilteredScan() throws InterruptedException, DBusException {
-        when(bluezAdapter.isDiscovering()).thenReturn(false);
         when(bluezAdapter.isPowered()).thenReturn(true);
         BluetoothCentralManager central = new BluetoothCentralManager(callback, Collections.emptySet(), bluezAdapter);
         central.scanForPeripherals();
@@ -966,7 +960,6 @@ class BluetoothCentralManagerTest {
     }
 
     private BluetoothCentralManager startScanWithServices(UUID service) throws InterruptedException, DBusException {
-        when(bluezAdapter.isDiscovering()).thenReturn(false);
         when(bluezAdapter.isPowered()).thenReturn(true);
         BluetoothCentralManager central = new BluetoothCentralManager(callback, Collections.emptySet(), bluezAdapter);
         central.scanForPeripheralsWithServices(new UUID[]{service});
@@ -978,7 +971,6 @@ class BluetoothCentralManagerTest {
     }
 
     private BluetoothCentralManager startScanWithAddress(String peripheralAddress) throws InterruptedException, DBusException {
-        when(bluezAdapter.isDiscovering()).thenReturn(false);
         when(bluezAdapter.isPowered()).thenReturn(true);
         BluetoothCentralManager central = new BluetoothCentralManager(callback, Collections.emptySet(), bluezAdapter);
         central.scanForPeripheralsWithAddresses(new String[]{peripheralAddress});
@@ -990,7 +982,6 @@ class BluetoothCentralManagerTest {
     }
 
     private BluetoothCentralManager startScanWithNames(String peripheralName) throws InterruptedException, DBusException {
-        when(bluezAdapter.isDiscovering()).thenReturn(false);
         when(bluezAdapter.isPowered()).thenReturn(true);
         BluetoothCentralManager central = new BluetoothCentralManager(callback, Collections.emptySet(), bluezAdapter);
         central.scanForPeripheralsWithNames(new String[]{peripheralName});
