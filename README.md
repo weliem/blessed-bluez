@@ -29,7 +29,7 @@ repositories {
 dependencies {
     implementation "ch.qos.logback:logback-core:+"
     implementation "ch.qos.logback:logback-classic:+"
-    implementation "com.github.weliem.blessed-bluez:blessed:0.40"
+    implementation "com.github.weliem.blessed-bluez:blessed:0.60"
 }
 ```
 
