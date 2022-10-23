@@ -1,9 +1,10 @@
 plugins {
     id 'java'
     id 'jacoco'
+    id 'maven-publish'
 }
 
-group 'com.welie'
+group 'com.github.weliem'
 version '1.0-library'
 
 compileJava {
@@ -53,3 +54,5 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
 }
+
+
