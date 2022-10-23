@@ -36,11 +36,14 @@ public final class BluetoothPeripheral {
     private final Logger logger = LoggerFactory.getLogger(TAG);
 
     private static final String ERROR_NATIVE_CHARACTERISTIC_IS_NULL = "ERROR: Native characteristic is null";
+    private static final String ERROR_NATIVE_DESCRIPTOR_IS_NULL = "ERROR: Native descriptor is null";
     private static final String NO_VALID_SERVICE_UUID_PROVIDED = "no valid service UUID provided";
     private static final String NO_VALID_CHARACTERISTIC_UUID_PROVIDED = "no valid characteristic UUID provided";
     private static final String NO_VALID_CHARACTERISTIC_PROVIDED = "no valid characteristic provided";
+    private static final String NO_VALID_DESCRIPTOR_PROVIDED = "no valid descriptor provided";
     private static final String NO_VALID_WRITE_TYPE_PROVIDED = "no valid writeType provided";
     private static final String NO_VALID_VALUE_PROVIDED = "no valid value provided";
+    private static final String ENQUEUE_ERROR = "ERROR: Could not enqueue command";
 
     @NotNull
     private final BluetoothCentralManager central;
@@ -200,6 +203,19 @@ public final class BluetoothPeripheral {
             }
 
             callBackHandler.post(() -> peripheralCallback.onNotificationStateUpdate(BluetoothPeripheral.this, characteristic, status));
+            completedCommand();
+        }
+
+
+        @Override
+        public void onDescriptorRead(@NotNull BluetoothGattDescriptor descriptor, @NotNull byte[] value, @NotNull BluetoothCommandStatus status) {
+            // Do some checks first
+            final BluetoothGattCharacteristic parentCharacteristic = descriptor.getCharacteristic();
+            if (status != COMMAND_SUCCESS) {
+                logger.info(String.format("ERROR: Read descriptor failed device: %s, characteristic: %s", getAddress(), parentCharacteristic.getUuid()));
+            }
+
+            callBackHandler.post(() -> peripheralCallback.onDescriptorRead(BluetoothPeripheral.this, value, descriptor, status));
             completedCommand();
         }
 
@@ -424,7 +440,7 @@ public final class BluetoothPeripheral {
         }
 
         // All in order, do the read
-        final boolean result = commandQueue.add(() -> {
+        return enqueue(() -> {
             if (state == CONNECTED) {
                 try {
                     logger.info(String.format("reading characteristic <%s>", nativeCharacteristic.getUuid()));
@@ -451,13 +467,6 @@ public final class BluetoothPeripheral {
                 }
             }
         });
-
-        if (result) {
-            nextCommand();
-        } else {
-            logger.error("ERROR: Could not enqueue read characteristic command");
-        }
-        return result;
     }
 
     /**
@@ -530,10 +539,9 @@ public final class BluetoothPeripheral {
         }
 
         // All in order, do the write
-        final boolean result = commandQueue.add(() -> {
+        return enqueue(() -> {
             if (state == CONNECTED) {
                 try {
-                    // Perform the write
                     currentWriteBytes = bytesToWrite;
                     logger.info(String.format("writing %s <%s> to characteristic <%s>", writeType, bytes2String(bytesToWrite), nativeCharacteristic.getUuid()));
                     HashMap<String, Object> options = new HashMap<>();
@@ -562,13 +570,37 @@ public final class BluetoothPeripheral {
                 }
             }
         });
+    }
 
-        if (result) {
-            nextCommand();
-        } else {
-            logger.error("ERROR: Could not enqueue write characteristic command");
+    public boolean readDescriptor(@NotNull final BluetoothGattDescriptor descriptor) {
+        Objects.requireNonNull(descriptor, NO_VALID_DESCRIPTOR_PROVIDED);
+        final BluetoothGattCharacteristic characteristic = descriptor.characteristic;
+        Objects.requireNonNull(characteristic, "descriptor does not have a valid characteristic");
+        Objects.requireNonNull(characteristic.getService(), "characteristic does not have valid service");
+
+        // Make sure we are still connected
+        if (state != CONNECTED) {
+            return false;
         }
-        return result;
+
+        final BluezGattDescriptor nativeDescriptor = getBluezGattDescriptor(characteristic.service.getUuid(), characteristic.getUuid(), descriptor.getUuid());
+        if (nativeDescriptor == null) {
+            logger.error(ERROR_NATIVE_CHARACTERISTIC_IS_NULL);
+            return false;
+        }
+
+        return enqueue(() -> {
+            if (state == CONNECTED) {
+                try {
+                    HashMap<String, Object> options = new HashMap<>();
+                    final byte[] result = nativeDescriptor.readValue(options);
+                    gattCallback.onDescriptorRead(descriptor, result, COMMAND_SUCCESS);
+                } catch (Exception e) {
+                    logger.error(e.getMessage());
+                    gattCallback.onDescriptorRead(descriptor, new byte[0], COMMAND_SUCCESS);
+                }
+            }
+        });
     }
 
     /**
@@ -624,7 +656,7 @@ public final class BluetoothPeripheral {
         }
 
         // All in order, do the set notify
-        final boolean result = commandQueue.add(() -> {
+        return enqueue(() -> {
             if (state == CONNECTED) {
                 try {
                     if (enable) {
@@ -656,13 +688,6 @@ public final class BluetoothPeripheral {
                 }
             }
         });
-
-        if (result) {
-            nextCommand();
-        } else {
-            logger.error("ERROR: Could not enqueue set notify characteristic command");
-        }
-        return result;
     }
 
     /**
@@ -821,6 +846,22 @@ public final class BluetoothPeripheral {
     };
 
     /**
+     * Enqueue a runnable to the command queue
+     *
+     * @param command a Runnable containing a command
+     * @return true if the command was successfully enqueued, otherwise false
+     */
+    private boolean enqueue(Runnable command) {
+        final boolean result = commandQueue.add(command);
+        if (result) {
+            nextCommand();
+        } else {
+            logger.error(ENQUEUE_ERROR);
+        }
+        return result;
+    }
+
+    /**
      * The current command has been completed, move to the next command in the queue (if any)
      */
     private void completedCommand() {
@@ -889,6 +930,20 @@ public final class BluetoothPeripheral {
                 }
             }
         }
+    }
+
+    @Nullable
+    private BluezGattDescriptor getBluezGattDescriptor(@NotNull final UUID serviceUUID, @NotNull final UUID characteristicUUID, @NotNull final UUID descriptorUUID) {
+        Objects.requireNonNull(serviceUUID, NO_VALID_SERVICE_UUID_PROVIDED);
+        Objects.requireNonNull(characteristicUUID, "no valid characteristic UUID provided");
+        Objects.requireNonNull(descriptorUUID, "no valid descriptor UUID provided");
+
+        BluezGattDescriptor descriptor = null;
+        BluezGattCharacteristic characteristic = getBluezGattCharacteristic(serviceUUID, characteristicUUID);
+        if (characteristic != null) {
+            descriptor = characteristic.getGattDescriptorByUuid(descriptorUUID);
+        }
+        return descriptor;
     }
 
     @Nullable

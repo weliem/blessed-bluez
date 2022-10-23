@@ -125,7 +125,7 @@ public class BluetoothCentralManager {
     // Bluez interface names
     protected static final String BLUEZ_ADAPTER_INTERFACE = "org.bluez.Adapter1";
 
-    private static final String ENQUEUE_ERROR = "ERROR: Could not enqueue stop scanning command";
+    private static final String ENQUEUE_ERROR = "ERROR: Could not enqueue command";
 
     // Scan options
     public static final String SCANOPTION_NO_NULL_NAMES = "ScanOption.NoNullNames";
