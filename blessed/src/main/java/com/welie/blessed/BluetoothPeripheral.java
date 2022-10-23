@@ -597,7 +597,37 @@ public final class BluetoothPeripheral {
                     gattCallback.onDescriptorRead(descriptor, result, COMMAND_SUCCESS);
                 } catch (Exception e) {
                     logger.error(e.getMessage());
-                    gattCallback.onDescriptorRead(descriptor, new byte[0], COMMAND_SUCCESS);
+                    gattCallback.onDescriptorRead(descriptor, new byte[0], BLUEZ_OPERATION_FAILED);
+                }
+            }
+        });
+    }
+
+    public boolean writeDescriptor(@NotNull final BluetoothGattDescriptor descriptor, @NotNull final byte[] value) {
+        Objects.requireNonNull(descriptor, NO_VALID_DESCRIPTOR_PROVIDED);
+        final BluetoothGattCharacteristic characteristic = descriptor.getCharacteristic();
+        Objects.requireNonNull(value, NO_VALID_VALUE_PROVIDED);
+
+        // Make sure we are still connected
+        if (state != CONNECTED) {
+            return false;
+        }
+
+        final BluezGattDescriptor nativeDescriptor = getBluezGattDescriptor(characteristic.service.getUuid(), characteristic.getUuid(), descriptor.getUuid());
+        if (nativeDescriptor == null) {
+            logger.error(ERROR_NATIVE_CHARACTERISTIC_IS_NULL);
+            return false;
+        }
+
+        return enqueue(() -> {
+            if (state == CONNECTED) {
+                try {
+                    HashMap<String, Object> options = new HashMap<>();
+                    nativeDescriptor.writeValue(value, options);
+                    gattCallback.onDescriptorWrite(descriptor, COMMAND_SUCCESS);
+                } catch (Exception e) {
+                    logger.error(e.getMessage());
+                    gattCallback.onDescriptorWrite(descriptor, BLUEZ_OPERATION_FAILED);
                 }
             }
         });
@@ -1225,7 +1255,7 @@ public final class BluetoothPeripheral {
         }
     }
 
-    private BluetoothGattDescriptor mapBluezGattDescriptorToHBDescriptor(final BluezGattDescriptor descriptor) {
+    private BluetoothGattDescriptor mapBluezGattDescriptorToBluetoothGattDescriptor(final BluezGattDescriptor descriptor) {
         // TODO What is permission?
         return new BluetoothGattDescriptor(descriptor.getUuid(), 0);
     }
@@ -1288,7 +1318,7 @@ public final class BluetoothPeripheral {
         // Process all descriptors
         descriptors.forEach(descriptor -> {
             descriptorMap.put(descriptor.getDbusPath(), descriptor);
-            bluetoothGattCharacteristic.addDescriptor(mapBluezGattDescriptorToHBDescriptor(descriptor));
+            bluetoothGattCharacteristic.addDescriptor(mapBluezGattDescriptorToBluetoothGattDescriptor(descriptor));
         });
 
         return bluetoothGattCharacteristic;
