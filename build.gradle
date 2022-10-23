@@ -1,7 +1,5 @@
-plugins {
-    id 'java'
-    id 'maven-publish'
-}
+apply plugin: 'java'
+apply plugin: 'maven-publish'
 
 group 'com.github.weliem'
 version '0.2-App'
@@ -31,4 +29,12 @@ dependencies {
     implementation 'ch.qos.logback:logback-core:1.2.10'
     implementation 'ch.qos.logback:logback-classic:1.2.10'
     implementation project(':blessed')
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+        }
+    }
 }
