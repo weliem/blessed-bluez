@@ -1186,4 +1186,18 @@ public class BluetoothCentralManager {
             return false;
         }
     }
+
+    /**
+     * To make the program stop smoothly (to avoid some threads blocking)
+     */
+    public void shutdown() {
+        try {
+            callBackHandler.shutdown();
+            queueHandler.shutdown();
+            signalHandler.shutdown();
+            adapter.getDBusConnection().close();
+        } catch (Exception e) {
+            logger.error("exception occurred when shutdown central manager", e);
+        }
+    }
 }
