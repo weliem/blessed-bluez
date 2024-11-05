@@ -3,7 +3,7 @@ apply plugin: 'jacoco'
 apply plugin: 'maven-publish'
 
 group 'com.github.weliem'
-version '1.0-library'
+version '0.62'
 
 compileJava {
     sourceCompatibility = '1.8'
@@ -29,17 +29,17 @@ test {
 
 jacoco {
     toolVersion = "0.8.6"
-    reportsDir = file("$buildDir/reports")
+    reportsDirectory = file("$buildDir/reports")
 }
 
 jacocoTestReport {
     group = "build"
     dependsOn test // tests are required to run before generating the report
     reports {
-        xml.enabled true
-        csv.enabled false
-        html.enabled true
-        html.destination file("${buildDir}/jacocoHtml")
+        xml.required = true
+        csv.required = false
+        html.required = true
+        html.outputLocation = file("${buildDir}/jacocoHtml")
     }
 }
 
