@@ -1,8 +1,13 @@
 apply plugin: 'java'
 apply plugin: 'maven-publish'
+apply plugin: 'application'
 
 group 'com.github.weliem'
 version '0.2-App'
+
+application {
+    mainClass = "testapp.Main"
+}
 
 compileJava {
     sourceCompatibility = 11
