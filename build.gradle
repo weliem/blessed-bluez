@@ -5,8 +5,8 @@ group 'com.github.weliem'
 version '0.2-App'
 
 compileJava {
-    sourceCompatibility = '1.8'
-    targetCompatibility = '1.8'
+    sourceCompatibility = 11
+    targetCompatibility = 11
 }
 
 repositories {
@@ -25,6 +25,8 @@ jar {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation 'com.github.hypfvieh:dbus-java-core:4.3.2'
+    implementation 'com.github.hypfvieh:dbus-java-transport-native-unixsocket:4.3.2'
     implementation 'org.jetbrains:annotations:22.0.0'
     implementation 'ch.qos.logback:logback-core:1.2.10'
     implementation 'ch.qos.logback:logback-classic:1.2.10'

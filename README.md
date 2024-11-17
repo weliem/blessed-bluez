@@ -2,8 +2,6 @@
 
 [![](https://jitpack.io/v/weliem/blessed-bluez.svg)](https://jitpack.io/#weliem/blessed-bluez)
 [![Downloads](https://jitpack.io/v/weliem/blessed-bluez/month.svg)](https://jitpack.io/#weliem/blessed-bluez)
-[![Total alerts](https://img.shields.io/lgtm/alerts/g/weliem/blessed-bluez.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/weliem/blessed-bluez/alerts/)
-[![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/weliem/blessed-bluez.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/weliem/blessed-bluez/context:java)
 
 BLESSED-for-Bluez is a Bluetooth Low Energy (BLE) library for Bluez 5.50 and higher, that makes working with BLE using Bluez very easy. It completely hides the DBus messaging needed to use Bluez and provides a CoreBluetooth-like object oriented interface. This library uses the [DBus-Java library](https://github.com/hypfvieh/dbus-java) and parts of the [Bluez-DBus library](https://github.com/hypfvieh/bluez-dbus) for the communication with the DBus and Bluez functionality.
 
@@ -15,23 +13,32 @@ The library consists of 3 core classes and 2 callback abstract classes:
 
 The `BluetoothCentralManager` class is used to scan for devices and manage connections. The `BluetoothPeripheral` class represent the peripheral and wraps all GATT related peripheral functionality. The `BluetoothBytesParser` class is a utility class that makes parsing byte arrays easy.
 
-The BLESSED library was inspired by CoreBluetooth on iOS and provides the same level of abstraction. If you already have developed using CoreBluetooth you can very easily port your code to Linux using this library. It has been tested on Ubuntu 18/19/20 and Raspberry Pi's.
+The BLESSED library was inspired by CoreBluetooth on iOS and provides the same level of abstraction. If you already have developed using CoreBluetooth you can very easily port your code to Linux using this library. It has been tested on Ubuntu 18/19/20 and Raspberry Pis.
 ## Installation
 
-The library is available on Jitpack and uses Logback for logging:
+The library is available on Jitpack and uses SLF4J for logging:
 
 ```groovy
 repositories {
     mavenCentral()
-    maven { url = uri("https://jitpack.io") }
+    maven {
+		url = uri("https://jitpack.io")
+		content {
+			includeGroup "com.github.weliem.blessed-bluez"
+		}
+	}
 }
 
 dependencies {
-    implementation "ch.qos.logback:logback-core:+"
     implementation "ch.qos.logback:logback-classic:+"
-    implementation "com.github.weliem.blessed-bluez:blessed:0.61"
+    implementation "com.github.weliem.blessed-bluez:blessed:0.63"
+	implementation "com.github.hypfvieh:dbus-java-transport-native-unixsocket:4.3.2"
 }
 ```
+
+You need to include a transport library for dbus-java, for most users `dbus-java-transport-native-unixsocket` will be the best choice. But if your Java version is older than 16, you need to use another transport such as `dbus-java-transport-junixsocket` or `dbus-java-transport-jnr-unixsocket`.
+
+Since version 0.63, blessed-bluez requires Java 11 or newer. If you need to use older Java versions, use 0.62 and do not include a transport library.
 
 ## Scanning
 
@@ -44,7 +51,7 @@ public void scanForPeripheralsWithNames(String[] peripheralNames)
 public void scanForPeripheralsWithAddresses(String[] peripheralAddresses)
 ```
 
-They all work in the same way and take an array of either service UUIDs, peripheral names or mac addresses. So in order to setup a scan for a device with the Bloodpressure service and connect to it, you do:
+They all work in the same way and take an array of either service UUIDs, peripheral names or mac addresses. So in order to set up a scan for a device with the Bloodpressure service and connect to it, you do:
 
 ```java
 private final BluetoothCentralManagerCallback bluetoothCentralManagerCallback = new BluetoothCentralManagerCallback() {
