@@ -28,7 +28,7 @@ public class BluezGattCharacteristic extends AbstractBluetoothObject {
 
     private final Map<UUID, BluezGattDescriptor> descriptorByUuid = new LinkedHashMap<>();
 
-    public BluezGattCharacteristic(GattCharacteristic1 _gattCharacteristic, BluezGattService _service, String _dbusPath, DBusConnection _dbusConnection) {
+    public BluezGattCharacteristic(@NotNull GattCharacteristic1 _gattCharacteristic, @NotNull BluezGattService _service, String _dbusPath, DBusConnection _dbusConnection) {
         super(BluezDeviceType.GATT_CHARACTERISTIC, _dbusConnection, _dbusPath);
 
         gattCharacteristic = _gattCharacteristic;

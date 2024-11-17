@@ -24,10 +24,10 @@ public class PairingAgent extends AbstractBluetoothObject implements Agent1 {
         super(BluezDeviceType.AGENT, _dbusConnection, _dbusPath);
         this.pairingDelegate = pairingDelegate;
 
-         try {
+        try {
             _dbusConnection.exportObject(_dbusPath, this);
         } catch (DBusException e) {
-            e.printStackTrace();
+            logger.error("", e);
         }
     }
 

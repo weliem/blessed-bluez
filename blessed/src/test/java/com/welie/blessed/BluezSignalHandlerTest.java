@@ -131,7 +131,7 @@ class BluezSignalHandlerTest {
         interfaceMap.put(PROPERTY_CONNECTED, new Variant<>(false));
         interfaceMap.put(PROPERTY_SERVICES_RESOLVED, new Variant<>(false));
         interfaceMap.put(PROPERTY_PAIRED, new Variant<>(false));
-        interfaceMap.put(PROPERTY_RSSI, new Variant<>(new Short("-50")));
+        interfaceMap.put(PROPERTY_RSSI, new Variant<>(Short.valueOf("-50")));
         ArrayList<String> uuids = new ArrayList<>();
         uuids.add(BLP_SERVICE_UUID.toString());
         interfaceMap.put(PROPERTY_SERVICE_UUIDS, new Variant<>(uuids, "as"));
@@ -157,7 +157,7 @@ class BluezSignalHandlerTest {
     private Properties.PropertiesChanged getPropertiesChangedSignalWhileScanning() throws DBusException {
         Map<String, Variant<?>> propertiesChanged = new HashMap<>();
         propertiesChanged.put(PROPERTY_ADDRESS, new Variant<>(DUMMY_MAC_ADDRESS_BLP));
-        propertiesChanged.put(PROPERTY_RSSI, new Variant<>(new Short("-32")));
+        propertiesChanged.put(PROPERTY_RSSI, new Variant<>(Short.valueOf("-32")));
         Object[][] testObjects = new Object[1][2];
         testObjects[0][0] = new UInt16(100);
         testObjects[0][1] = new Variant<>(new byte[]{0x10,0x20}, "ay");
@@ -167,7 +167,7 @@ class BluezSignalHandlerTest {
         serviceData.put(BLP_SERVICE_UUID.toString(), new Variant<>(new byte[]{0x44, 0x55}));
         propertiesChanged.put(PROPERTY_SERVICE_DATA, new Variant<>(convertStringHashMapToDBusMap(serviceData), "a{sv}"));
         String dBusPath = DUMMY_MAC_ADDRESS_PATH_BLP;
-        return new Properties.PropertiesChanged(dBusPath, BLUEZ_DEVICE_INTERFACE, propertiesChanged,new ArrayList() );
+        return new Properties.PropertiesChanged(dBusPath, BLUEZ_DEVICE_INTERFACE, propertiesChanged, new ArrayList<>());
     }
 
 
@@ -175,7 +175,7 @@ class BluezSignalHandlerTest {
     private Properties.PropertiesChanged getPropertiesChangedSignalCharacteristicUpdate(String path, byte[] value) throws DBusException {
         Map<String, Variant<?>> propertiesChanged = new HashMap<>();
         propertiesChanged.put(PROPERTY_VALUE, new Variant<>(value, "ay"));
-        return new Properties.PropertiesChanged(path, BLUEZ_CHARACTERISTIC_INTERFACE, propertiesChanged,new ArrayList() );
+        return new Properties.PropertiesChanged(path, BLUEZ_CHARACTERISTIC_INTERFACE, propertiesChanged, new ArrayList<>());
     }
 
     private DBusMap<String, Variant<?>> convertStringHashMapToDBusMap(Map<String, Variant<?>> source) {

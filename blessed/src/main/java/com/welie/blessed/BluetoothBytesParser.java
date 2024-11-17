@@ -38,7 +38,7 @@ public class BluetoothBytesParser {
 
     private int offset = 0;
     private byte[] mValue;
-    private ByteOrder byteOrder;
+    private final ByteOrder byteOrder;
 
     /**
      * Characteristic value format type uint8
@@ -168,7 +168,7 @@ public class BluetoothBytesParser {
     /**
      * Return a Long value. This operation will automatically advance the internal offset to the next position.
      *
-     * @return an Long object or null in case the byte array was not valid
+     * @return a Long object or null in case the byte array was not valid
      */
     public long getLongValue() {
         return getLongValue(byteOrder);
@@ -178,7 +178,7 @@ public class BluetoothBytesParser {
      * Return a Long value using the specified byte order. This operation will automatically advance the internal offset to the next position.
      *
      * @param byteOrder the byte order to use
-     * @return an Long object or null in case the byte array was not valid
+     * @return a Long object or null in case the byte array was not valid
      */
     public long getLongValue(ByteOrder byteOrder) {
         long result = getLongValue(offset, byteOrder);
@@ -191,7 +191,7 @@ public class BluetoothBytesParser {
      *
      * @param offset the offset to use
      * @param byteOrder the byte order to use
-     * @return an Long object or null in case the byte array was not valid
+     * @return a Long object or null in case the byte array was not valid
      */
     public long getLongValue(int offset, ByteOrder byteOrder) {
         if (byteOrder == ByteOrder.LITTLE_ENDIAN) {
@@ -327,7 +327,7 @@ public class BluetoothBytesParser {
     /**
      * Return a String from this byte array. This operation will not advance the internal offset to the next position.
      *
-     * @return String value representated by the byte array
+     * @return String value represented by the byte array
      */
     public String getStringValue() {
         return getStringValue(offset);
@@ -337,7 +337,7 @@ public class BluetoothBytesParser {
      * Return a String from this byte array. This operation will not advance the internal offset to the next position.
      *
      * @param offset Offset at which the string value can be found.
-     * @return String value representated by the byte array
+     * @return String value represented by the byte array
      */
     public String getStringValue(int offset) {
         // Check if there are enough bytes to parse
@@ -356,7 +356,7 @@ public class BluetoothBytesParser {
     }
 
     /**
-     * Return a the date represented by the byte array.
+     * Return the date represented by the byte array.
      * <p>
      * The byte array must conform to the DateTime specification (year, month, day, hour, min, sec)
      *

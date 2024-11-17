@@ -113,8 +113,7 @@ public class BluezGattDescriptor extends AbstractBluetoothObject {
      *
      * @return byte array, not null
      */
-    @NotNull
-    public byte[] getValue() {
+    public byte @NotNull [] getValue() {
         List<?> typed = getTyped("Value", ArrayList.class);
         if (typed != null) {
             return byteListToByteArray(typed);

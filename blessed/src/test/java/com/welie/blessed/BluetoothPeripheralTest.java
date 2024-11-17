@@ -293,7 +293,7 @@ class BluetoothPeripheralTest {
         BluetoothPeripheral peripheral = getPeripheral();
         BluetoothGattCharacteristic characteristic = getBluetoothGattCharacteristic(BLP_SERVICE_UUID, BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID, PROPERTY_READ);
         BluezGattCharacteristic bluezGattCharacteristic = mock(BluezGattCharacteristic.class);
-        when(bluezGattCharacteristic.getDbusPath()).thenReturn("/org/bluez/hci0/characteristic/" + BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID.toString());
+        when(bluezGattCharacteristic.getDbusPath()).thenReturn("/org/bluez/hci0/characteristic/" + BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID);
         peripheral.characteristicMap.put(bluezGattCharacteristic.getDbusPath(), bluezGattCharacteristic);
 
         // When
@@ -309,7 +309,7 @@ class BluetoothPeripheralTest {
         BluetoothPeripheral peripheral = getConnectedPeripheral();
         BluetoothGattCharacteristic characteristic = getBluetoothGattCharacteristic(BLP_SERVICE_UUID, BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID, PROPERTY_NOTIFY);
         BluezGattCharacteristic bluezGattCharacteristic = mock(BluezGattCharacteristic.class);
-        when(bluezGattCharacteristic.getDbusPath()).thenReturn("/org/bluez/hci0/characteristic/" + BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID.toString());
+        when(bluezGattCharacteristic.getDbusPath()).thenReturn("/org/bluez/hci0/characteristic/" + BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID);
         peripheral.characteristicMap.put(bluezGattCharacteristic.getDbusPath(), bluezGattCharacteristic);
 
         // When
@@ -430,7 +430,7 @@ class BluetoothPeripheralTest {
         ArgumentCaptor<byte[]> valueCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(bluezGattCharacteristic, timeout(TIMEOUT_THRESHOLD)).writeValue(valueCaptor.capture(),mapCaptor.capture());
         assertEquals("request", mapCaptor.getValue().get("type"));
-        assertTrue(Arrays.equals(value, valueCaptor.getValue()));
+		assertArrayEquals(value, valueCaptor.getValue());
     }
 
     @Test
@@ -450,7 +450,7 @@ class BluetoothPeripheralTest {
         ArgumentCaptor<byte[]> valueCaptor = ArgumentCaptor.forClass(byte[].class);
         verify(bluezGattCharacteristic, timeout(TIMEOUT_THRESHOLD)).writeValue(valueCaptor.capture(),mapCaptor.capture());
         assertEquals("command", mapCaptor.getValue().get("type"));
-        assertTrue(Arrays.equals(value, valueCaptor.getValue()));
+		assertArrayEquals(value, valueCaptor.getValue());
     }
 
     @Test
@@ -519,7 +519,7 @@ class BluetoothPeripheralTest {
         ArgumentCaptor<BluetoothCommandStatus> statusCaptor = ArgumentCaptor.forClass(BluetoothCommandStatus.class);
         verify(peripheralCallback, timeout(TIMEOUT_THRESHOLD)).onCharacteristicWrite(peripheralCaptor.capture(),valueCaptor.capture(), characteristicCaptor.capture(), statusCaptor.capture());
         assertEquals(WRITE_NOT_PERMITTED, statusCaptor.getValue());
-        assertTrue(Arrays.equals(value, valueCaptor.getValue()));
+		assertArrayEquals(value, valueCaptor.getValue());
     }
 
     @Test
@@ -544,7 +544,7 @@ class BluetoothPeripheralTest {
         ArgumentCaptor<BluetoothCommandStatus> statusCaptor = ArgumentCaptor.forClass(BluetoothCommandStatus.class);
         verify(peripheralCallback, timeout(TIMEOUT_THRESHOLD)).onCharacteristicWrite(peripheralCaptor.capture(),valueCaptor.capture(), characteristicCaptor.capture(), statusCaptor.capture());
         assertEquals(INSUFFICIENT_AUTHORIZATION, statusCaptor.getValue());
-        assertTrue(Arrays.equals(value, valueCaptor.getValue()));
+		assertArrayEquals(value, valueCaptor.getValue());
     }
 
     @Test
@@ -569,7 +569,7 @@ class BluetoothPeripheralTest {
         ArgumentCaptor<BluetoothCommandStatus> statusCaptor = ArgumentCaptor.forClass(BluetoothCommandStatus.class);
         verify(peripheralCallback, timeout(TIMEOUT_THRESHOLD)).onCharacteristicWrite(peripheralCaptor.capture(),valueCaptor.capture(), characteristicCaptor.capture(), statusCaptor.capture());
         assertEquals(BLUEZ_OPERATION_FAILED, statusCaptor.getValue());
-        assertTrue(Arrays.equals(value, valueCaptor.getValue()));
+		assertArrayEquals(value, valueCaptor.getValue());
     }
 
     @Test
@@ -795,7 +795,7 @@ class BluetoothPeripheralTest {
     private BluezGattCharacteristic getBluezGattCharacteristic() {
         BluezGattCharacteristic bluezGattCharacteristic = mock(BluezGattCharacteristic.class);
         BluezGattService bluezGattService = mock(BluezGattService.class);
-        when(bluezGattCharacteristic.getDbusPath()).thenReturn("/org/bluez/hci0/characteristic/" + BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID.toString());
+        when(bluezGattCharacteristic.getDbusPath()).thenReturn("/org/bluez/hci0/characteristic/" + BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID);
         when(bluezGattCharacteristic.getUuid()).thenReturn(BLOOD_PRESSURE_MEASUREMENT_CHARACTERISTIC_UUID);
         when(bluezGattCharacteristic.getService()).thenReturn(bluezGattService);
         when(bluezGattService.getUuid()).thenReturn(BLP_SERVICE_UUID);
@@ -831,34 +831,34 @@ class BluetoothPeripheralTest {
     private Properties.PropertiesChanged getPropertiesChangedSignalConnected() throws DBusException {
         Map<String, Variant<?>> propertiesChanged = new HashMap<>();
         propertiesChanged.put(PROPERTY_CONNECTED, new Variant<>(true));
-        return new Properties.PropertiesChanged("/org/bluez/hci0/dev_C0_26_DF_01_F2_72", BLUEZ_DEVICE_INTERFACE, propertiesChanged,new ArrayList() );
+        return new Properties.PropertiesChanged("/org/bluez/hci0/dev_C0_26_DF_01_F2_72", BLUEZ_DEVICE_INTERFACE, propertiesChanged, new ArrayList<>());
     }
 
     @NotNull
     private Properties.PropertiesChanged getPropertiesChangedSignalDisconnected() throws DBusException {
         Map<String, Variant<?>> propertiesChanged = new HashMap<>();
         propertiesChanged.put(PROPERTY_CONNECTED, new Variant<>(false));
-        return new Properties.PropertiesChanged("/org/bluez/hci0/dev_C0_26_DF_01_F2_72", BLUEZ_DEVICE_INTERFACE, propertiesChanged,new ArrayList() );
+        return new Properties.PropertiesChanged("/org/bluez/hci0/dev_C0_26_DF_01_F2_72", BLUEZ_DEVICE_INTERFACE, propertiesChanged, new ArrayList<>());
     }
 
     @NotNull
     private Properties.PropertiesChanged getPropertiesChangedSignalServicesResolved() throws DBusException {
         Map<String, Variant<?>> propertiesChanged = new HashMap<>();
         propertiesChanged.put(PROPERTY_SERVICES_RESOLVED, new Variant<>(true));
-        return new Properties.PropertiesChanged("/org/bluez/hci0/dev_C0_26_DF_01_F2_72", BLUEZ_DEVICE_INTERFACE, propertiesChanged,new ArrayList() );
+        return new Properties.PropertiesChanged("/org/bluez/hci0/dev_C0_26_DF_01_F2_72", BLUEZ_DEVICE_INTERFACE, propertiesChanged, new ArrayList<>());
     }
 
     @NotNull
     private Properties.PropertiesChanged getPropertiesChangedSignalCharacteristicUpdate(String path, BluetoothGattCharacteristic characteristic, byte[] value) throws DBusException {
         Map<String, Variant<?>> propertiesChanged = new HashMap<>();
         propertiesChanged.put(PROPERTY_VALUE, new Variant<>(value, "ay"));
-        return new Properties.PropertiesChanged(path, BLUEZ_CHARACTERISTIC_INTERFACE, propertiesChanged,new ArrayList() );
+        return new Properties.PropertiesChanged(path, BLUEZ_CHARACTERISTIC_INTERFACE, propertiesChanged, new ArrayList<>());
     }
 
     @NotNull
     private Properties.PropertiesChanged getPropertiesChangedSignalCharacteristicNotifying(String path, boolean value) throws DBusException {
         Map<String, Variant<?>> propertiesChanged = new HashMap<>();
         propertiesChanged.put(PROPERTY_NOTIFYING, new Variant<>(value));
-        return new Properties.PropertiesChanged(path, BLUEZ_CHARACTERISTIC_INTERFACE, propertiesChanged,new ArrayList<String>() );
+        return new Properties.PropertiesChanged(path, BLUEZ_CHARACTERISTIC_INTERFACE, propertiesChanged, new ArrayList<>());
     }
 }

@@ -51,12 +51,7 @@ public class HandlerTest {
         final Handler handler = new Handler("test");
         final List<String> output = new ArrayList<>();
 
-        Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                output.add("first");
-            }
-        };
+        Runnable runnable = () -> output.add("first");
 
         ScheduledFuture<?> future = handler.postDelayed(runnable , 1000);
         handler.postDelayed(() -> output.add("second"),100);

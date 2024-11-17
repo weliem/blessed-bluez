@@ -67,14 +67,14 @@ public final class XmlHelper {
 
         XPathFactory xfactory = XPathFactory.newInstance();
         XPath xpath = xfactory.newXPath();
-        XPathExpression expr = null;
+        XPathExpression expr;
         try {
             expr = xpath.compile(_xpathExpression);
         } catch (XPathExpressionException _ex) {
             throw new IOException(_ex);
         }
 
-        Object result = null;
+        Object result;
         try {
             result = expr.evaluate(_xmlDocumentOrNode, XPathConstants.NODESET);
         } catch (Exception _ex) {

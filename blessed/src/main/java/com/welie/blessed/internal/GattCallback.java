@@ -10,11 +10,11 @@ public abstract class GattCallback {
 
     public abstract void onCharacteristicRead(@NotNull BluetoothGattCharacteristic characteristic, @NotNull BluetoothCommandStatus status);
 
-    public abstract void onCharacteristicChanged(@NotNull byte[] value, @NotNull BluetoothGattCharacteristic characteristic);
+    public abstract void onCharacteristicChanged(byte @NotNull [] value, @NotNull BluetoothGattCharacteristic characteristic);
 
     public abstract void onCharacteristicWrite(@NotNull BluetoothGattCharacteristic characteristic, @NotNull BluetoothCommandStatus status);
 
-    public abstract void onDescriptorRead(@NotNull BluetoothGattDescriptor descriptor, @NotNull byte[] value, @NotNull BluetoothCommandStatus status);
+    public abstract void onDescriptorRead(@NotNull BluetoothGattDescriptor descriptor, byte @NotNull [] value, @NotNull BluetoothCommandStatus status);
 
     public abstract void onDescriptorWrite(@NotNull BluetoothGattDescriptor descriptor, @NotNull BluetoothCommandStatus status);
 

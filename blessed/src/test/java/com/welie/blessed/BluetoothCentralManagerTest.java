@@ -77,7 +77,7 @@ class BluetoothCentralManagerTest {
     void setup() {
     }
 
-    @Test
+	@Test
     void Constructor_may_not_be_null() {
         Assertions.assertThrows(NullPointerException.class, () -> {
             BluetoothCentralManager central = new BluetoothCentralManager(null, null, null);
@@ -254,10 +254,10 @@ class BluetoothCentralManagerTest {
         // Given
         BluetoothCentralManager central = new BluetoothCentralManager(callback, Collections.emptySet(), bluezAdapter);
 
-        assertThrows(NullPointerException.class, ()-> {
+        assertThrows(NullPointerException.class, () -> {
             central.scanForPeripheralsWithServices(null);
         });
-        assertThrows(IllegalArgumentException.class, ()-> {
+        assertThrows(IllegalArgumentException.class, () -> {
             central.scanForPeripheralsWithServices(new UUID[0]);
         });
     }
@@ -382,10 +382,10 @@ class BluetoothCentralManagerTest {
         // Given
         BluetoothCentralManager central = new BluetoothCentralManager(callback, Collections.emptySet(), bluezAdapter);
 
-        assertThrows(NullPointerException.class, ()-> {
+        assertThrows(NullPointerException.class, () -> {
             central.scanForPeripheralsWithAddresses(null);
         });
-        assertThrows(IllegalArgumentException.class, ()-> {
+        assertThrows(IllegalArgumentException.class, () -> {
             central.scanForPeripheralsWithAddresses(new String[0]);
         });
     }
@@ -507,10 +507,10 @@ class BluetoothCentralManagerTest {
         // Given
         BluetoothCentralManager central = new BluetoothCentralManager(callback, Collections.emptySet(), bluezAdapter);
 
-        assertThrows(NullPointerException.class, ()-> {
+        assertThrows(NullPointerException.class, () -> {
             central.scanForPeripheralsWithNames(null);
         });
-        assertThrows(IllegalArgumentException.class, ()-> {
+        assertThrows(IllegalArgumentException.class, () -> {
             central.scanForPeripheralsWithNames(new String[0]);
         });
     }
@@ -819,42 +819,42 @@ class BluetoothCentralManagerTest {
     private Properties.PropertiesChanged getPropertiesChangedSignalConnected() throws DBusException {
         Map<String, Variant<?>> propertiesChanged = new HashMap<>();
         propertiesChanged.put(PROPERTY_CONNECTED, new Variant<>(true));
-        return new Properties.PropertiesChanged("/org/bluez/hci0", BLUEZ_DEVICE_INTERFACE, propertiesChanged,new ArrayList() );
+        return new Properties.PropertiesChanged("/org/bluez/hci0", BLUEZ_DEVICE_INTERFACE, propertiesChanged, new ArrayList<>());
     }
 
     @NotNull
     private Properties.PropertiesChanged getPropertiesChangedSignalDisconnected() throws DBusException {
         Map<String, Variant<?>> propertiesChanged = new HashMap<>();
         propertiesChanged.put(PROPERTY_CONNECTED, new Variant<>(false));
-        return new Properties.PropertiesChanged("/org/bluez/hci0", BLUEZ_DEVICE_INTERFACE, propertiesChanged,new ArrayList() );
+        return new Properties.PropertiesChanged("/org/bluez/hci0", BLUEZ_DEVICE_INTERFACE, propertiesChanged, new ArrayList<>());
     }
 
     @NotNull
     private Properties.PropertiesChanged getPropertiesChangedSignalServicesResolved() throws DBusException {
         Map<String, Variant<?>> propertiesChanged = new HashMap<>();
         propertiesChanged.put(PROPERTY_SERVICES_RESOLVED, new Variant<>(true));
-        return new Properties.PropertiesChanged("/org/bluez/hci0/dev_C0_26_DF_01_F2_72", BLUEZ_DEVICE_INTERFACE, propertiesChanged,new ArrayList() );
+        return new Properties.PropertiesChanged("/org/bluez/hci0/dev_C0_26_DF_01_F2_72", BLUEZ_DEVICE_INTERFACE, propertiesChanged, new ArrayList<>());
     }
 
     @NotNull
     private Properties.PropertiesChanged getPropertiesChangeSignalDiscoveryStarted() throws DBusException {
         Map<String, Variant<?>> propertiesChanged = new HashMap<>();
         propertiesChanged.put(PROPERTY_DISCOVERING, new Variant<>(true));
-        return new Properties.PropertiesChanged("/org/bluez/hci0", BLUEZ_ADAPTER_INTERFACE, propertiesChanged,new ArrayList() );
+        return new Properties.PropertiesChanged("/org/bluez/hci0", BLUEZ_ADAPTER_INTERFACE, propertiesChanged, new ArrayList<>());
     }
 
     @NotNull
     private Properties.PropertiesChanged getPropertiesChangeSignalDiscoveryStopped() throws DBusException {
         Map<String, Variant<?>> propertiesChanged = new HashMap<>();
         propertiesChanged.put(PROPERTY_DISCOVERING, new Variant<>(false));
-        return new Properties.PropertiesChanged("/org/bluez/hci0", BLUEZ_ADAPTER_INTERFACE, propertiesChanged,new ArrayList() );
+        return new Properties.PropertiesChanged("/org/bluez/hci0", BLUEZ_ADAPTER_INTERFACE, propertiesChanged, new ArrayList<>());
     }
 
     @NotNull
     private Properties.PropertiesChanged getPropertiesChangedSignalWhileScanning() throws DBusException {
         Map<String, Variant<?>> propertiesChanged = new HashMap<>();
         propertiesChanged.put(PROPERTY_ADDRESS, new Variant<>(DUMMY_MAC_ADDRESS_BLP));
-        propertiesChanged.put(PROPERTY_RSSI, new Variant<>(new Short("-32")));
+        propertiesChanged.put(PROPERTY_RSSI, new Variant<>(Short.valueOf("-32")));
         Object[][] testObjects = new Object[1][2];
         testObjects[0][0] = new UInt16(100);
         testObjects[0][1] = new Variant<>(new byte[]{0x10,0x20}, "ay");
@@ -863,7 +863,7 @@ class BluetoothCentralManagerTest {
         Map<String, Variant<?>> serviceData = new HashMap<>();
         serviceData.put(BLP_SERVICE_UUID.toString(), new Variant<>(new byte[]{0x44, 0x55}));
         propertiesChanged.put(PROPERTY_SERVICE_DATA, new Variant<>(convertStringHashMapToDBusMap(serviceData), "a{sv}"));
-        return new Properties.PropertiesChanged(DUMMY_MAC_ADDRESS_PATH_BLP, BLUEZ_DEVICE_INTERFACE, propertiesChanged,new ArrayList() );
+        return new Properties.PropertiesChanged(DUMMY_MAC_ADDRESS_PATH_BLP, BLUEZ_DEVICE_INTERFACE, propertiesChanged, new ArrayList<>());
     }
 
     @NotNull
@@ -879,7 +879,7 @@ class BluetoothCentralManagerTest {
         interfaceMap.put(PROPERTY_CONNECTED, new Variant<>(false));
         interfaceMap.put(PROPERTY_SERVICES_RESOLVED, new Variant<>(false));
         interfaceMap.put(PROPERTY_PAIRED, new Variant<>(false));
-        interfaceMap.put(PROPERTY_RSSI, new Variant<>(new Short("-50")));
+        interfaceMap.put(PROPERTY_RSSI, new Variant<>(Short.valueOf("-50")));
         ArrayList<String> uuids = new ArrayList<>();
         uuids.add(BLP_SERVICE_UUID.toString());
         interfaceMap.put(PROPERTY_SERVICE_UUIDS, new Variant<>(uuids, "as"));
@@ -914,7 +914,7 @@ class BluetoothCentralManagerTest {
         interfaceMap.put(PROPERTY_CONNECTED, new Variant<>(false));
         interfaceMap.put(PROPERTY_SERVICES_RESOLVED, new Variant<>(false));
         interfaceMap.put(PROPERTY_PAIRED, new Variant<>(false));
-        interfaceMap.put(PROPERTY_RSSI, new Variant<>(new Short("-32")));
+        interfaceMap.put(PROPERTY_RSSI, new Variant<>(Short.valueOf("-32")));
         ArrayList<String> uuids = new ArrayList<>();
         uuids.add(HTS_SERVICE_UUID.toString());
         interfaceMap.put(PROPERTY_SERVICE_UUIDS, new Variant<>(uuids, "as"));
