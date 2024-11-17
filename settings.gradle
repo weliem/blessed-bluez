@@ -1,3 +1,4 @@
-rootProject.name = 'blessed-test'
+rootProject.name = 'blessed-bluez'
 include 'blessed'
+include 'blessed-test'
 
