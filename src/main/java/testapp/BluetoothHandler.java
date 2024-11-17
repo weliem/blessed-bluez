@@ -89,13 +89,13 @@ public class BluetoothHandler {
         }
 
         @Override
-        public void onNotificationStateUpdate(@NotNull BluetoothPeripheral peripheral, @NotNull BluetoothGattCharacteristic characteristic, BluetoothCommandStatus status) {
+        public void onNotificationStateUpdate(@NotNull BluetoothPeripheral peripheral, @NotNull BluetoothGattCharacteristic characteristic, @NotNull BluetoothCommandStatus status) {
             if (status == COMMAND_SUCCESS) {
                 final boolean isNotifying = peripheral.isNotifying(characteristic);
-                logger.info(String.format("SUCCESS: Notify set to '%s' for %s", isNotifying, characteristic.getUuid()));
+                logger.info("SUCCESS: Notify set to '{}' for {}", isNotifying, characteristic.getUuid());
                 if (isNotifying) {
                     // If we just bonded wit the A&D 651BLE, issue a disconnect to finish the pairing process
-                    String peripheralName = peripheral.getName() == null ? "" : peripheral.getName();
+                    String peripheralName = peripheral.getName();
                     if (justBonded && isANDPeripheral(peripheralName)) {
                         peripheral.cancelConnection();
                         justBonded = false;
@@ -111,27 +111,27 @@ public class BluetoothHandler {
                     }
                 }
             } else {
-                logger.error(String.format("ERROR: Changing notification state failed for %s", characteristic.getUuid()));
+                logger.error("ERROR: Changing notification state failed for {}", characteristic.getUuid());
             }
         }
 
         @Override
-        public void onCharacteristicUpdate(@NotNull BluetoothPeripheral peripheral, byte[] value, @NotNull BluetoothGattCharacteristic characteristic, BluetoothCommandStatus status) {
+        public void onCharacteristicUpdate(@NotNull BluetoothPeripheral peripheral, byte @NotNull [] value, @NotNull BluetoothGattCharacteristic characteristic, @NotNull BluetoothCommandStatus status) {
             final UUID characteristicUUID = characteristic.getUuid();
             final BluetoothBytesParser parser = new BluetoothBytesParser(value);
 
             // Deal with errors
             if (status != COMMAND_SUCCESS) {
-                logger.error(String.format("command failed with status %s", status));
+                logger.error("command failed with status {}", status);
                 return;
             }
 
             if (characteristicUUID.equals(MANUFACTURER_NAME_CHARACTERISTIC_UUID)) {
                 String manufacturer = parser.getStringValue(0);
-                logger.info(String.format("Received manufacturer: '%s'", manufacturer));
+                logger.info("Received manufacturer: '{}'", manufacturer);
             } else if (characteristicUUID.equals(MODEL_NUMBER_CHARACTERISTIC_UUID)) {
                 String modelNumber = parser.getStringValue(0);
-                logger.info(String.format("Received modelnumber: '%s'", modelNumber));
+                logger.info("Received modelNumber: '{}'", modelNumber);
             } else if (characteristicUUID.equals(TEMPERATURE_MEASUREMENT_CHARACTERISTIC_UUID)) {
                 TemperatureMeasurement measurement = new TemperatureMeasurement(value);
                 logger.info(measurement.toString());
@@ -156,10 +156,10 @@ public class BluetoothHandler {
                 startDisconnectTimer(peripheral);
             } else if (characteristicUUID.equals(CURRENT_TIME_CHARACTERISTIC_UUID)) {
                 Date currentTime = parser.getDateTime();
-                logger.info(String.format("Received device time: %s", currentTime));
+                logger.info("Received device time: {}", currentTime);
             } else if (characteristicUUID.equals(BATTERY_LEVEL_CHARACTERISTIC_UUID)) {
                 int batteryLevel = parser.getIntValue(FORMAT_UINT8);
-                logger.info(String.format("battery level %d", batteryLevel));
+                logger.info("Received battery level {}", batteryLevel);
             }
         }
 
@@ -185,8 +185,8 @@ public class BluetoothHandler {
         }
 
         @Override
-        public void onReadRemoteRssi(@NotNull BluetoothPeripheral peripheral, int rssi, BluetoothCommandStatus status) {
-            logger.info(String.format("rssi is %d", rssi));
+        public void onReadRemoteRssi(@NotNull BluetoothPeripheral peripheral, int rssi, @NotNull BluetoothCommandStatus status) {
+            logger.info("rssi is {}", rssi);
         }
     };
 
@@ -218,7 +218,7 @@ public class BluetoothHandler {
 
         @Override
         public void onConnectionFailed(@NotNull BluetoothPeripheral peripheral, @NotNull BluetoothCommandStatus status) {
-            logger.info(String.format("connection failed with status %s",status));
+            logger.info("connection failed with status {}", status);
             final String peripheralAddress = peripheral.getAddress();
             handler.postDelayed(() -> blackList.remove(peripheralAddress), 2000L);
         }
@@ -228,7 +228,7 @@ public class BluetoothHandler {
             logger.info("disconnected peripheral");
             final String peripheralAddress = peripheral.getAddress();
             handler.postDelayed(() -> {
-                logger.info(String.format("removing '%s' from blacklist", peripheralAddress));
+                logger.info("removing '{}' from blacklist", peripheralAddress);
                 blackList.remove(peripheralAddress);
             }, 40000L);
         }

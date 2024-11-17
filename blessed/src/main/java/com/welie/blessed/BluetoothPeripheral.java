@@ -57,8 +57,7 @@ public final class BluetoothPeripheral {
     @NotNull
     private final String deviceAddress;
 
-    @Nullable
-    private byte[] currentWriteBytes;
+    private byte @Nullable [] currentWriteBytes;
 
     @NotNull
     private final Handler callBackHandler;
@@ -79,7 +78,7 @@ public final class BluetoothPeripheral {
     protected final Map<String, BluezGattDescriptor> descriptorMap = new ConcurrentHashMap<>();
 
     @NotNull
-    protected List<@NotNull BluetoothGattService> services = new ArrayList<>();
+    protected final List<@NotNull BluetoothGattService> services = new ArrayList<>();
 
     @Nullable
     private ScheduledFuture<?> timeoutFuture;
@@ -168,12 +167,12 @@ public final class BluetoothPeripheral {
 
         private void successfullyDisconnected(@NotNull final BluetoothCommandStatus status, @NotNull final ConnectionState previousState) {
             if (!serviceDiscoveryCompleted) {
-//                            if (isBonded) {
-//                                // Assume we lost the bond
-//                                if (peripheralCallback != null) {
-//                                    callBackHandler.post(() -> peripheralCallback.onBondLost(BluetoothPeripheral.this));
-//                                }
-//                            }
+//              if (isBonded) {
+//                  // Assume we lost the bond
+//                  if (peripheralCallback != null) {
+//                      callBackHandler.post(() -> peripheralCallback.onBondLost(BluetoothPeripheral.this));
+//                  }
+//              }
                 listener.serviceDiscoveryFailed(BluetoothPeripheral.this);
             }
             completeDisconnect(true, status);
@@ -182,15 +181,15 @@ public final class BluetoothPeripheral {
         void connectionStateChangeUnsuccessful(@NotNull final BluetoothCommandStatus status, @NotNull final ConnectionState previousState, @NotNull final ConnectionState newState) {
             if (previousState == CONNECTING) {
                 completeDisconnect(false, status);
-                logger.error(String.format("connection failed with status '%s'", status));
+                logger.error("connection failed with status '{}'", status);
                 listener.connectFailed(BluetoothPeripheral.this, status);
             } else if (previousState == CONNECTED && newState == DISCONNECTED && !serviceDiscoveryCompleted) {
                 completeDisconnect(false, status);
-                logger.error(String.format("connection failed with status '%s' during service discovery", status));
+                logger.error("connection failed with status '{}' during service discovery", status);
                 listener.connectFailed(BluetoothPeripheral.this, status);
             } else {
                 if (newState == DISCONNECTED) {
-                    logger.error(String.format("disconnected with status '%s'", status));
+                    logger.error("disconnected with status '{}'", status);
                 }
                 completeDisconnect(true, status);
             }
@@ -199,7 +198,7 @@ public final class BluetoothPeripheral {
         @Override
         public void onNotificationStateUpdate(@NotNull final BluetoothGattCharacteristic characteristic, @NotNull final BluetoothCommandStatus status) {
             if (status != COMMAND_SUCCESS) {
-                logger.error(String.format("set notify failed with status '%s'", status));
+                logger.error("set notify failed with status '{}'", status);
             }
 
             callBackHandler.post(() -> peripheralCallback.onNotificationStateUpdate(BluetoothPeripheral.this, characteristic, status));
@@ -208,11 +207,11 @@ public final class BluetoothPeripheral {
 
 
         @Override
-        public void onDescriptorRead(@NotNull BluetoothGattDescriptor descriptor, @NotNull byte[] value, @NotNull BluetoothCommandStatus status) {
+        public void onDescriptorRead(@NotNull BluetoothGattDescriptor descriptor, byte @NotNull [] value, @NotNull BluetoothCommandStatus status) {
             // Do some checks first
             final BluetoothGattCharacteristic parentCharacteristic = descriptor.getCharacteristic();
             if (status != COMMAND_SUCCESS) {
-                logger.info(String.format("ERROR: Read descriptor failed device: %s, characteristic: %s", getAddress(), parentCharacteristic.getUuid()));
+                logger.info("ERROR: Read descriptor failed device: {}, characteristic: {}", getAddress(), parentCharacteristic.getUuid());
             }
 
             callBackHandler.post(() -> peripheralCallback.onDescriptorRead(BluetoothPeripheral.this, value, descriptor, status));
@@ -224,7 +223,7 @@ public final class BluetoothPeripheral {
             // Do some checks first
             final BluetoothGattCharacteristic parentCharacteristic = descriptor.getCharacteristic();
             if (status != COMMAND_SUCCESS) {
-                logger.info(String.format("ERROR: Write descriptor failed device: %s, characteristic: %s", getAddress(), parentCharacteristic.getUuid()));
+                logger.info("ERROR: Write descriptor failed device: {}, characteristic: {}", getAddress(), parentCharacteristic.getUuid());
             }
 
             callBackHandler.post(() -> peripheralCallback.onDescriptorWrite(BluetoothPeripheral.this, new byte[0], descriptor, status));
@@ -234,7 +233,7 @@ public final class BluetoothPeripheral {
         @Override
         public void onCharacteristicRead(@NotNull final BluetoothGattCharacteristic characteristic, @NotNull final BluetoothCommandStatus status) {
             if (status != COMMAND_SUCCESS) {
-                logger.error(String.format(Locale.ENGLISH, "read failed for characteristic: %s, status '%s'", characteristic.getUuid(), status));
+                logger.error("read failed for characteristic: {}, status '{}'", characteristic.getUuid(), status);
                 // Propagate error so it can be handled
                 callBackHandler.post(() -> peripheralCallback.onCharacteristicUpdate(BluetoothPeripheral.this, new byte[0], characteristic, status));
             }
@@ -244,14 +243,14 @@ public final class BluetoothPeripheral {
         }
 
         @Override
-        public void onCharacteristicChanged(@NotNull final byte[] value, @NotNull final BluetoothGattCharacteristic characteristic) {
+        public void onCharacteristicChanged(final byte @NotNull [] value, @NotNull final BluetoothGattCharacteristic characteristic) {
             callBackHandler.post(() -> peripheralCallback.onCharacteristicUpdate(BluetoothPeripheral.this, value, characteristic, COMMAND_SUCCESS));
         }
 
         @Override
         public void onCharacteristicWrite(@NotNull final BluetoothGattCharacteristic characteristic, @NotNull final BluetoothCommandStatus status) {
             if (status != COMMAND_SUCCESS) {
-                logger.error(String.format("write failed for characteristic: %s, status '%s'", characteristic.getUuid(), status));
+                logger.error("write failed for characteristic: {}, status '{}'", characteristic.getUuid(), status);
             }
 
             callBackHandler.post(() -> peripheralCallback.onCharacteristicWrite(BluetoothPeripheral.this, currentWriteBytes, characteristic, status));
@@ -280,7 +279,7 @@ public final class BluetoothPeripheral {
         @Override
         public void onServicesDiscovered(@NotNull final List<BluetoothGattService> services) {
             serviceDiscoveryCompleted = true;
-            logger.info(String.format("discovered %d services for '%s' (%s)", services.size(), getName(), getAddress()));
+            logger.info("discovered {} services for '{}' ({})", services.size(), getName(), getAddress());
 
             // We are now fully connected and service discovery was successful, so let Central know
             listener.connected(BluetoothPeripheral.this);
@@ -319,7 +318,7 @@ public final class BluetoothPeripheral {
         if (peripheralCallback != null) {
             this.peripheralCallback = peripheralCallback;
         }
-        this.callBackHandler = Objects.requireNonNull(callBackHandler, "no callbackhandler provided");
+        this.callBackHandler = Objects.requireNonNull(callBackHandler, "no callBackHandler provided");
     }
 
     void setPeripheralCallback(@NotNull final BluetoothPeripheralCallback peripheralCallback) {
@@ -333,7 +332,7 @@ public final class BluetoothPeripheral {
         gattCallback.onConnectionStateChanged(CONNECTING, COMMAND_SUCCESS);
 
         try {
-            logger.info(String.format("connecting to '%s' (%s)", deviceName, deviceAddress));
+            logger.info("connecting to '{}' ({})", deviceName, deviceAddress);
             queueHandler = new Handler(deviceAddress + "-queue");
             signalHandler = new Handler(deviceAddress + "-signal");
             BluezSignalHandler.getInstance().addPeripheral(deviceAddress, this);
@@ -379,7 +378,7 @@ public final class BluetoothPeripheral {
      * Internal disconnect method that does the real disconnect
      */
     void disconnectBluezDevice() {
-        logger.info(String.format("force disconnect '%s' (%s)", getName(), getAddress()));
+        logger.info("force disconnect '{}' ({})", getName(), getAddress());
         gattCallback.onConnectionStateChanged(DISCONNECTING, COMMAND_SUCCESS);
         if (device != null) {
             device.disconnect();
@@ -443,7 +442,7 @@ public final class BluetoothPeripheral {
         return enqueue(() -> {
             if (state == CONNECTED) {
                 try {
-                    logger.info(String.format("reading characteristic <%s>", nativeCharacteristic.getUuid()));
+                    logger.info("reading characteristic <{}>", nativeCharacteristic.getUuid());
                     nativeCharacteristic.readValue(new HashMap<>());
                     gattCallback.onCharacteristicRead(characteristic, COMMAND_SUCCESS);
                 } catch (BluezInProgressException e) {
@@ -481,7 +480,7 @@ public final class BluetoothPeripheral {
      * @return true if a write operation was successfully enqueued, otherwise false
      */
     @SuppressWarnings("UnusedReturnValue")
-    public boolean writeCharacteristic(@NotNull final UUID serviceUUID, @NotNull final UUID characteristicUUID, @NotNull final byte[] value, @NotNull final WriteType writeType) {
+    public boolean writeCharacteristic(@NotNull final UUID serviceUUID, @NotNull final UUID characteristicUUID, final byte @NotNull [] value, @NotNull final WriteType writeType) {
         Objects.requireNonNull(serviceUUID, NO_VALID_SERVICE_UUID_PROVIDED);
         Objects.requireNonNull(characteristicUUID, NO_VALID_CHARACTERISTIC_UUID_PROVIDED);
         Objects.requireNonNull(value, NO_VALID_VALUE_PROVIDED);
@@ -508,7 +507,7 @@ public final class BluetoothPeripheral {
      * @return true if a write operation was successfully enqueued, otherwise false
      */
     @SuppressWarnings({"UnusedReturnValue", "unused"})
-    public boolean writeCharacteristic(@NotNull final BluetoothGattCharacteristic characteristic, @NotNull final byte[] value, @NotNull final WriteType writeType) {
+    public boolean writeCharacteristic(@NotNull final BluetoothGattCharacteristic characteristic, final byte @NotNull [] value, @NotNull final WriteType writeType) {
         Objects.requireNonNull(characteristic, NO_VALID_CHARACTERISTIC_PROVIDED);
         Objects.requireNonNull(value, NO_VALID_VALUE_PROVIDED);
         Objects.requireNonNull(writeType, NO_VALID_WRITE_TYPE_PROVIDED);
@@ -534,7 +533,7 @@ public final class BluetoothPeripheral {
 
         // Check if this characteristic actually supports this writeType
         if (!characteristic.supportsWriteType(writeType)) {
-            logger.error(String.format(Locale.ENGLISH, "characteristic cannot be written with this writeType : %s", writeType));
+            logger.error("characteristic cannot be written with this writeType : {}", writeType);
             return false;
         }
 
@@ -543,7 +542,7 @@ public final class BluetoothPeripheral {
             if (state == CONNECTED) {
                 try {
                     currentWriteBytes = bytesToWrite;
-                    logger.info(String.format("writing %s <%s> to characteristic <%s>", writeType, bytes2String(bytesToWrite), nativeCharacteristic.getUuid()));
+                    logger.info("writing {} <{}> to characteristic <{}>", writeType, bytes2String(bytesToWrite), nativeCharacteristic.getUuid());
                     HashMap<String, Object> options = new HashMap<>();
                     options.put("type", writeType == WriteType.WITH_RESPONSE ? "request" : "command");
                     nativeCharacteristic.writeValue(bytesToWrite, options);
@@ -585,7 +584,7 @@ public final class BluetoothPeripheral {
 
         final BluezGattDescriptor nativeDescriptor = getBluezGattDescriptor(characteristic.service.getUuid(), characteristic.getUuid(), descriptor.getUuid());
         if (nativeDescriptor == null) {
-            logger.error(ERROR_NATIVE_CHARACTERISTIC_IS_NULL);
+            logger.error(ERROR_NATIVE_DESCRIPTOR_IS_NULL);
             return false;
         }
 
@@ -603,7 +602,7 @@ public final class BluetoothPeripheral {
         });
     }
 
-    public boolean writeDescriptor(@NotNull final BluetoothGattDescriptor descriptor, @NotNull final byte[] value) {
+    public boolean writeDescriptor(@NotNull final BluetoothGattDescriptor descriptor, final byte @NotNull [] value) {
         Objects.requireNonNull(descriptor, NO_VALID_DESCRIPTOR_PROVIDED);
         final BluetoothGattCharacteristic characteristic = descriptor.getCharacteristic();
         Objects.requireNonNull(value, NO_VALID_VALUE_PROVIDED);
@@ -615,7 +614,7 @@ public final class BluetoothPeripheral {
 
         final BluezGattDescriptor nativeDescriptor = getBluezGattDescriptor(characteristic.service.getUuid(), characteristic.getUuid(), descriptor.getUuid());
         if (nativeDescriptor == null) {
-            logger.error(ERROR_NATIVE_CHARACTERISTIC_IS_NULL);
+            logger.error(ERROR_NATIVE_DESCRIPTOR_IS_NULL);
             return false;
         }
 
@@ -681,7 +680,7 @@ public final class BluetoothPeripheral {
 
         // Check if characteristic has NOTIFY or INDICATE properties and set the correct byte value to be written
         if (!characteristic.supportsNotifying()) {
-            logger.info(String.format("characteristic %s does not have notify of indicate property", characteristic.getUuid()));
+            logger.info("characteristic {} does not have notify of indicate property", characteristic.getUuid());
             return false;
         }
 
@@ -690,7 +689,7 @@ public final class BluetoothPeripheral {
             if (state == CONNECTED) {
                 try {
                     if (enable) {
-                        logger.info(String.format("setNotify for characteristic <%s>", nativeCharacteristic.getUuid()));
+                        logger.info("setNotify for characteristic <{}>", nativeCharacteristic.getUuid());
                         boolean isNotifying = nativeCharacteristic.isNotifying();
                         if (isNotifying) {
                             // Already notifying, ignoring command
@@ -701,7 +700,7 @@ public final class BluetoothPeripheral {
                             nativeCharacteristic.startNotify();
                         }
                     } else {
-                        logger.info(String.format("stopNotify for characteristic <%s>", nativeCharacteristic.getUuid()));
+                        logger.info("stopNotify for characteristic <{}>", nativeCharacteristic.getUuid());
                         nativeCharacteristic.stopNotify();
                     }
                 } catch (BluezNotPermittedException e) {
@@ -727,7 +726,7 @@ public final class BluetoothPeripheral {
     @SuppressWarnings("unused")
     public void readRemoteRssi() {
         try {
-            logger.info(String.format("reading rssi for '%s'", deviceName));
+            logger.info("reading rssi for '{}'", deviceName);
             Short rssi = Objects.requireNonNull(device).getRssi();
             if (rssi != null) {
                 callBackHandler.post(() -> peripheralCallback.onReadRemoteRssi(BluetoothPeripheral.this, rssi, COMMAND_SUCCESS));
@@ -737,7 +736,7 @@ public final class BluetoothPeripheral {
             if (e.getMessage().equalsIgnoreCase("No such property 'RSSI'")) {
                 logger.error("rssi not available when not scanning");
             } else {
-                logger.error(String.format("reading rssi failed: %s", e.getMessage()));
+                logger.error("reading rssi failed: {}", e.getMessage());
             }
         }
     }
@@ -785,7 +784,7 @@ public final class BluetoothPeripheral {
                     propertiesChanged.getPropertiesChanged().forEach((key, value) -> handlePropertyChangedForCharacteristic(bluetoothGattCharacteristic, key, value));
                     break;
                 case BLUEZ_DEVICE_INTERFACE:
-                    propertiesChanged.getPropertiesChanged().forEach((key, value) -> handlePropertyChangeForDevice(key, value));
+                    propertiesChanged.getPropertiesChanged().forEach(this::handlePropertyChangeForDevice);
                     break;
                 default:
                     break;
@@ -801,7 +800,7 @@ public final class BluetoothPeripheral {
                     } else {
                         notifyingCharacteristics.remove(bluetoothGattCharacteristic);
                     }
-                    logger.info(String.format("characteristic '%s' %s", bluetoothGattCharacteristic.getUuid(), isNotifying ? "is notifying" : "stopped notifying"));
+                    logger.info("characteristic '{}' {}", bluetoothGattCharacteristic.getUuid(), isNotifying ? "is notifying" : "stopped notifying");
                     gattCallback.onNotificationStateUpdate(bluetoothGattCharacteristic, COMMAND_SUCCESS);
                     break;
                 case PROPERTY_VALUE:
@@ -815,7 +814,7 @@ public final class BluetoothPeripheral {
                     }
                     break;
                 default:
-                    logger.error(String.format("Unhandled characteristic property change %s", propertyName));
+                    logger.error("Unhandled characteristic property change {}", propertyName);
             }
         }
 
@@ -831,7 +830,7 @@ public final class BluetoothPeripheral {
                         }
                     } else {
                         // Services_Resolved false will be followed by Connected == false, so no action needed
-                        logger.debug(String.format("servicesResolved is false (%s)", deviceName));
+                        logger.debug("servicesResolved is false ({})", deviceName);
                     }
                     break;
                 case PROPERTY_CONNECTED:
@@ -840,7 +839,7 @@ public final class BluetoothPeripheral {
                         gattCallback.onConnectionStateChanged(CONNECTED, COMMAND_SUCCESS);
                         startServiceDiscoveryTimer();
                     } else {
-                        logger.info(String.format("disconnected '%s' (%s)", deviceName, deviceAddress));
+                        logger.info("disconnected '{}' ({})", deviceName, deviceAddress);
 
                         // Cancel service discovery timer, just in case it was started
                         cancelServiceDiscoveryTimer();
@@ -928,7 +927,7 @@ public final class BluetoothPeripheral {
         synchronized (this) {
             // Check if we are still connected
             if (state != CONNECTED) {
-                logger.info(String.format("device %s is not connected, clearing command queue", getAddress()));
+                logger.info("device {} is not connected, clearing command queue", getAddress());
                 commandQueue.clear();
                 commandQueueBusy = false;
                 return;
@@ -952,8 +951,7 @@ public final class BluetoothPeripheral {
                         try {
                             bluetoothCommand.run();
                         } catch (Exception ex) {
-                            logger.warn(String.format("ERROR: Command exception for device '%s'", getName()));
-                            ex.printStackTrace();
+							logger.warn("ERROR: Command exception for device '{}'", getName(), ex);
                             completedCommand();
                         }
                     });
@@ -1165,7 +1163,7 @@ public final class BluetoothPeripheral {
                 connect();
             } else {
                 manualBonding = true;
-                logger.info(String.format("pairing with '%s' (%s)", deviceName, deviceAddress));
+                logger.info("pairing with '{}' ({})", deviceName, deviceAddress);
                 connectTimestamp = System.currentTimeMillis();
                 device.pair();
             }
@@ -1203,8 +1201,8 @@ public final class BluetoothPeripheral {
                 logger.error(e.getMessage());
             }
         } catch (BluezInProgressException e) {
+            logger.error("Pair exception: Bluez operation in progress", e);
             status = BLUEZ_OPERATION_IN_PROGRESS;
-            e.printStackTrace();
         }
 
         // Clean up after failed pairing
@@ -1226,7 +1224,7 @@ public final class BluetoothPeripheral {
 
         final BluetoothGattCharacteristic bluetoothGattCharacteristic = getBluetoothGattCharacteristic(characteristic);
         if (bluetoothGattCharacteristic == null) {
-            logger.error(String.format("can't find characteristic with path %s", path));
+            logger.error("can't find characteristic with path {}", path);
         }
         return bluetoothGattCharacteristic;
     }
@@ -1237,7 +1235,7 @@ public final class BluetoothPeripheral {
         // Disconnecting doesn't work so do it ourselves
         final Runnable timeoutRunnable = () -> {
             String deviceName = (device != null) ? device.getName() : deviceAddress;
-            logger.error(String.format("Service Discovery timeout, disconnecting '%s'", deviceName));
+            logger.error("Service Discovery timeout, disconnecting '{}'", deviceName);
 
             // Disconnecting doesn't work so do it ourselves
             cancelServiceDiscoveryTimer();
@@ -1355,8 +1353,7 @@ public final class BluetoothPeripheral {
      * @param source the byte array to copy, can be null
      * @return non-null byte array that is a copy of source
      */
-    @NotNull
-    private byte[] copyOf(@Nullable final byte[] source) {
+    private byte @NotNull [] copyOf(final byte @Nullable [] source) {
         return (source == null) ? new byte[0] : Arrays.copyOf(source, source.length);
     }
 

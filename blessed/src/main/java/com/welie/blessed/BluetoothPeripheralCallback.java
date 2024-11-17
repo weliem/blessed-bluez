@@ -40,7 +40,7 @@ public abstract class BluetoothPeripheralCallback {
      * @param characteristic the characteristic for which the new value was received
      * @param status GATT status code
      */
-    public void onCharacteristicUpdate(@NotNull BluetoothPeripheral peripheral, @NotNull byte[] value, @NotNull BluetoothGattCharacteristic characteristic, @NotNull BluetoothCommandStatus status) {}
+    public void onCharacteristicUpdate(@NotNull BluetoothPeripheral peripheral, byte @NotNull [] value, @NotNull BluetoothGattCharacteristic characteristic, @NotNull BluetoothCommandStatus status) {}
 
     /**
      * Callback indicating the result of a characteristic write operation.
@@ -52,7 +52,7 @@ public abstract class BluetoothPeripheralCallback {
      * @param characteristic the characteristic written to
      * @param status GATT status code
      */
-    public void onCharacteristicWrite(@NotNull BluetoothPeripheral peripheral, @NotNull byte[] value, @NotNull BluetoothGattCharacteristic characteristic, @NotNull BluetoothCommandStatus status) {}
+    public void onCharacteristicWrite(@NotNull BluetoothPeripheral peripheral, byte @NotNull [] value, @NotNull BluetoothGattCharacteristic characteristic, @NotNull BluetoothCommandStatus status) {}
 
     /**
      * Callback invoked as the result of a descriptor read operation
@@ -62,7 +62,7 @@ public abstract class BluetoothPeripheralCallback {
      * @param descriptor the descriptor that was read
      * @param status GATT status code
      */
-    public void onDescriptorRead(@NotNull BluetoothPeripheral peripheral, @NotNull byte[] value, @NotNull BluetoothGattDescriptor descriptor, @NotNull BluetoothCommandStatus status) {}
+    public void onDescriptorRead(@NotNull BluetoothPeripheral peripheral, byte @NotNull [] value, @NotNull BluetoothGattDescriptor descriptor, @NotNull BluetoothCommandStatus status) {}
 
     /**
      * Callback invoked as the result of a descriptor write operation.
@@ -73,7 +73,7 @@ public abstract class BluetoothPeripheralCallback {
      * @param descriptor the descriptor written to
      * @param status the GATT status code
      */
-    public void onDescriptorWrite(@NotNull BluetoothPeripheral peripheral, @NotNull byte[] value, @NotNull BluetoothGattDescriptor descriptor, @NotNull BluetoothCommandStatus status) {}
+    public void onDescriptorWrite(@NotNull BluetoothPeripheral peripheral, byte @NotNull [] value, @NotNull BluetoothGattDescriptor descriptor, @NotNull BluetoothCommandStatus status) {}
 
     /**
      * Callback invoked when a bonding process is started

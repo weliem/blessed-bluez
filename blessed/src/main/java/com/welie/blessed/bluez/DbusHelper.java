@@ -38,7 +38,7 @@ public final class DbusHelper {
      */
     public static Set<String> findNodes(DBusConnection _connection, String _path) {
         Set<String> foundNodes = new LinkedHashSet<>();
-        if (_connection == null || _path.length() == 0) {
+        if (_connection == null || _path.isEmpty()) {
             return foundNodes;
         }
         try {

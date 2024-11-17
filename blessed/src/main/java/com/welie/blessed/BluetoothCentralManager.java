@@ -24,7 +24,6 @@ import org.slf4j.LoggerFactory;
 
 import static com.welie.blessed.BluetoothPeripheral.*;
 import static com.welie.blessed.ConnectionState.CONNECTED;
-import static java.lang.Thread.sleep;
 
 /**
  * Represents a Bluetooth Central object
@@ -216,7 +215,7 @@ public class BluetoothCentralManager {
         this.scanOptions = Objects.requireNonNull(scanOptions, "no scanOptions provided");
         this.adapter = Objects.requireNonNull(bluezAdapter, "no bluez adapter provided");
 
-        logger.info(String.format("using adapter %s", adapter.getDeviceName()));
+        logger.info("using adapter {}", adapter.getDeviceName());
 
         // Make sure the adapter is powered on
         isPowered = adapter.isPowered();
@@ -237,7 +236,7 @@ public class BluetoothCentralManager {
         final PairingAgent agent = new PairingAgent("/test/agent", adapter.getDBusConnection(), new PairingDelegate() {
             @Override
             public String requestPassCode(@NotNull final String deviceAddress) {
-                logger.info(String.format("received passcode request for %s", deviceAddress));
+                logger.info("received passcode request for {}", deviceAddress);
 
                 // See if we have a pass code for this device
                 String passCode = pinCodes.get(deviceAddress);
@@ -246,7 +245,7 @@ public class BluetoothCentralManager {
                 if (passCode == null) {
                     passCode = bluetoothCentralManagerCallback.onPinRequest(getPeripheral(deviceAddress));
                 }
-                logger.info(String.format("sending passcode %s", passCode));
+                logger.info("sending passcode {}", passCode);
                 return passCode;
             }
 
@@ -425,7 +424,7 @@ public class BluetoothCentralManager {
         final String peripheralAddress = peripheral.getAddress();
         final BluetoothPeripheralCallback peripheralCallback = reconnectCallbacks.get(peripheralAddress);
 
-        logger.info(String.format("found peripheral to autoconnect '%s'", peripheralAddress));
+        logger.info("found peripheral to autoconnect '{}'", peripheralAddress);
         autoScanActive = false;
         reconnectPeripheralAddresses.remove(peripheralAddress);
         reconnectCallbacks.remove(peripheralAddress);
@@ -580,7 +579,7 @@ public class BluetoothCentralManager {
         final String deviceAddress = bluezDevice.getAddress();
         if (deviceAddress == null) return;
 
-        // Check if the properties are belonging to a scan
+        // Check if the properties belong to a scan
         final Set<String> keys = propertiesChanged.keySet();
         if (!(keys.contains(PROPERTY_RSSI) || keys.contains(PROPERTY_MANUFACTURER_DATA) || keys.contains(PROPERTY_SERVICE_DATA)))
             return;
@@ -638,11 +637,11 @@ public class BluetoothCentralManager {
     private void handlePropertiesChangedForAdapter(@NotNull final String propertyName, @NotNull final Variant<?> value) {
         switch (propertyName) {
             case PROPERTY_DISCOVERING:
-                logger.debug(String.format("adapter discovery %s", (Boolean) value.getValue() ? "started" : "stopped"));
+                logger.debug("adapter discovery {}", (Boolean) value.getValue() ? "started" : "stopped");
                 break;
             case PROPERTY_POWERED:
                 isPowered = (Boolean) value.getValue();
-                logger.info(String.format("powered %s", isPowered ? "on" : "off"));
+                logger.info("powered {}", isPowered ? "on" : "off");
 
                 if (currentCommand.equalsIgnoreCase(PROPERTY_POWERED)) {
                     callBackHandler.postDelayed(this::completedCommand, 100L);
@@ -835,19 +834,19 @@ public class BluetoothCentralManager {
 
         // Check if we are already connected
         if (connectedPeripherals.containsKey(peripheral.getAddress())) {
-            logger.warn(String.format("WARNING: Already connected to %s'", peripheral.getAddress()));
+            logger.warn("WARNING: Already connected to {}'", peripheral.getAddress());
             return;
         }
 
         // Check if we already have an outstanding connection request for this peripheral
         if (unconnectedPeripherals.containsKey(peripheral.getAddress())) {
-            logger.warn(String.format("WARNING: Already connecting to %s'", peripheral.getAddress()));
+            logger.warn("WARNING: Already connecting to {}'", peripheral.getAddress());
             return;
         }
 
         // Make sure we have BluezDevice
         if (peripheral.getDevice() == null) {
-            logger.warn(String.format("WARNING: Peripheral '%s' doesn't have Bluez device", peripheral.getAddress()));
+            logger.warn("WARNING: Peripheral '{}' doesn't have Bluez device", peripheral.getAddress());
             return;
         }
 
@@ -890,7 +889,7 @@ public class BluetoothCentralManager {
         reconnectCallbacks.put(peripheralAddress, peripheralCallback);
         unconnectedPeripherals.put(peripheralAddress, peripheral);
 
-        logger.info(String.format("autoconnect to %s", peripheralAddress));
+        logger.info("autoconnect to {}", peripheralAddress);
         startAutoConnectScan();
         return true;
     }
@@ -1033,12 +1032,12 @@ public class BluetoothCentralManager {
         Objects.requireNonNull(pin, "no pin provided");
 
         if (!isValidBluetoothAddress(peripheralAddress)) {
-            logger.error(String.format("%s is not a valid address. Make sure all alphabetic characters are uppercase.", peripheralAddress));
+            logger.error("{} is not a valid address. Make sure all alphabetic characters are uppercase.", peripheralAddress);
             return false;
         }
 
         if (pin.length() != 6) {
-            logger.error(String.format("%s is not 6 digits long", pin));
+            logger.error("{} is not 6 digits long", pin);
             return false;
         }
 
@@ -1167,7 +1166,7 @@ public class BluetoothCentralManager {
         if (bluetoothDevice == null) return;
 
         boolean isBonded = peripheral.isPaired();
-        logger.info(String.format("removing peripheral '%s' %s (%s)", peripheral.getName(), peripheral.getAddress(), isBonded ? "BONDED" : "BOND_NONE"));
+        logger.info("removing peripheral '{}' {} ({})", peripheral.getName(), peripheral.getAddress(), isBonded ? "BONDED" : "BOND_NONE");
         removeDevice(bluetoothDevice);
     }
 
