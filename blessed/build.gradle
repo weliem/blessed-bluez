@@ -3,7 +3,7 @@ apply plugin: 'jacoco'
 apply plugin: 'maven-publish'
 
 group 'com.github.weliem'
-version '0.63'
+version '0.64'
 
 compileJava {
     sourceCompatibility = 11
