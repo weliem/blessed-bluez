@@ -15,6 +15,7 @@ import org.w3c.dom.NodeList;
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Various DBUS related helper methods.
@@ -83,7 +84,7 @@ public final class DbusHelper {
     public static @NotNull List<@NotNull BluezAdapter> findBluezAdapters(DBusConnection _connection) {
         final Map<String, BluezAdapter> bluetoothAdaptersByAdapterName = new LinkedHashMap<>();
 
-        Set<String> nodes = DbusHelper.findNodes(_connection, BLUEZ_PATH);
+        Set<String> nodes = DbusHelper.findNodes(_connection, BLUEZ_PATH).stream().filter( node -> node.startsWith("hci")).collect(Collectors.toSet());
         for (String hci : nodes) {
             Adapter1 adapter1 = DbusHelper.getRemoteObject(_connection, BLUEZ_PATH + "/" + hci, Adapter1.class);
             if (adapter1 != null) {
